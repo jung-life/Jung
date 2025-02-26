@@ -42,8 +42,7 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -53,11 +52,6 @@
       "eas": {
         "projectId": "your-project-id"
       }
-    },
-    "plugins": [
-      [
-        "expo-auth-session"
-      ]
-    ]
+    }
   }
 }

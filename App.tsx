@@ -9,9 +9,6 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LoadingScreen } from './src/screens/LoadingScreen';
-import * as WebBrowser from 'expo-web-browser';
-
-WebBrowser.maybeCompleteAuthSession();
 
 // Enable screens before creating the navigator
 enableScreens();

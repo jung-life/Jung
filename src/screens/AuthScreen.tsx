@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import 'react-native-get-random-values';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -7,8 +8,9 @@ import { RootStackParamList } from '../navigation/types';
 import { supabase } from '../lib/supabase';
 import { SocialButton } from '../components/SocialButton';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import * as Linking from 'expo-linking';
 
-// Initialize WebBrowser for OAuth
 WebBrowser.maybeCompleteAuthSession();
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Auth'>;
@@ -19,6 +21,45 @@ export const AuthScreen = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
+  
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
+      redirectUri: AuthSession.makeRedirectUri(),
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    const getInitialURL = async () => {
+      const url = await Linking.getInitialURL();
+      if (url) {
+        handleDeepLink({ url });
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    getInitialURL();
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleDeepLink = async ({ url }: { url: string }) => {
+    if (url) {
+      const [, queryString] = url.split('#');
+      if (queryString) {
+        const params = new URLSearchParams(queryString);
+        await supabase.auth.getUser();
+      }
+    }
+  };
 
   const handleEmailLogin = async () => {
     try {
@@ -40,20 +81,21 @@ export const AuthScreen = () => {
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
+      const response = await promptAsync();
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'jung://auth/callback',
-        }
-      });
+      if (response?.type === 'success') {
+        const { code } = response.params;
+        
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: code,
+        });
 
-      if (error) throw error;
-      console.log('Auth response:', data);
-
+        if (error) throw error;
+      }
     } catch (error: any) {
-      console.error('Detailed error:', error);
-      alert('Error with Google login: ' + (error?.message || 'Unknown error'));
+      console.error('Error signing in with Google:', error.message);
+      alert('Error signing in with Google');
     } finally {
       setGoogleLoading(false);
     }
