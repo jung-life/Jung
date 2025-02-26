@@ -51,9 +51,9 @@ export const AuthScreen = () => {
       if (error) throw error;
       console.log('Auth response:', data);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Detailed error:', error);
-      alert('Error with Google login: ' + (error.message || error));
+      alert('Error with Google login: ' + (error?.message || 'Unknown error'));
     } finally {
       setGoogleLoading(false);
     }
