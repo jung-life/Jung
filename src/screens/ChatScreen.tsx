@@ -10,7 +10,8 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -21,6 +22,8 @@ import { generateAIResponse } from '../lib/api';
 import { TherapistAvatar } from '../components/TherapistAvatar';
 import tw from '../lib/tailwind';
 import HomeButton from "../components/HomeButton";
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 type Message = {
   id: string;
@@ -43,6 +46,9 @@ export const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentAIMessage, setCurrentAIMessage] = useState('');
+  const [summarizing, setSummarizing] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   useEffect(() => {
     if (id === 'new') {
@@ -304,6 +310,92 @@ export const ChatScreen = () => {
     navigation.navigate('Conversations');
   };
 
+  const generateSummary = async () => {
+    if (messages.length < 2) {
+      Alert.alert('Not enough content', 'Have a conversation first before generating a summary.');
+      return;
+    }
+    
+    try {
+      setSummarizing(true);
+      
+      // Prepare the conversation for the AI
+      const conversationText = messages
+        .map(msg => `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`)
+        .join('\n\n');
+      
+      // Create a prompt for the AI
+      const prompt = `Please provide a concise summary of the following conversation, highlighting key insights, patterns, and potential areas for self-reflection:\n\n${conversationText}`;
+      
+      // Get the summary from the AI
+      const summaryResponse = await generateAIResponse(prompt, []);
+      
+      // Save the summary to the database
+      if (conversationId) {
+        const { error } = await supabase
+          .from('conversations')
+          .update({ 
+            summary: summaryResponse,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId);
+          
+        if (error) throw error;
+      }
+      
+      // Update the UI
+      setSummary(summaryResponse);
+      setShowSummaryModal(true);
+      
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      Alert.alert('Error', 'Failed to generate summary. Please try again.');
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
+  const exportSummary = async () => {
+    try {
+      // First check if the modules are available
+      if (!Sharing || !FileSystem) {
+        Alert.alert(
+          'Error', 
+          'Sharing functionality is not available. Please make sure expo-sharing and expo-file-system are installed.'
+        );
+        return;
+      }
+      
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Error', 'Sharing is not available on this device');
+        return;
+      }
+
+      // Create a file with the summary content
+      const fileDate = new Date().toISOString().split('T')[0];
+      const fileName = `${FileSystem.documentDirectory}summary-${fileDate}.txt`;
+      
+      // Format the content with title and date
+      const content = `# ${conversationTitle}\n\nDate: ${new Date().toLocaleDateString()}\n\n${summary}`;
+      
+      // Write the file
+      await FileSystem.writeAsStringAsync(fileName, content);
+      
+      // Share the file
+      await Sharing.shareAsync(fileName, {
+        mimeType: 'text/plain',
+        dialogTitle: 'Export Summary',
+        UTI: 'public.plain-text'
+      });
+      
+    } catch (error) {
+      console.error('Error exporting summary:', error);
+      Alert.alert('Error', 'Failed to export summary. Please make sure the required packages are installed.');
+    }
+  };
+
   return (
     <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
       <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
@@ -321,7 +413,17 @@ export const ChatScreen = () => {
           </View>
         </TouchableOpacity>
         
-        <View style={tw`w-6`} />
+        <TouchableOpacity 
+          style={tw`p-2 rounded-full`}
+          onPress={generateSummary}
+          disabled={summarizing || messages.length < 2}
+        >
+          {summarizing ? (
+            <ActivityIndicator size="small" color="#4A3B78" />
+          ) : (
+            <AntDesign name="filetext1" size={24} color="#4A3B78" />
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.avatarSection}>
@@ -413,6 +515,37 @@ export const ChatScreen = () => {
                 onPress={confirmRename}
               >
                 <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Summary Modal */}
+      <Modal
+        visible={showSummaryModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSummaryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <Text style={styles.modalTitle}>Conversation Summary</Text>
+            <ScrollView style={tw`mb-4`}>
+              <Text style={tw`text-base leading-6 text-gray-800`}>{summary}</Text>
+            </ScrollView>
+            <View style={tw`flex-row justify-center space-x-4`}>
+              <TouchableOpacity 
+                style={tw`bg-gray-200 py-3 px-6 rounded-lg`}
+                onPress={() => setShowSummaryModal(false)}
+              >
+                <Text style={tw`text-gray-800 font-semibold text-base`}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={tw`bg-jung-purple py-3 px-6 rounded-lg`}
+                onPress={exportSummary}
+              >
+                <Text style={tw`text-white font-semibold text-base`}>Export</Text>
               </TouchableOpacity>
             </View>
           </View>
