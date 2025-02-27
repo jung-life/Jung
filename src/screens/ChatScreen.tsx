@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  StyleSheet, 
+  StyleSheet,
   View, 
   Text, 
   TextInput, 
@@ -20,6 +20,7 @@ import { RootStackNavigationProp } from '../navigation/types';
 import { generateAIResponse } from '../lib/api';
 import { TherapistAvatar } from '../components/TherapistAvatar';
 import tw from '../lib/tailwind';
+import HomeButton from "../components/HomeButton";
 
 type Message = {
   id: string;
@@ -44,7 +45,20 @@ export const ChatScreen = () => {
   const [currentAIMessage, setCurrentAIMessage] = useState('');
 
   useEffect(() => {
-    if (id !== 'new') {
+    if (id === 'new') {
+      // Automatically create a new conversation with default name
+      const createNewConversation = async () => {
+        const defaultTitle = `Reflection - ${new Date().toLocaleDateString()}`;
+        const newId = await createConversation(defaultTitle);
+        if (newId) {
+          // Update the conversation ID and title
+          setConversationId(newId);
+          setConversationTitle(defaultTitle);
+        }
+      };
+      
+      createNewConversation();
+    } else if (id !== 'new') {
       fetchMessages();
       fetchConversationTitle();
     }
@@ -85,6 +99,40 @@ export const ChatScreen = () => {
     }
   };
 
+  const getNextReflectionNumber = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return 1;
+      
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('title')
+        .eq('user_id', user.id)
+        .ilike('title', 'Reflection #%')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      if (!data || data.length === 0) return 1;
+      
+      // Try to extract the highest number from existing titles
+      let highestNumber = 0;
+      data.forEach(conv => {
+        const match = conv.title.match(/Reflection #(\d+)/);
+        if (match && match[1]) {
+          const num = parseInt(match[1], 10);
+          if (num > highestNumber) highestNumber = num;
+        }
+      });
+      
+      return highestNumber + 1;
+    } catch (error) {
+      console.error('Error getting next reflection number:', error);
+      return 1;
+    }
+  };
+
   const createConversation = async (customTitle?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -92,14 +140,19 @@ export const ChatScreen = () => {
       if (!user) return null;
       
       // Generate a default title if none provided
-      const defaultTitle = customTitle || `Reflection - ${new Date().toLocaleDateString()}`;
+      let title = customTitle;
+      if (!title) {
+        const nextNumber = await getNextReflectionNumber();
+        const date = new Date().toLocaleDateString();
+        title = `Reflection #${nextNumber} - ${date}`;
+      }
       
       const { data, error } = await supabase
         .from('conversations')
         .insert([
           { 
             user_id: user.id,
-            title: defaultTitle,
+            title: title,
           }
         ])
         .select()
@@ -127,7 +180,9 @@ export const ChatScreen = () => {
         
       if (error) throw error;
       
+      // Update the UI immediately
       setConversationTitle(title);
+      console.log('Conversation title updated to:', title);
     } catch (error) {
       console.error('Error updating conversation title:', error);
       Alert.alert('Error', 'Failed to update conversation title');
@@ -139,9 +194,9 @@ export const ChatScreen = () => {
     setShowNameModal(true);
   };
 
-  const confirmRename = () => {
+  const confirmRename = async () => {
     if (newTitle.trim()) {
-      updateConversationTitle(newTitle.trim());
+      await updateConversationTitle(newTitle.trim());
       setShowNameModal(false);
     }
   };
@@ -252,18 +307,18 @@ export const ChatScreen = () => {
   return (
     <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
       <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
-        <TouchableOpacity onPress={handleBackToReflections}>
-          <AntDesign name="arrowleft" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
+        <HomeButton />
         
         <TouchableOpacity 
           style={tw`flex-1 flex-row items-center justify-center`}
           onPress={handleRenameConversation}
         >
-          <Text style={tw`text-lg font-bold text-gray-900`} numberOfLines={1}>
+          <Text style={tw`text-lg font-bold text-gray-900 mr-2`} numberOfLines={1}>
             {conversationTitle || 'New Reflection'}
           </Text>
-          <AntDesign name="edit" size={16} color="#718096" style={tw`ml-2`} />
+          <View style={tw`bg-gray-100 p-1.5 rounded-full`}>
+            <AntDesign name="edit" size={18} color="#4A3B78" />
+          </View>
         </TouchableOpacity>
         
         <View style={tw`w-6`} />
@@ -363,13 +418,6 @@ export const ChatScreen = () => {
           </View>
         </View>
       </Modal>
-
-      <TouchableOpacity 
-        style={styles.floatingBackButton}
-        onPress={handleBackToReflections}
-      >
-        <AntDesign name="arrowleft" size={18} color="white" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -530,22 +578,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-  },
-  floatingBackButton: {
-    position: 'absolute',
-    top: 90,
-    left: 10,
-    backgroundColor: '#4A3B78',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    zIndex: 10,
   },
 }); 

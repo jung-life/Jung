@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, Text, ImageSourcePropType, TouchableOpacity } from 'react-native';
+import { View, Image, Text, ImageSourcePropType } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AntDesign } from '@expo/vector-icons';
 import tw from '../lib/tailwind';
+import HomeButton from './HomeButton';
 
 interface TherapistAvatarProps {
   isSpeaking: boolean;
@@ -17,7 +18,7 @@ interface TherapistAvatarProps {
   onBackPress?: () => void;
 }
 
-export const TherapistAvatar = ({ isSpeaking, message, onBackPress }: TherapistAvatarProps) => {
+export const TherapistAvatar = ({ isSpeaking, message }: TherapistAvatarProps) => {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
   const opacity = useSharedValue(0.8);
@@ -89,15 +90,6 @@ export const TherapistAvatar = ({ isSpeaking, message, onBackPress }: TherapistA
       
       {isSpeaking && (
         <Text style={tw`mt-2.5 text-sm text-jung-purple font-medium`}>Thinking...</Text>
-      )}
-      
-      {onBackPress && (
-        <TouchableOpacity 
-          style={tw`absolute top-2.5 left-2.5 p-2`}
-          onPress={onBackPress}
-        >
-          <AntDesign name="home" size={28} color="#4A3B78" />
-        </TouchableOpacity>
       )}
     </View>
   );

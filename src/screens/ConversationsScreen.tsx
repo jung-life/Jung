@@ -14,6 +14,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { Swipeable } from 'react-native-gesture-handler';
 import { RootStackNavigationProp } from '../navigation/types';
+import tw from '../lib/tailwind';
 
 type Conversation = {
   id: string;
@@ -137,37 +138,15 @@ export const ConversationsScreen = () => {
     }
   };
 
-  const renderRightActions = (id: string, title: string) => {
-    return (
-      <TouchableOpacity 
-        style={styles.deleteButton}
-        onPress={() => {
-          swipeableRefs.current.get(id)?.close();
-          handleDeleteConversation(id, title);
-        }}
-        disabled={deleting === id}
-      >
-        {deleting === id ? (
-          <ActivityIndicator size="small" color="white" />
-        ) : (
-          <View style={styles.deleteButtonContent}>
-            <AntDesign name="delete" size={20} color="white" />
-            <Text style={styles.deleteText}>Delete</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoToHome}>
+    <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
+      <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
+        <TouchableOpacity style={tw`p-2 rounded-full`} onPress={handleGoToHome}>
           <AntDesign name="home" size={24} color="#1a1a1a" />
         </TouchableOpacity>
-        <Text style={styles.title}>Reflections</Text>
+        <Text style={tw`text-2xl font-bold text-gray-900`}>Reflections</Text>
         <TouchableOpacity 
-          style={styles.newButton}
+          style={tw`w-11 h-11 rounded-full bg-jung-purple flex items-center justify-center shadow-sm`}
           onPress={handleNewConversation}
         >
           <AntDesign name="plus" size={24} color="white" />
@@ -175,14 +154,16 @@ export const ConversationsScreen = () => {
       </View>
 
       {conversations.length === 0 && !loading ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No conversations yet</Text>
-          <Text style={styles.emptySubtext}>Start a new conversation to begin your journey</Text>
+        <View style={tw`flex-1 justify-center items-center p-5`}>
+          <Text style={tw`text-xl font-bold text-gray-900 mb-2`}>No conversations yet</Text>
+          <Text style={tw`text-base text-gray-600 text-center mb-6`}>
+            Start a new conversation to begin your journey
+          </Text>
           <TouchableOpacity 
-            style={styles.startButton}
+            style={tw`bg-jung-purple py-3 px-6 rounded-lg shadow-sm`}
             onPress={handleNewConversation}
           >
-            <Text style={styles.startButtonText}>Start New Conversation</Text>
+            <Text style={tw`text-white font-semibold text-base`}>Start New Conversation</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -194,19 +175,39 @@ export const ConversationsScreen = () => {
               ref={(ref) => {
                 if (ref) swipeableRefs.current.set(item.id, ref);
               }}
-              renderRightActions={() => renderRightActions(item.id, item.title)}
+              renderRightActions={() => (
+                <TouchableOpacity 
+                  style={tw`bg-red-500 w-24 justify-center items-center`}
+                  onPress={() => {
+                    swipeableRefs.current.get(item.id)?.close();
+                    handleDeleteConversation(item.id, item.title);
+                  }}
+                  disabled={deleting === item.id}
+                >
+                  {deleting === item.id ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <View style={tw`items-center justify-center`}>
+                      <AntDesign name="delete" size={20} color="white" />
+                      <Text style={tw`text-white text-sm mt-1`}>Delete</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
               friction={2}
               rightThreshold={40}
             >
               <TouchableOpacity 
-                style={styles.conversationItem}
+                style={tw`flex-row items-center justify-between p-4 bg-white border-b border-gray-200`}
                 onPress={() => handleSelectConversation(item.id)}
               >
-                <Text style={styles.conversationTitle}>{item.title}</Text>
-                <Text style={styles.conversationDate}>
-                  {new Date(item.created_at).toLocaleDateString()}
-                </Text>
-                <AntDesign name="right" size={16} color="#718096" />
+                <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
+                <View style={tw`flex-row items-center`}>
+                  <Text style={tw`text-sm text-gray-500 mr-2`}>
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </Text>
+                  <AntDesign name="right" size={16} color="#718096" />
+                </View>
               </TouchableOpacity>
             </Swipeable>
           )}
