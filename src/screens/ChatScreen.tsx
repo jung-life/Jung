@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import { RootStackNavigationProp } from '../navigation/types';
 import { generateAIResponse } from '../lib/api';
 import { TherapistAvatar } from '../components/TherapistAvatar';
+import tw from '../lib/tailwind';
 
 type Message = {
   id: string;
@@ -249,26 +250,23 @@ export const ChatScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
+      <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
         <TouchableOpacity onPress={handleBackToReflections}>
           <AntDesign name="arrowleft" size={24} color="#1a1a1a" />
         </TouchableOpacity>
+        
         <TouchableOpacity 
-          style={styles.titleContainer} 
+          style={tw`flex-1 flex-row items-center justify-center`}
           onPress={handleRenameConversation}
         >
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={tw`text-lg font-bold text-gray-900`} numberOfLines={1}>
             {conversationTitle || 'New Reflection'}
           </Text>
-          <AntDesign 
-            name="edit" 
-            size={16} 
-            color="#718096" 
-            style={styles.editIcon}
-          />
+          <AntDesign name="edit" size={16} color="#718096" style={tw`ml-2`} />
         </TouchableOpacity>
-        <View style={{ width: 24 }} />
+        
+        <View style={tw`w-6`} />
       </View>
 
       <View style={styles.avatarSection}>

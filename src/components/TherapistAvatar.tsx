@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Image, Text, ImageSourcePropType, TouchableOpacity } from 'react-native';
+import { View, Image, Text, ImageSourcePropType, TouchableOpacity } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
-  withSpring, 
   withRepeat, 
   withSequence,
   withTiming,
   Easing
 } from 'react-native-reanimated';
 import { AntDesign } from '@expo/vector-icons';
+import tw from '../lib/tailwind';
 
 interface TherapistAvatarProps {
   isSpeaking: boolean;
@@ -25,22 +25,20 @@ export const TherapistAvatar = ({ isSpeaking, message, onBackPress }: TherapistA
   
   // Define avatar image source
   const avatarSource: ImageSourcePropType = imageError 
-    ? { uri: 'https://via.placeholder.com/120' } // Fallback to online placeholder
-    : require('../../assets/therapist-avatar.webp'); // Use local WebP image
+    ? { uri: 'https://via.placeholder.com/120' }
+    : require('../../assets/therapist-avatar.webp');
   
   useEffect(() => {
     if (isSpeaking) {
-      // Subtle pulsing effect when speaking
       scale.value = withRepeat(
         withSequence(
           withTiming(1.05, { duration: 700, easing: Easing.inOut(Easing.ease) }),
           withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) })
         ),
-        -1, // Infinite repeat
-        true // Reverse
+        -1,
+        true
       );
       
-      // Subtle swaying effect
       rotation.value = withRepeat(
         withSequence(
           withTiming(-0.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
@@ -50,54 +48,52 @@ export const TherapistAvatar = ({ isSpeaking, message, onBackPress }: TherapistA
         true
       );
       
-      // Increase opacity when speaking
       opacity.value = withTiming(1, { duration: 300 });
     } else {
-      // Reset animations when not speaking
       scale.value = withTiming(1, { duration: 500 });
       rotation.value = withTiming(0, { duration: 500 });
       opacity.value = withTiming(0.8, { duration: 300 });
     }
   }, [isSpeaking]);
   
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { scale: scale.value },
-        { rotate: `${rotation.value}rad` }
-      ],
-      opacity: opacity.value
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { rotate: `${rotation.value}rad` }
+    ],
+    opacity: opacity.value
+  }));
   
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.avatarContainer, animatedStyle]}>
+    <View style={tw`items-center justify-center h-45`}>
+      <Animated.View style={[tw`w-30 h-30 rounded-full overflow-hidden bg-gray-100 justify-center items-center shadow-md`, animatedStyle]}>
         {imageError ? (
-          <View style={styles.fallbackAvatar}>
+          <View style={tw`w-full h-full justify-center items-center bg-gray-200`}>
             <AntDesign name="user" size={60} color="#4A3B78" />
           </View>
         ) : (
           <Image 
             source={avatarSource}
-            style={styles.avatar}
+            style={tw`w-full h-full`}
             onError={() => setImageError(true)}
           />
         )}
         {isSpeaking && (
-          <View style={styles.speakingIndicator}>
-            <View style={[styles.dot, styles.dot1]} />
-            <View style={[styles.dot, styles.dot2]} />
-            <View style={[styles.dot, styles.dot3]} />
+          <View style={tw`absolute bottom-2.5 flex-row justify-center items-center bg-black bg-opacity-50 px-2 py-1 rounded-lg`}>
+            <View style={[tw`w-1.5 h-1.5 rounded-full bg-white mx-0.5`, { opacity: 0.4 }]} />
+            <View style={[tw`w-1.5 h-1.5 rounded-full bg-white mx-0.5`, { opacity: 0.7 }]} />
+            <View style={[tw`w-1.5 h-1.5 rounded-full bg-white mx-0.5`, { opacity: 1 }]} />
           </View>
         )}
       </Animated.View>
+      
       {isSpeaking && (
-        <Text style={styles.speakingText}>Thinking...</Text>
+        <Text style={tw`mt-2.5 text-sm text-jung-purple font-medium`}>Thinking...</Text>
       )}
+      
       {onBackPress && (
         <TouchableOpacity 
-          style={styles.homeButton}
+          style={tw`absolute top-2.5 left-2.5 p-2`}
           onPress={onBackPress}
         >
           <AntDesign name="home" size={28} color="#4A3B78" />
@@ -105,80 +101,4 @@ export const TherapistAvatar = ({ isSpeaking, message, onBackPress }: TherapistA
       )}
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 180,
-  },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  fallbackAvatar: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#e2e8f0',
-  },
-  speakingIndicator: {
-    position: 'absolute',
-    bottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'white',
-    marginHorizontal: 2,
-  },
-  dot1: {
-    opacity: 0.4,
-  },
-  dot2: {
-    opacity: 0.7,
-  },
-  dot3: {
-    opacity: 1,
-  },
-  speakingText: {
-    marginTop: 10,
-    fontSize: 14,
-    color: '#4A3B78',
-    fontWeight: '500',
-  },
-  homeButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    padding: 8,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-}); 
+}; 
