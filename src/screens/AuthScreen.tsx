@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import { SocialButton } from '../components/SocialButton';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Linking from 'expo-linking';
+import { AntDesign } from '@expo/vector-icons';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,11 +27,16 @@ export const AuthScreen = () => {
   
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
-      redirectUri: AuthSession.makeRedirectUri(),
+      clientId: '478933387478-6vg33n8ph627csrvi6rg929i014ta5mm.apps.googleusercontent.com',
+      redirectUri: AuthSession.makeRedirectUri({
+        scheme: 'jung'
+      }),
       scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.Code,
-      usePKCE: true,
+      responseType: AuthSession.ResponseType.Token,
+      extraParams: {
+        prompt: 'select_account',
+        access_type: 'offline',
+      },
     },
     discovery
   );
@@ -51,8 +57,49 @@ export const AuthScreen = () => {
     };
   }, []);
 
+  const handleEmailVerification = async (token: string, type: string) => {
+    try {
+      setLoading(true);
+      
+      if (type === 'signup') {
+        // Handle email confirmation
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: token,
+          type: 'email',
+        });
+        
+        if (error) throw error;
+        
+        Alert.alert(
+          'Email Verified',
+          'Your email has been verified successfully. You can now sign in.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Error verifying email:', error);
+      Alert.alert('Verification Failed', error.message || 'Failed to verify your email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeepLink = async ({ url }: { url: string }) => {
     if (url) {
+      console.log('Deep link URL:', url);
+      
+      // Handle email verification links
+      if (url.includes('type=signup') && url.includes('token=')) {
+        const params = new URLSearchParams(url.split('#')[1]);
+        const token = params.get('token');
+        const type = params.get('type');
+        
+        if (token && type) {
+          await handleEmailVerification(token, type);
+        }
+      }
+      
+      // Handle other auth callbacks
       const [, queryString] = url.split('#');
       if (queryString) {
         const params = new URLSearchParams(queryString);
@@ -62,16 +109,30 @@ export const AuthScreen = () => {
   };
 
   const handleEmailLogin = async () => {
+    // Validate email and password
+    if (!email.trim()) {
+      Alert.alert('Missing Information', 'Please enter your email address.');
+      return;
+    }
+    
+    if (!password.trim()) {
+      Alert.alert('Missing Information', 'Please enter your password.');
+      return;
+    }
+    
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
       if (error) throw error;
-      // Navigate to main app screen after successful login
+      
+      // Session will be automatically stored by Supabase
+      console.log('Login successful:', data.session);
     } catch (error) {
-      console.error(error);
+      console.error('Error logging in:', error);
       alert('Error logging in');
     } finally {
       setLoading(false);
@@ -84,14 +145,21 @@ export const AuthScreen = () => {
       const response = await promptAsync();
       
       if (response?.type === 'success') {
-        const { code } = response.params;
-        
-        const { data, error } = await supabase.auth.signInWithIdToken({
+        const { access_token } = response.params;
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          token: code,
+          options: {
+            redirectTo: 'jung://auth/callback'
+          }
         });
 
         if (error) throw error;
+        console.log('Signed in:', data);
+
+        if (data?.url) {
+          await WebBrowser.openBrowserAsync(data.url);
+        }
       }
     } catch (error: any) {
       console.error('Error signing in with Google:', error.message);
@@ -103,18 +171,40 @@ export const AuthScreen = () => {
 
   const handleAppleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
+        options: {
+          redirectTo: 'jung://auth/callback',
+          queryParams: {
+            scope: 'email name',
+          },
+        },
       });
+
       if (error) throw error;
-    } catch (error) {
-      console.error(error);
-      alert('Error with Apple login');
+      
+      if (data?.url) {
+        await WebBrowser.openBrowserAsync(data.url);
+      }
+    } catch (error: any) {
+      console.error('Error signing in with Apple:', error.message);
+      alert('Error signing in with Apple');
     }
+  };
+
+  const handleBackToLanding = () => {
+    navigation.navigate('Landing');
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBackToLanding}>
+          <AntDesign name="arrowleft" size={24} color="#1a1a1a" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }} />
+      </View>
+      
       <View style={styles.content}>
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Continue your journey of self-discovery</Text>
@@ -182,6 +272,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   content: {
     flex: 1,

@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  TextInput, 
+  Alert,
+  ScrollView 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
@@ -7,28 +15,95 @@ import { supabase } from '../lib/supabase';
 
 export const RegisterScreen = () => {
   const navigation = useNavigation();
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleBackToLanding = () => {
+    navigation.navigate('Landing');
+  };
+
   const handleRegister = async () => {
+    // Validate inputs
+    if (!name.trim()) {
+      Alert.alert('Missing Information', 'Please enter your name.');
+      return;
+    }
+
+    if (!email.trim()) {
+      Alert.alert('Missing Information', 'Please enter your email address.');
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert('Missing Information', 'Please enter a password.');
+      return;
+    }
+
+    // Enhanced password policy
+    if (password.length < 8) {
+      Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+      return;
+    }
+
+    // Check for password complexity
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+      Alert.alert(
+        'Weak Password', 
+        'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      );
+      return;
+    }
+
+    if (!confirmPassword.trim()) {
+      Alert.alert('Missing Information', 'Please confirm your password.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      
+      // Register the user with Supabase Auth with email confirmation
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name,
-          },
+          data: { name },
+          emailRedirectTo: 'https://auth.expo.io/@infinitydata.ai/jungapp/callback'
         },
       });
+
       if (error) throw error;
-      alert('Check your email for the confirmation link!');
-    } catch (error) {
-      console.error(error);
-      alert('Error signing up');
+
+      if (data.user) {
+        Alert.alert(
+          'Registration Successful',
+          'Please check your email for a confirmation link to complete your registration.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Error registering:', error);
+      Alert.alert('Registration Failed', error.message || 'An error occurred during registration.');
     } finally {
       setLoading(false);
     }
@@ -37,17 +112,18 @@ export const RegisterScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={handleBackToLanding}>
           <AntDesign name="arrowleft" size={24} color="#1a1a1a" />
         </TouchableOpacity>
+        <View style={{ flex: 1 }} />
       </View>
-
-      <View style={styles.content}>
+      
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Start your journey of self-discovery</Text>
+        <Text style={styles.subtitle}>Begin your journey of self-discovery</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -55,6 +131,7 @@ export const RegisterScreen = () => {
             placeholder="Full Name"
             value={name}
             onChangeText={setName}
+            autoCapitalize="words"
           />
           <TextInput
             style={styles.input}
@@ -71,6 +148,13 @@ export const RegisterScreen = () => {
             onChangeText={setPassword}
             secureTextEntry
           />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
           
           <TouchableOpacity 
             style={[styles.button, styles.registerButton]}
@@ -82,7 +166,14 @@ export const RegisterScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+            <Text style={styles.loginLink}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -93,19 +184,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
-    marginTop: -60, // Offset for the header space
+    paddingBottom: 40,
   },
   title: {
     fontSize: 32,
@@ -138,6 +227,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 16,
   },
   registerButton: {
     backgroundColor: '#0284c7',
@@ -145,6 +235,20 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  loginText: {
+    color: '#4a5568',
+    fontSize: 14,
+  },
+  loginLink: {
+    color: '#0284c7',
+    fontSize: 14,
     fontWeight: '600',
   },
 }); 

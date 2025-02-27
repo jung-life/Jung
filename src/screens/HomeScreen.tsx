@@ -4,7 +4,13 @@ import { supabase } from '../lib/supabase';
 
 export const HomeScreen = () => {
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      // The useAuth hook will automatically update the session state
+    } catch (error) {
+      console.error('Error signing out:', error);
+      alert('Error signing out');
+    }
   };
 
   return (

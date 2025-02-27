@@ -9,6 +9,9 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LoadingScreen } from './src/screens/LoadingScreen';
+import { ConversationsScreen } from './src/screens/ConversationsScreen';
+import { ChatScreen } from './src/screens/ChatScreen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Enable screens before creating the navigator
 enableScreens();
@@ -23,27 +26,33 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <SafeAreaProvider>
-        <Stack.Navigator 
-          screenOptions={{ 
-            headerShown: false,
-            animation: 'slide_from_right'
-          }}
-        >
-          {session ? (
-            // Authenticated stack
-            <Stack.Screen name="Home" component={HomeScreen} />
-          ) : (
-            // Non-authenticated stack
-            <>
-              <Stack.Screen name="Landing" component={LandingScreen} />
-              <Stack.Screen name="Auth" component={AuthScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </SafeAreaProvider>
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <SafeAreaProvider>
+          <Stack.Navigator 
+            screenOptions={{ 
+              headerShown: false,
+              animation: 'slide_from_right'
+            }}
+          >
+            {session ? (
+              // Authenticated stack
+              <>
+                <Stack.Screen name="Conversations" component={ConversationsScreen} />
+                <Stack.Screen name="Chat" component={ChatScreen} />
+                <Stack.Screen name="Home" component={HomeScreen} />
+              </>
+            ) : (
+              // Non-authenticated stack
+              <>
+                <Stack.Screen name="Landing" component={LandingScreen} />
+                <Stack.Screen name="Auth" component={AuthScreen} />
+                <Stack.Screen name="Register" component={RegisterScreen} />
+              </>
+            )}
+          </Stack.Navigator>
+        </SafeAreaProvider>
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 } 

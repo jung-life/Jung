@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Jung",
-    "slug": "Jung",
+    "slug": "jung",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -36,11 +36,13 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "jung",
-              "host": "login-callback"
+              "scheme": "jung"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -52,6 +54,10 @@
       "eas": {
         "projectId": "your-project-id"
       }
-    }
+    },
+    "owner": "infinitydata.ai",
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
