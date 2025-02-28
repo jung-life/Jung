@@ -31,19 +31,18 @@ export const TherapistAvatar = ({ isSpeaking, message }: TherapistAvatarProps) =
   
   useEffect(() => {
     if (isSpeaking) {
+      // Subtle breathing effect - represents the living psyche
       scale.value = withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) })
-        ),
+        withTiming(1.03, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
         -1,
         true
       );
       
+      // Very subtle rotation - represents balance of opposites
       rotation.value = withRepeat(
         withSequence(
-          withTiming(-0.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.05, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          withTiming(-0.02, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.02, { duration: 3000, easing: Easing.inOut(Easing.ease) })
         ),
         -1,
         true

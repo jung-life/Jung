@@ -15,6 +15,12 @@ import { supabase } from '../lib/supabase';
 import { Swipeable } from 'react-native-gesture-handler';
 import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
+import { GradientBackground } from '../components/GradientBackground';
+import { SymbolicBackground } from '../components/SymbolicBackground';
+import { SensualContainer } from '../components/SensualContainer';
+import { Typography } from '../components/Typography';
+import TouchableJung from '../components/TouchableJung';
+import { SignOut, Plus, Sparkle } from 'phosphor-react-native';
 
 type Conversation = {
   id: string;
@@ -70,14 +76,32 @@ export const ConversationsScreen = () => {
     navigation.navigate('Chat', { id });
   };
   
-  const handleGoToHome = async () => {
+  const handleLogout = async () => {
     try {
-      // Sign out the user
-      await supabase.auth.signOut();
-      // The auth state change will automatically redirect to Landing
+      Alert.alert(
+        "Logout",
+        "Are you sure you want to logout?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          { 
+            text: "Logout", 
+            onPress: async () => {
+              try {
+                await supabase.auth.signOut();
+                // The auth state change will automatically redirect to Landing
+              } catch (error) {
+                console.error('Error signing out:', error);
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
+              }
+            }
+          }
+        ]
+      );
     } catch (error) {
-      console.error('Error signing out:', error);
-      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      console.error('Error showing logout dialog:', error);
     }
   };
 
@@ -139,81 +163,92 @@ export const ConversationsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
-      <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
-        <TouchableOpacity style={tw`p-2 rounded-full`} onPress={handleGoToHome}>
-          <AntDesign name="home" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
-        <Text style={tw`text-2xl font-bold text-gray-900`}>Reflections</Text>
-        <TouchableOpacity 
-          style={tw`w-11 h-11 rounded-full bg-jung-purple flex items-center justify-center shadow-sm`}
-          onPress={handleNewConversation}
-        >
-          <AntDesign name="plus" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {conversations.length === 0 && !loading ? (
-        <View style={tw`flex-1 justify-center items-center p-5`}>
-          <Text style={tw`text-xl font-bold text-gray-900 mb-2`}>No conversations yet</Text>
-          <Text style={tw`text-base text-gray-600 text-center mb-6`}>
-            Start a new conversation to begin your journey
-          </Text>
-          <TouchableOpacity 
-            style={tw`bg-jung-purple py-3 px-6 rounded-lg shadow-sm`}
-            onPress={handleNewConversation}
+    <GradientBackground>
+      <SafeAreaView style={tw`flex-1`}>
+        <SymbolicBackground opacity={0.03} />
+        
+        <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200/50`}>
+          <TouchableJung
+            onPress={handleLogout}
+            style={tw`flex-row items-center py-2 px-3 rounded-lg`}
           >
-            <Text style={tw`text-white font-semibold text-base`}>Start New Conversation</Text>
-          </TouchableOpacity>
+            <View style={tw`w-8 h-8 rounded-full border border-jung-gold flex items-center justify-center`}>
+              <SignOut size={16} color="#D4AF37" weight="light" />
+            </View>
+          </TouchableJung>
+          
+          <Typography variant="title">Reflections</Typography>
+          
+          <TouchableJung
+            onPress={handleNewConversation}
+            style={tw`w-11 h-11 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
+          >
+            <Sparkle size={24} color="#E6C3C3" weight="light" />
+          </TouchableJung>
         </View>
-      ) : (
-        <FlatList
-          data={conversations}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Swipeable
-              ref={(ref) => {
-                if (ref) swipeableRefs.current.set(item.id, ref);
-              }}
-              renderRightActions={() => (
-                <TouchableOpacity 
-                  style={tw`bg-red-500 w-24 justify-center items-center`}
-                  onPress={() => {
-                    swipeableRefs.current.get(item.id)?.close();
-                    handleDeleteConversation(item.id, item.title);
-                  }}
-                  disabled={deleting === item.id}
-                >
-                  {deleting === item.id ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <View style={tw`items-center justify-center`}>
-                      <AntDesign name="delete" size={20} color="white" />
-                      <Text style={tw`text-white text-sm mt-1`}>Delete</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              )}
-              friction={2}
-              rightThreshold={40}
+        
+        {conversations.length === 0 && !loading ? (
+          <View style={tw`flex-1 justify-center items-center p-5`}>
+            <Text style={tw`text-xl font-bold text-gray-900 mb-2`}>No conversations yet</Text>
+            <Text style={tw`text-base text-gray-600 text-center mb-6`}>
+              Start a new conversation to begin your journey
+            </Text>
+            <TouchableOpacity 
+              style={tw`bg-jung-purple py-3 px-6 rounded-lg shadow-sm`}
+              onPress={handleNewConversation}
             >
-              <TouchableOpacity 
-                style={tw`flex-row items-center justify-between p-4 bg-white border-b border-gray-200`}
-                onPress={() => handleSelectConversation(item.id)}
+              <Text style={tw`text-white font-semibold text-base`}>Start New Conversation</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={conversations}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Swipeable
+                ref={(ref) => {
+                  if (ref) swipeableRefs.current.set(item.id, ref);
+                }}
+                renderRightActions={() => (
+                  <TouchableOpacity 
+                    style={tw`bg-red-500 w-24 justify-center items-center`}
+                    onPress={() => {
+                      swipeableRefs.current.get(item.id)?.close();
+                      handleDeleteConversation(item.id, item.title);
+                    }}
+                    disabled={deleting === item.id}
+                  >
+                    {deleting === item.id ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <View style={tw`items-center justify-center`}>
+                        <AntDesign name="delete" size={20} color="white" />
+                        <Text style={tw`text-white text-sm mt-1`}>Delete</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )}
+                friction={2}
+                rightThreshold={40}
               >
-                <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
-                <View style={tw`flex-row items-center`}>
-                  <Text style={tw`text-sm text-gray-500 mr-2`}>
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </Text>
-                  <AntDesign name="right" size={16} color="#718096" />
-                </View>
-              </TouchableOpacity>
-            </Swipeable>
-          )}
-        />
-      )}
-    </SafeAreaView>
+                <TouchableOpacity 
+                  style={tw`flex-row items-center justify-between p-4 bg-white border-b border-gray-200`}
+                  onPress={() => handleSelectConversation(item.id)}
+                >
+                  <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
+                  <View style={tw`flex-row items-center`}>
+                    <Text style={tw`text-sm text-gray-500 mr-2`}>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
+                    <AntDesign name="right" size={16} color="#718096" />
+                  </View>
+                </TouchableOpacity>
+              </Swipeable>
+            )}
+          />
+        )}
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 

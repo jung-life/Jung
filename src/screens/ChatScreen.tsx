@@ -11,7 +11,9 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
-  ScrollView
+  ScrollView,
+  Animated,
+  Easing
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -286,6 +288,15 @@ export const ChatScreen = () => {
       setIsSpeaking(true);
       setCurrentAIMessage(aiResponse);
       
+      // Add a ripple effect from the user's message to the AI
+      const rippleAnimation = new Animated.Value(0);
+      Animated.timing(rippleAnimation, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }).start();
+      
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert(
@@ -442,10 +453,17 @@ export const ChatScreen = () => {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         renderItem={({ item }) => (
           <View style={[
-            styles.messageBubble,
-            item.role === 'user' ? styles.userBubble : styles.aiBubble
+            tw`px-4 py-3 mb-4 max-w-[85%]`,
+            item.role === 'user' 
+              ? tw`bg-jung-animus/90 self-end rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm shadow-sm` 
+              : tw`bg-jung-anima-light self-start rounded-tl-sm rounded-tr-2xl rounded-bl-2xl rounded-br-2xl shadow-sm border border-jung-anima/20`
           ]}>
-            <Text style={styles.messageText}>{item.content}</Text>
+            <Text style={[
+              tw`text-base leading-6`,
+              item.role === 'user' ? tw`text-white` : tw`text-jung-text`
+            ]}>
+              {item.content}
+            </Text>
           </View>
         )}
         ListEmptyComponent={
