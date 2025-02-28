@@ -5,7 +5,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Register: undefined;
   Home: undefined;
-  Conversations: undefined;
+  Conversations: { refresh?: number };
   Chat: { id: string };
 };
 

@@ -9,7 +9,7 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -30,6 +30,8 @@ type Conversation = {
 
 export const ConversationsScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
+  const route = useRoute();
+  const refresh = route.params?.refresh;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -37,10 +39,16 @@ export const ConversationsScreen = () => {
 
   const fetchConversations = useCallback(async () => {
     try {
+      console.log('Fetching conversations...');
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) return;
+      if (!user) {
+        console.log('No user found');
+        return;
+      }
+      
+      console.log('Fetching conversations for user:', user.id);
       
       const { data, error } = await supabase
         .from('conversations')
@@ -48,8 +56,12 @@ export const ConversationsScreen = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
-      console.log('Fetched conversations:', data?.length);
+      if (error) {
+        console.error('Supabase fetch error:', error);
+        throw error;
+      }
+      
+      console.log('Fetched conversations:', data);
       setConversations(data || []);
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -61,11 +73,12 @@ export const ConversationsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       console.log('Reflections screen focused - fetching conversations');
+      console.log('Route params:', route.params);
       fetchConversations();
       return () => {
         // Cleanup function if needed
       };
-    }, [fetchConversations])
+    }, [fetchConversations, refresh])
   );
 
   const handleNewConversation = () => {

@@ -26,7 +26,7 @@ import tw from '../lib/tailwind';
 import HomeButton from "../components/HomeButton";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { ArrowLeft } from 'phosphor-react-native';
+import { ArrowLeft, PaperPlaneRight, PencilSimple } from 'phosphor-react-native';
 
 type Message = {
   id: string;
@@ -52,6 +52,7 @@ export const ChatScreen = () => {
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState('');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
 
   useEffect(() => {
     if (id === 'new') {
@@ -199,15 +200,59 @@ export const ChatScreen = () => {
   };
 
   const handleRenameConversation = () => {
-    setNewTitle(conversationTitle);
-    setShowNameModal(true);
-  };
-
-  const confirmRename = async () => {
-    if (newTitle.trim()) {
-      await updateConversationTitle(newTitle.trim());
-      setShowNameModal(false);
-    }
+    if (!conversationId) return;
+    
+    Alert.prompt(
+      "Rename Reflection",
+      "Enter a new name for this reflection:",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Save",
+          onPress: async (newTitle) => {
+            if (!newTitle || !newTitle.trim()) return;
+            
+            try {
+              console.log('Updating conversation title in Supabase:', {
+                id: conversationId,
+                title: newTitle.trim()
+              });
+              
+              // Update the conversation title in the database
+              const { data, error } = await supabase
+                .from('conversations')
+                .update({ 
+                  title: newTitle.trim(),
+                  updated_at: new Date().toISOString() 
+                })
+                .eq('id', conversationId)
+                .select();
+                
+              if (error) {
+                console.error('Supabase update error:', error);
+                throw error;
+              }
+              
+              console.log('Supabase update response:', data);
+              
+              // Update the local state
+              setConversationTitle(newTitle.trim());
+              
+              // Force a refresh when navigating back
+              setNeedsRefresh(true);
+            } catch (error) {
+              console.error('Error renaming conversation:', error);
+              Alert.alert("Error", "Failed to rename reflection. Please try again.");
+            }
+          }
+        }
+      ],
+      "plain-text",
+      conversationTitle
+    );
   };
 
   const sendMessage = async () => {
@@ -319,7 +364,7 @@ export const ChatScreen = () => {
   }, [isSpeaking]);
 
   const handleBackToReflections = () => {
-    navigation.navigate('Conversations');
+    navigation.navigate('Conversations', { refresh: needsRefresh ? Date.now() : undefined });
   };
 
   const generateSummary = async () => {
@@ -425,8 +470,8 @@ export const ChatScreen = () => {
           <Text style={tw`text-lg font-bold text-gray-900 mr-2`} numberOfLines={1}>
             {conversationTitle || 'New Reflection'}
           </Text>
-          <View style={tw`bg-gray-100 p-1.5 rounded-full`}>
-            <AntDesign name="edit" size={18} color="#4A3B78" />
+          <View style={tw`bg-gray-100/50 p-1.5 rounded-full`}>
+            <PencilSimple size={18} color="#4A3B78" weight="light" />
           </View>
         </TouchableOpacity>
         
@@ -504,7 +549,7 @@ export const ChatScreen = () => {
               onPress={sendMessage}
               disabled={!input.trim()}
             >
-              <AntDesign name="arrowup" size={24} color="white" />
+              <PaperPlaneRight size={22} color="white" weight="fill" />
             </TouchableOpacity>
           )}
         </View>
@@ -536,7 +581,12 @@ export const ChatScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.saveButton]}
-                onPress={confirmRename}
+                onPress={() => {
+                  if (newTitle.trim()) {
+                    updateConversationTitle(newTitle.trim());
+                    setShowNameModal(false);
+                  }
+                }}
               >
                 <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
