@@ -68,4 +68,36 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const checkSession = async () => {
   const { data } = await supabase.auth.getSession()
   return data.session
-} 
+}
+
+// Add this function to your existing supabase.ts file
+export const getAvatarUrl = (filename: string) => {
+  // Make sure to use the full public URL
+  return `${supabase.supabaseUrl}/storage/v1/object/public/avatars/${filename}`;
+};
+
+// Check if a user has premium access
+export const checkPremiumAccess = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return false;
+    
+    const { data, error } = await supabase
+      .from('premium_access')
+      .select('expires_at')
+      .eq('user_id', user.id)
+      .single();
+      
+    if (error || !data) return false;
+    
+    // Check if premium access is still valid
+    const now = new Date();
+    const expiresAt = new Date(data.expires_at);
+    
+    return expiresAt > now;
+  } catch (error) {
+    console.error('Error checking premium access:', error);
+    return false;
+  }
+}; 

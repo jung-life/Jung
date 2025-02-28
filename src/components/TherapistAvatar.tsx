@@ -11,23 +11,25 @@ import Animated, {
 import { AntDesign } from '@expo/vector-icons';
 import tw from '../lib/tailwind';
 import HomeButton from './HomeButton';
+import { supabase, getAvatarUrl } from '../lib/supabase';
 
 interface TherapistAvatarProps {
   isSpeaking: boolean;
   message: string;
   onBackPress?: () => void;
+  avatarId?: string;
 }
 
-export const TherapistAvatar = ({ isSpeaking, message }: TherapistAvatarProps) => {
+export const TherapistAvatar = ({ isSpeaking, message, avatarId = 'jung' }: TherapistAvatarProps) => {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
   const opacity = useSharedValue(0.8);
   const [imageError, setImageError] = useState(false);
+  const [avatarDetails, setAvatarDetails] = useState<{name: string, imageUrl: string} | null>(null);
   
-  // Define avatar image source
-  const avatarSource: ImageSourcePropType = imageError 
-    ? { uri: 'https://via.placeholder.com/120' }
-    : require('../../assets/therapist-avatar.webp');
+  // Use the avatar image from fetched details or a default placeholder
+  const avatarSource = imageError ? null : 
+    (avatarDetails ? { uri: avatarDetails.imageUrl } : null);
   
   useEffect(() => {
     if (isSpeaking) {
@@ -56,6 +58,45 @@ export const TherapistAvatar = ({ isSpeaking, message }: TherapistAvatarProps) =
     }
   }, [isSpeaking]);
   
+  useEffect(() => {
+    const fetchAvatarDetails = async () => {
+      try {
+        console.log('Fetching avatar details for:', avatarId);
+        const { data, error } = await supabase
+          .from('avatars')
+          .select('name, image_url')
+          .eq('avatar_id', avatarId)
+          .single();
+          
+        if (error) {
+          console.error('Supabase error fetching avatar:', error);
+          throw error;
+        }
+        
+        if (data) {
+          const imageUrl = getAvatarUrl(data.image_url);
+          console.log('Avatar image URL:', imageUrl);
+          setAvatarDetails({
+            name: data.name,
+            imageUrl: imageUrl
+          });
+        } else {
+          // If no data found, use a default
+          console.log('No avatar data found, using default');
+          setAvatarDetails({
+            name: 'Therapist',
+            imageUrl: getAvatarUrl('jung.webp') // Default avatar
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching avatar details:', err);
+        setImageError(true);
+      }
+    };
+    
+    fetchAvatarDetails();
+  }, [avatarId]);
+  
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: scale.value },
@@ -65,17 +106,20 @@ export const TherapistAvatar = ({ isSpeaking, message }: TherapistAvatarProps) =
   }));
   
   return (
-    <View style={tw`items-center justify-center h-45`}>
-      <Animated.View style={[tw`w-30 h-30 rounded-full overflow-hidden bg-gray-100 justify-center items-center shadow-md`, animatedStyle]}>
-        {imageError ? (
-          <View style={tw`w-full h-full justify-center items-center bg-gray-200`}>
+    <View style={tw`items-center`}>
+      <Animated.View style={[tw`w-24 h-24 rounded-full overflow-hidden bg-white shadow-lg`, animatedStyle]}>
+        {imageError || !avatarSource ? (
+          <View style={tw`w-full h-full items-center justify-center bg-gray-100`}>
             <AntDesign name="user" size={60} color="#4A3B78" />
           </View>
         ) : (
           <Image 
             source={avatarSource}
             style={tw`w-full h-full`}
-            onError={() => setImageError(true)}
+            onError={() => {
+              console.error('Image failed to load');
+              setImageError(true);
+            }}
           />
         )}
         {isSpeaking && (

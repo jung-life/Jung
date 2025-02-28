@@ -27,6 +27,7 @@ import HomeButton from "../components/HomeButton";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { ArrowLeft, PaperPlaneRight, PencilSimple } from 'phosphor-react-native';
+import { availableAvatars } from '../components/AvatarSelector';
 
 type Message = {
   id: string;
@@ -53,6 +54,7 @@ export const ChatScreen = () => {
   const [summary, setSummary] = useState('');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
+  const [avatarId, setAvatarId] = useState('jung');
 
   useEffect(() => {
     if (id === 'new') {
@@ -98,14 +100,17 @@ export const ChatScreen = () => {
     try {
       const { data, error } = await supabase
         .from('conversations')
-        .select('title')
+        .select('*')
         .eq('id', id)
         .single();
         
       if (error) throw error;
-      if (data) setConversationTitle(data.title);
+      if (data) {
+        setConversationTitle(data.title);
+        setAvatarId(data.avatar_id || 'jung');
+      }
     } catch (error) {
-      console.error('Error fetching conversation title:', error);
+      console.error('Error fetching conversation:', error);
     }
   };
 
@@ -492,6 +497,7 @@ export const ChatScreen = () => {
         <TherapistAvatar 
           isSpeaking={isSpeaking} 
           message={currentAIMessage}
+          avatarId={avatarId}
           onBackPress={handleBackToReflections}
         />
       </View>

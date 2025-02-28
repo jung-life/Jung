@@ -6,7 +6,10 @@ import {
   FlatList, 
   TouchableOpacity, 
   Alert,
-  ActivityIndicator 
+  ActivityIndicator,
+  Share,
+  Modal,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
@@ -24,10 +27,19 @@ import { SignOut, Plus, Sparkle, Brain } from 'phosphor-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { generateAIResponse } from '../lib/api';
+import * as Clipboard from 'expo-clipboard';
+import { AvatarSelector, availableAvatars } from '../components/AvatarSelector';
 
 type Conversation = {
   id: string;
   title: string;
+  created_at: string;
+};
+
+type Analysis = {
+  id: string;
+  conversation_id: string;
+  content: string;
   created_at: string;
 };
 
@@ -41,6 +53,11 @@ export const ConversationsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const swipeableRefs = React.useRef<Map<string, Swipeable>>(new Map());
+  const [analysesCache, setAnalysesCache] = useState<Record<string, Analysis[]>>({});
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState('jung');
+  const [newConversationTitle, setNewConversationTitle] = useState('');
+  const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -87,7 +104,8 @@ export const ConversationsScreen = () => {
   );
 
   const handleNewConversation = () => {
-    navigation.navigate('Chat', { id: 'new' });
+    setSelectedAvatar('jung');
+    setShowNewChatModal(true);
   };
 
   const handleSelectConversation = (id: string) => {
@@ -182,40 +200,52 @@ export const ConversationsScreen = () => {
 
   const handleAnalyzeChat = async (id: string, title: string) => {
     try {
-      // Check if analysis already exists
-      const { data: existingAnalysis, error: fetchError } = await supabase
-        .from('analyses')
-        .select('*')
-        .eq('conversation_id', id)
-        .single();
-        
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" error
-        console.error('Error checking for existing analysis:', fetchError);
-        Alert.alert("Error", "Failed to check for existing analysis");
-        return;
+      // Check cache first
+      let existingAnalysis: Analysis | undefined;
+      
+      if (analysesCache[id]?.length > 0) {
+        existingAnalysis = analysesCache[id][0];
+      } else {
+        // Fetch from database if not in cache
+        const { data, error } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('conversation_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (!error && data) {
+          existingAnalysis = data;
+          // Update cache
+          setAnalysesCache(prev => ({
+            ...prev,
+            [id]: [data]
+          }));
+        }
       }
       
       if (existingAnalysis) {
         // Analysis exists, show options
         Alert.alert(
-          "Analysis Available",
-          `What would you like to do with the analysis for "${title}"?`,
+          "Insights Available",
+          `What would you like to do with the insights for "${title}"?`,
           [
             { text: "Cancel", style: "cancel" },
             { text: "View", onPress: () => viewAnalysis(existingAnalysis) },
-            { text: "Download", onPress: () => downloadAnalysis(existingAnalysis) },
-            { text: "Share", onPress: () => emailAnalysis(existingAnalysis) },
+            { text: "Download", onPress: () => downloadAnalysis(existingAnalysis, title) },
+            { text: "Share", onPress: () => emailAnalysis(existingAnalysis, title) },
             { text: "Regenerate", onPress: () => createAnalysis(id, title) }
           ]
         );
       } else {
         // No analysis exists, create one
         Alert.alert(
-          "Create Analysis",
-          `Would you like to create an analysis for "${title}"?`,
+          "Generate Insights",
+          `Would you like to generate insights for "${title}"?`,
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Create", onPress: () => createAnalysis(id, title) }
+            { text: "Generate", onPress: () => createAnalysis(id, title) }
           ]
         );
       }
@@ -228,7 +258,7 @@ export const ConversationsScreen = () => {
   const createAnalysis = async (conversationId: string, title: string) => {
     try {
       // Show loading indicator
-      Alert.alert("Generating Analysis", "Please wait while we analyze your conversation...");
+      Alert.alert("Generating Insights", "Please wait while we analyze your conversation...");
       
       // Fetch all messages for this conversation
       const { data: messages, error: messagesError } = await supabase
@@ -248,35 +278,57 @@ export const ConversationsScreen = () => {
         return;
       }
       
-      // Format messages for the API in the expected format
-      const formattedMessages = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Format the conversation as a simple string
+      const conversationText = messages.map(msg => 
+        `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`
+      ).join('\n\n');
       
-      // Add a system message with the analysis instructions
-      const conversationHistory = [
-        {
-          role: "system",
-          content: "Please analyze the following conversation and provide insights from a Jungian perspective. Include themes, patterns, and potential areas for self-reflection."
-        },
-        ...formattedMessages
-      ];
+      // Create a more general prompt for analysis
+      const analysisPrompt = `Please analyze the following conversation and provide:
+1. Key themes and patterns in the discussion
+2. Personal insights that might be valuable for self-reflection
+3. Practical suggestions based on the conversation
+4. Potential areas for further exploration
+
+Please use clear, accessible language with specific examples from the conversation. Format your response in sections with headings.
+
+Here's the conversation:
+${conversationText}`;
       
-      // Pass the formatted conversation history to the API
-      const analysisResponse = await generateAIResponse(conversationHistory, "gpt-4");
-      
-      if (!analysisResponse) {
-        Alert.alert("Error", "Failed to generate analysis");
-        return;
+      // Call the API with the prompt
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      const apiKey = process.env.EXPO_PUBLIC_API_KEY;
+
+      if (!apiUrl || !apiKey) {
+        throw new Error('Missing API URL or API Key');
       }
+
+      const analysisResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [{ role: "user", content: analysisPrompt }],
+          temperature: 0.7
+        })
+      });
+      
+      if (!analysisResponse.ok) {
+        throw new Error(`API error: ${analysisResponse.status}`);
+      }
+      
+      const responseData = await analysisResponse.json();
+      const analysisContent = responseData.choices[0].message.content;
       
       // Store analysis in Supabase
       const { data: analysis, error: insertError } = await supabase
         .from('analyses')
         .insert({
           conversation_id: conversationId,
-          content: analysisResponse,
+          content: analysisContent,
           created_at: new Date().toISOString()
         })
         .select()
@@ -294,8 +346,8 @@ export const ConversationsScreen = () => {
         "Your conversation has been analyzed. What would you like to do next?",
         [
           { text: "View", onPress: () => viewAnalysis(analysis) },
-          { text: "Download", onPress: () => downloadAnalysis(analysis) },
-          { text: "Share", onPress: () => emailAnalysis(analysis) }
+          { text: "Download", onPress: () => downloadAnalysis(analysis, title) },
+          { text: "Share", onPress: () => emailAnalysis(analysis, title) }
         ]
       );
       
@@ -305,59 +357,158 @@ export const ConversationsScreen = () => {
     }
   };
 
-  const viewAnalysis = (analysis) => {
+  const viewAnalysis = (analysis: Analysis) => {
     Alert.alert(
-      "Conversation Analysis",
+      "Conversation Insights",
       analysis.content,
       [{ text: "Close" }]
     );
   };
 
-  const downloadAnalysis = async (analysis) => {
+  const downloadAnalysis = async (analysis: Analysis, title?: string) => {
     try {
-      // Check if sharing is available
-      const isSharingAvailable = await Sharing.isAvailableAsync();
+      // Get conversation title from cache or use default
+      const conversationTitle = title || "Conversation";
       
-      if (!isSharingAvailable) {
-        Alert.alert("Error", "Sharing is not available on this device");
-        return;
-      }
+      // Format date for filename
+      const date = new Date();
+      const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
-      // Create a temporary file
-      const fileUri = `${FileSystem.documentDirectory}analysis_${analysis.conversation_id}.txt`;
+      // Create a header for the text file
+      const header = `INSIGHTS FOR: ${conversationTitle.toUpperCase()}\nDATE: ${date.toLocaleDateString()}\n\n`;
+      const content = header + analysis.content;
       
-      // Write the analysis to the file
-      await FileSystem.writeAsStringAsync(fileUri, analysis.content);
-      
-      // Share the file
-      await Sharing.shareAsync(fileUri);
-      
-    } catch (error) {
-      console.error('Error downloading analysis:', error);
-      Alert.alert("Error", "Failed to download analysis");
-    }
-  };
-
-  const emailAnalysis = async (analysis) => {
-    try {
-      // Create a temporary file for sharing
-      const fileUri = `${FileSystem.documentDirectory}analysis_${analysis.conversation_id}.txt`;
-      
-      // Write the analysis to the file
-      await FileSystem.writeAsStringAsync(fileUri, analysis.content);
-      
-      // Use sharing instead of email composer
-      await Sharing.shareAsync(fileUri, {
-        mimeType: 'text/plain',
-        dialogTitle: 'Share Analysis',
-        UTI: 'public.plain-text'
+      // Use React Native's Share API directly without file operations
+      await Share.share({
+        title: `Insights_${formattedDate}`,
+        message: content
       });
       
     } catch (error) {
-      console.error('Error sharing analysis:', error);
-      Alert.alert("Error", "Failed to share analysis");
+      console.error('Error sharing insights:', error);
+      Alert.alert("Error", "Failed to share insights: " + (error instanceof Error ? error.message : String(error)));
     }
   };
+
+  const emailAnalysis = async (analysis: Analysis, title?: string) => {
+    try {
+      await downloadAnalysis(analysis, title);
+    } catch (error) {
+      console.error('Error sharing insights:', error);
+      Alert.alert("Error", "Failed to share insights: " + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const fetchAnalyses = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching analyses:', error);
+      return [];
+    }
+  };
+
+  const createNewConversation = async (title: string) => {
+    try {
+      setShowNewChatModal(false);
+      
+      // Format the current date for the default title
+      const today = new Date();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      const year = today.getFullYear();
+      const defaultTitle = `Reflection_${month}/${day}/${year}`;
+      
+      // Create a new conversation with the avatar information
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .insert({
+          title: title || defaultTitle,
+          user_id: user.id,
+          avatar_id: selectedAvatar,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Navigate to the chat screen with the new conversation
+      navigation.navigate('Chat', { id: conversation.id });
+      
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      Alert.alert('Error', 'Failed to create conversation');
+    }
+  };
+
+  const renderNewChatModal = () => (
+    <Modal
+      visible={showNewChatModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowNewChatModal(false)}
+    >
+      <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+        <View style={tw`bg-white w-5/6 rounded-xl p-5`}>
+          <Typography variant="title" style={tw`mb-4 text-center`}>Start a New Conversation</Typography>
+          
+          <AvatarSelector
+            selectedAvatar={selectedAvatar}
+            onSelectAvatar={setSelectedAvatar}
+            hasPremiumAccess={hasPremiumAccess}
+          />
+          
+          <TextInput
+            style={tw`border border-gray-300 rounded-lg p-3 mb-4`}
+            placeholder="Conversation title"
+            onChangeText={setNewConversationTitle}
+            value={newConversationTitle}
+          />
+          
+          <View style={tw`flex-row justify-end mt-2`}>
+            <TouchableOpacity 
+              style={tw`px-4 py-2 mr-2`}
+              onPress={() => setShowNewChatModal(false)}
+            >
+              <Text style={tw`text-gray-600`}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={tw`bg-jung-purple px-4 py-2 rounded-lg`}
+              onPress={() => createNewConversation(newConversationTitle)}
+            >
+              <Text style={tw`text-white font-medium`}>Start</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  useEffect(() => {
+    const checkPremium = async () => {
+      const isPremium = await checkPremiumAccess();
+      setHasPremiumAccess(isPremium);
+    };
+    
+    checkPremium();
+  }, []);
 
   return (
     <GradientBackground>
@@ -450,106 +601,8 @@ export const ConversationsScreen = () => {
             )}
           />
         )}
+        {renderNewChatModal()}
       </SafeAreaView>
     </GradientBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  newButton: {
-    backgroundColor: '#0284c7',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: '#718096',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  startButton: {
-    backgroundColor: '#0284c7',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  startButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  conversationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  conversationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  conversationTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-  },
-  conversationDate: {
-    fontSize: 14,
-    color: '#718096',
-    marginRight: 8,
-  },
-  deleteButton: {
-    backgroundColor: '#ef4444',
-    width: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButtonContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteText: {
-    color: 'white',
-    fontSize: 14,
-    marginTop: 4,
-  },
-}); 
