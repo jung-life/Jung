@@ -22,6 +22,9 @@
         "googleSignIn": {
           "reservedClientId": "your-google-client-id"
         }
+      },
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library."
       }
     },
     "android": {
@@ -44,6 +47,9 @@
             "DEFAULT"
           ]
         }
+      ],
+      "permissions": [
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {

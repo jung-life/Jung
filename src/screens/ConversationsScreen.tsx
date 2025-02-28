@@ -9,18 +9,21 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { Swipeable } from 'react-native-gesture-handler';
-import { RootStackNavigationProp } from '../navigation/types';
+import { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SensualContainer } from '../components/SensualContainer';
 import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
-import { SignOut, Plus, Sparkle } from 'phosphor-react-native';
+import { SignOut, Plus, Sparkle, Brain } from 'phosphor-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { generateAIResponse } from '../lib/api';
 
 type Conversation = {
   id: string;
@@ -28,9 +31,11 @@ type Conversation = {
   created_at: string;
 };
 
+type ConversationsScreenRouteProp = RouteProp<RootStackParamList, 'Conversations'>;
+
 export const ConversationsScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const route = useRoute();
+  const route = useRoute<ConversationsScreenRouteProp>();
   const refresh = route.params?.refresh;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +180,185 @@ export const ConversationsScreen = () => {
     }
   };
 
+  const handleAnalyzeChat = async (id: string, title: string) => {
+    try {
+      // Check if analysis already exists
+      const { data: existingAnalysis, error: fetchError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('conversation_id', id)
+        .single();
+        
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error('Error checking for existing analysis:', fetchError);
+        Alert.alert("Error", "Failed to check for existing analysis");
+        return;
+      }
+      
+      if (existingAnalysis) {
+        // Analysis exists, show options
+        Alert.alert(
+          "Analysis Available",
+          `What would you like to do with the analysis for "${title}"?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "View", onPress: () => viewAnalysis(existingAnalysis) },
+            { text: "Download", onPress: () => downloadAnalysis(existingAnalysis) },
+            { text: "Share", onPress: () => emailAnalysis(existingAnalysis) },
+            { text: "Regenerate", onPress: () => createAnalysis(id, title) }
+          ]
+        );
+      } else {
+        // No analysis exists, create one
+        Alert.alert(
+          "Create Analysis",
+          `Would you like to create an analysis for "${title}"?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Create", onPress: () => createAnalysis(id, title) }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error in handleAnalyzeChat:', error);
+      Alert.alert("Error", "Something went wrong");
+    }
+  };
+
+  const createAnalysis = async (conversationId: string, title: string) => {
+    try {
+      // Show loading indicator
+      Alert.alert("Generating Analysis", "Please wait while we analyze your conversation...");
+      
+      // Fetch all messages for this conversation
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+        
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        Alert.alert("Error", "Failed to fetch conversation messages");
+        return;
+      }
+      
+      if (!messages || messages.length === 0) {
+        Alert.alert("Empty Conversation", "There are no messages to analyze");
+        return;
+      }
+      
+      // Format messages for the API in the expected format
+      const formattedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+      
+      // Add a system message with the analysis instructions
+      const conversationHistory = [
+        {
+          role: "system",
+          content: "Please analyze the following conversation and provide insights from a Jungian perspective. Include themes, patterns, and potential areas for self-reflection."
+        },
+        ...formattedMessages
+      ];
+      
+      // Pass the formatted conversation history to the API
+      const analysisResponse = await generateAIResponse(conversationHistory, "gpt-4");
+      
+      if (!analysisResponse) {
+        Alert.alert("Error", "Failed to generate analysis");
+        return;
+      }
+      
+      // Store analysis in Supabase
+      const { data: analysis, error: insertError } = await supabase
+        .from('analyses')
+        .insert({
+          conversation_id: conversationId,
+          content: analysisResponse,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (insertError) {
+        console.error('Error storing analysis:', insertError);
+        Alert.alert("Error", "Failed to save analysis");
+        return;
+      }
+      
+      // Show success and options
+      Alert.alert(
+        "Analysis Complete",
+        "Your conversation has been analyzed. What would you like to do next?",
+        [
+          { text: "View", onPress: () => viewAnalysis(analysis) },
+          { text: "Download", onPress: () => downloadAnalysis(analysis) },
+          { text: "Share", onPress: () => emailAnalysis(analysis) }
+        ]
+      );
+      
+    } catch (error) {
+      console.error('Error creating analysis:', error);
+      Alert.alert("Error", "Failed to create analysis");
+    }
+  };
+
+  const viewAnalysis = (analysis) => {
+    Alert.alert(
+      "Conversation Analysis",
+      analysis.content,
+      [{ text: "Close" }]
+    );
+  };
+
+  const downloadAnalysis = async (analysis) => {
+    try {
+      // Check if sharing is available
+      const isSharingAvailable = await Sharing.isAvailableAsync();
+      
+      if (!isSharingAvailable) {
+        Alert.alert("Error", "Sharing is not available on this device");
+        return;
+      }
+      
+      // Create a temporary file
+      const fileUri = `${FileSystem.documentDirectory}analysis_${analysis.conversation_id}.txt`;
+      
+      // Write the analysis to the file
+      await FileSystem.writeAsStringAsync(fileUri, analysis.content);
+      
+      // Share the file
+      await Sharing.shareAsync(fileUri);
+      
+    } catch (error) {
+      console.error('Error downloading analysis:', error);
+      Alert.alert("Error", "Failed to download analysis");
+    }
+  };
+
+  const emailAnalysis = async (analysis) => {
+    try {
+      // Create a temporary file for sharing
+      const fileUri = `${FileSystem.documentDirectory}analysis_${analysis.conversation_id}.txt`;
+      
+      // Write the analysis to the file
+      await FileSystem.writeAsStringAsync(fileUri, analysis.content);
+      
+      // Use sharing instead of email composer
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'text/plain',
+        dialogTitle: 'Share Analysis',
+        UTI: 'public.plain-text'
+      });
+      
+    } catch (error) {
+      console.error('Error sharing analysis:', error);
+      Alert.alert("Error", "Failed to share analysis");
+    }
+  };
+
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
@@ -250,6 +434,12 @@ export const ConversationsScreen = () => {
                 >
                   <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
                   <View style={tw`flex-row items-center`}>
+                    <TouchableJung
+                      style={tw`p-2 mr-2`}
+                      onPress={() => handleAnalyzeChat(item.id, item.title)}
+                    >
+                      <Brain size={20} color="#536878" weight="light" />
+                    </TouchableJung>
                     <Text style={tw`text-sm text-gray-500 mr-2`}>
                       {new Date(item.created_at).toLocaleDateString()}
                     </Text>
