@@ -26,6 +26,7 @@ import tw from '../lib/tailwind';
 import HomeButton from "../components/HomeButton";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import { ArrowLeft } from 'phosphor-react-native';
 
 type Message = {
   id: string;
@@ -410,7 +411,12 @@ export const ChatScreen = () => {
   return (
     <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
       <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
-        <HomeButton />
+        <TouchableOpacity 
+          style={tw`p-2 rounded-full`}
+          onPress={handleBackToReflections}
+        >
+          <ArrowLeft size={24} color="#4A3B78" weight="light" />
+        </TouchableOpacity>
         
         <TouchableOpacity 
           style={tw`flex-1 flex-row items-center justify-center`}
