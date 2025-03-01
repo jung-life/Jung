@@ -36,12 +36,12 @@ export const DisclaimerScreen = () => {
       setIsNewUser(false);
       
       // Navigate to the main screen
-      navigation.replace('Conversations', { refresh: Date.now() });
+      navigation.replace('Conversations', { refresh: true });
     } catch (error) {
       console.error('Error saving disclaimer acknowledgment:', error);
       // Navigate anyway even if saving fails
       setIsNewUser(false);
-      navigation.replace('Conversations', { refresh: Date.now() });
+      navigation.replace('Conversations', { refresh: true });
     }
   };
 

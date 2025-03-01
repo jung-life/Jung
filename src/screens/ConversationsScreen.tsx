@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Share,
   Modal,
-  TextInput
+  TextInput,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
@@ -23,17 +24,21 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SensualContainer } from '../components/SensualContainer';
 import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
-import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf } from 'phosphor-react-native';
+import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf, User } from 'phosphor-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { generateAIResponse } from '../lib/api';
 import * as Clipboard from 'expo-clipboard';
 import { AvatarSelector, availableAvatars } from '../components/AvatarSelector';
+import { SimpleAvatar } from '../components/SimpleAvatar';
+import { Avatar } from '../components/AvatarSelector';
 
 type Conversation = {
   id: string;
   title: string;
   created_at: string;
+  avatar_id?: string;
+  avatar?: string;
 };
 
 type Analysis = {
@@ -58,6 +63,7 @@ export const ConversationsScreen = () => {
   const [selectedAvatar, setSelectedAvatar] = useState('jung');
   const [newConversationTitle, setNewConversationTitle] = useState('');
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -105,6 +111,10 @@ export const ConversationsScreen = () => {
 
   const handleNewConversation = () => {
     setSelectedAvatar('jung');
+    
+    // Set a more intuitive default title
+    setNewConversationTitle('New Reflection');
+    
     setShowNewChatModal(true);
   };
 
@@ -416,121 +426,137 @@ ${conversationText}`;
   };
 
   const createNewConversation = async (title: string) => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Please enter a title for your conversation');
+      return;
+    }
+    
     try {
-      setShowNewChatModal(false);
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Format the current date for the default title
-      const today = new Date();
-      const month = today.getMonth() + 1;
-      const day = today.getDate();
-      const year = today.getFullYear();
-      const defaultTitle = `Reflection_${month}/${day}/${year}`;
-      
-      // Get user session with better error handling
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        Alert.alert("Authentication Error", "Please log out and log back in to continue.");
+      if (!user) {
+        Alert.alert('Error', 'You must be logged in to create a conversation');
         return;
       }
       
-      if (!data.session || !data.session.user) {
-        console.error('No active session found');
-        Alert.alert("Authentication Error", "You need to be logged in to create a conversation.");
-        return;
-      }
-      
-      const user = data.session.user;
-      console.log('Creating conversation for user:', user.id);
-      
-      // Create a new conversation with the avatar information
-      const { data: conversation, error } = await supabase
+      // Create a new conversation with the selected avatar
+      const { data, error } = await supabase
         .from('conversations')
         .insert({
-          title: title || defaultTitle,
+          title,
           user_id: user.id,
-          avatar_id: selectedAvatar,
-          created_at: new Date().toISOString()
+          avatar_id: selectedAvatar, // Use the column name that exists in your database
+          // If you've added the avatar column, you can include this too
+          // avatar: selectedAvatar
         })
         .select()
         .single();
         
       if (error) {
-        console.error('Supabase insert error:', error);
         throw error;
       }
       
-      // Navigate to the chat screen with the new conversation
-      navigation.navigate('Chat', { id: conversation.id });
+      console.log('Created new conversation:', data);
+      
+      // Close the modal and navigate to the new chat
+      setShowNewChatModal(false);
+      setNewConversationTitle('');
+      
+      // Navigate to the chat screen with the new conversation ID
+      navigation.navigate('Chat', { id: data.id });
       
     } catch (error) {
       console.error('Error creating conversation:', error);
       Alert.alert('Error', 'Failed to create conversation. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderNewChatModal = () => (
-    <Modal
-      visible={showNewChatModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowNewChatModal(false)}
-    >
-      <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-        <View style={tw`bg-white w-5/6 rounded-xl p-5`}>
-          <View style={tw`flex-row justify-between items-center mb-4`}>
-            <Typography variant="title" style={tw`text-center flex-1`}>Start a New Conversation</Typography>
-            <TouchableOpacity 
-              style={tw`p-2`}
-              onPress={() => setShowNewChatModal(false)}
-            >
-              <AntDesign name="close" size={24} color="red" />
-            </TouchableOpacity>
-          </View>
-          
-          <AvatarSelector
-            selectedAvatar={selectedAvatar}
-            onSelectAvatar={(avatarId) => {
-              setSelectedAvatar(avatarId);
+  const renderNewChatModal = () => {
+    return (
+      <Modal
+        visible={showNewChatModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowNewChatModal(false)}
+      >
+        <View style={tw`flex-1 justify-end bg-black/50`}>
+          <View style={tw`bg-white rounded-t-3xl p-6 max-h-[80%]`}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={tw`text-2xl font-bold text-center mb-6`}>
+                New Reflection
+              </Text>
               
-              // Set default title with current date in mm/dd/yyyy format
-              const today = new Date();
-              const month = (today.getMonth() + 1).toString().padStart(2, '0');
-              const day = today.getDate().toString().padStart(2, '0');
-              const year = today.getFullYear();
+              <AvatarSelector
+                selectedAvatar={selectedAvatar}
+                onSelectAvatar={(avatarId) => {
+                  setSelectedAvatar(avatarId);
+                  
+                  // Update title based on selected avatar
+                  const avatarName = availableAvatars.find((a: Avatar) => a.id === avatarId)?.name || 'Jung';
+                  setNewConversationTitle(`Reflection with ${avatarName}`);
+                }}
+                hasPremiumAccess={hasPremiumAccess}
+              />
               
-              setNewConversationTitle(`Reflection - ${month}/${day}/${year}`);
-            }}
-            hasPremiumAccess={hasPremiumAccess}
-          />
-          
-          <TextInput
-            style={tw`border border-gray-300 rounded-lg p-3 mb-4`}
-            placeholder="Conversation title"
-            onChangeText={setNewConversationTitle}
-            value={newConversationTitle}
-          />
-          
-          <View style={tw`flex-row justify-between items-center mt-2`}>
-            <TouchableOpacity 
-              style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-300`}
-              onPress={() => setShowNewChatModal(false)}
-            >
-              <XCircle size={28} color="#F87171" weight="duotone" />
-            </TouchableOpacity>
+              <View style={tw`mb-4`}>
+                <TextInput
+                  style={tw`border border-gray-300 rounded-lg p-3 mb-2`}
+                  placeholder="Conversation title"
+                  onChangeText={setNewConversationTitle}
+                  value={newConversationTitle}
+                />
+                
+                {/* Title suggestions */}
+                <View style={tw`mb-2`}>
+                  <Text style={tw`text-sm text-gray-500 mb-2`}>Suggested titles:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {titleSuggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={tw`bg-gray-100 rounded-full px-3 py-1 mr-2`}
+                        onPress={() => setNewConversationTitle(suggestion)}
+                      >
+                        <Text style={tw`text-sm`}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+                
+                {/* Generate title button */}
+                <TouchableOpacity
+                  style={tw`flex-row items-center justify-center bg-gray-100 p-2 rounded-lg`}
+                  onPress={() => setNewConversationTitle(generateCreativeTitle())}
+                >
+                  <Sparkle size={18} color="#8A2BE2" weight="duotone" style={tw`mr-2`} />
+                  <Text style={tw`text-jung-purple`}>Generate Creative Title</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+            
+            {/* Fixed position buttons at the bottom */}
+            <View style={tw`flex-row justify-between items-center mt-4 pb-2`}>
+              <TouchableOpacity 
+                style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-300`}
+                onPress={() => setShowNewChatModal(false)}
+              >
+                <XCircle size={28} color="#F87171" weight="duotone" />
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-purple-300 bg-jung-purple`}
-              onPress={() => createNewConversation(newConversationTitle)}
-            >
-              <FlowerLotus size={28} color="#A5F3FC" weight="duotone" />
-            </TouchableOpacity>
+              <TouchableOpacity 
+                style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-purple-300 bg-jung-purple`}
+                onPress={() => createNewConversation(newConversationTitle)}
+              >
+                <FlowerLotus size={28} color="#A5F3FC" weight="duotone" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   const checkPremiumAccess = async (): Promise<boolean> => {
     try {
@@ -560,6 +586,70 @@ ${conversationText}`;
     checkPremium();
   }, []);
 
+  // Add this function to generate a creative title
+  const generateCreativeTitle = () => {
+    const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+    
+    // Different title formats based on avatar
+    const titleFormats = {
+      'jung': [
+        'Exploring the Shadow with Jung',
+        'Archetypes & Individuation',
+        'Journey to the Self',
+        'Collective Unconscious Dialogue',
+        'Jungian Reflection'
+      ],
+      'freud': [
+        'Dream Analysis with Freud',
+        'Exploring the Unconscious',
+        'Id, Ego & Superego',
+        'Psychoanalytic Dialogue',
+        'Freudian Introspection'
+      ],
+      'adler': [
+        'Finding Purpose with Adler',
+        'Social Interest Reflection',
+        'Overcoming Inferiority',
+        'Adlerian Life Goals',
+        'Striving for Superiority'
+      ],
+      'horney': [
+        'Neurotic Needs Exploration',
+        'Self-Realization with Horney',
+        'Moving Toward, Against, Away',
+        'Cultural Influences Dialogue',
+        "Horney's Feminine Psychology"
+      ],
+      'morpheus': [
+        'Red Pill Conversation',
+        'Reality Deconstruction',
+        'Awakening with Morpheus',
+        'Beyond the Matrix',
+        'Truth Seeker\'s Dialogue'
+      ],
+      'oracle': [
+        'Prophecy & Potential',
+        'Fate vs. Choice',
+        'Oracle\'s Wisdom',
+        'Seeing Beyond Time',
+        'Crossroads Guidance'
+      ]
+    };
+    
+    // Get titles for the selected avatar or use default
+    const titles = titleFormats[selectedAvatar as keyof typeof titleFormats] || [
+      `Reflection with ${avatarName}`,
+      `${avatarName}'s Guidance`,
+      `My Journey with ${avatarName}`,
+      `Self-Discovery with ${avatarName}`,
+      `Inner Dialogue: ${avatarName}`
+    ];
+    
+    // Pick a random title from the list
+    const randomIndex = Math.floor(Math.random() * titles.length);
+    return titles[randomIndex];
+  };
+
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
@@ -575,12 +665,21 @@ ${conversationText}`;
           
           <Typography variant="title">Reflections</Typography>
           
-          <TouchableJung
-            onPress={handleNewConversation}
-            style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
-          >
-            <PencilLine size={24} color="#E6C3C3" weight="light" />
-          </TouchableJung>
+          <View style={tw`flex-row`}>
+            <TouchableJung
+              onPress={() => navigation.navigate('AccountScreen')}
+              style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima mr-2`}
+            >
+              <User size={24} color="#6b46c1" />
+            </TouchableJung>
+            
+            <TouchableJung
+              onPress={handleNewConversation}
+              style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
+            >
+              <PencilLine size={24} color="#E6C3C3" weight="light" />
+            </TouchableJung>
+          </View>
         </View>
         
         {conversations.length === 0 && !loading ? (
@@ -631,7 +730,31 @@ ${conversationText}`;
                   style={tw`flex-row items-center justify-between p-4 bg-white border-b border-gray-200`}
                   onPress={() => handleSelectConversation(item.id)}
                 >
-                  <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
+                  <SimpleAvatar 
+                    avatarId={item.avatar || item.avatar_id || 'jung'} 
+                    size={50} 
+                    style={tw`mr-4`}
+                  />
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
+                    <View style={tw`flex-row items-center`}>
+                      <Text style={tw`text-sm text-gray-500`}>
+                        {new Date(item.created_at).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </Text>
+                      {item.avatar_id && (
+                        <View style={tw`flex-row items-center ml-2`}>
+                          <Text style={tw`text-sm text-gray-400 mx-1`}>•</Text>
+                          <Text style={tw`text-sm text-gray-500`}>
+                            {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'Jung'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
                   <View style={tw`flex-row items-center`}>
                     <TouchableJung
                       style={tw`p-2 mr-2`}

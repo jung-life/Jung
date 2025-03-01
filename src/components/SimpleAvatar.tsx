@@ -1,62 +1,190 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Image as RNImage, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { getAvatarUrl, supabase } from '../lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { User } from 'phosphor-react-native';
 import tw from '../lib/tailwind';
 
-// Define avatar colors and initials
-const AVATAR_STYLES = {
-  jung: { color: '#8A2BE2', initial: 'J', name: 'Jung' },      // BlueViolet
-  freud: { color: '#4682B4', initial: 'F', name: 'Freud' },    // SteelBlue
-  adler: { color: '#2E8B57', initial: 'A', name: 'Adler' },    // SeaGreen
-  horney: { color: '#CD5C5C', initial: 'H', name: 'Horney' },  // IndianRed
-  morpheus: { color: '#191970', initial: 'M', name: 'Morpheus' }, // MidnightBlue
-  oracle: { color: '#DAA520', initial: 'O', name: 'Oracle' },  // GoldenRod
-  user: { color: '#4169E1', initial: 'U', name: 'User' },      // RoyalBlue
-  assistant: { color: '#8A2BE2', initial: 'A', name: 'Assistant' }, // BlueViolet
-  default: { color: '#4169E1', initial: '?', name: 'Unknown' } // RoyalBlue
-};
+// Conditionally import expo-image
+let ExpoImage;
+try {
+  ExpoImage = require('expo-image').Image;
+} catch (e) {
+  console.log('expo-image not available, using React Native Image');
+  ExpoImage = null;
+}
 
-// Simple avatar component that doesn't require image assets
-export const SimpleAvatar = ({ 
-  avatarId = 'jung', 
-  size = 40, 
-  style = {}
+// Use the appropriate Image component based on platform and availability
+const Image = (Platform.OS === 'ios' && parseInt(Platform.Version, 10) < 14 && ExpoImage) 
+  ? ExpoImage 
+  : RNImage;
+
+// Define available avatars with their details - metadata only
+export const availableAvatars = [
+  { id: 'jung', name: 'Jung', filename: 'jung.webp', premium: false },
+  { id: 'freud', name: 'Freud', filename: 'freud.webp', premium: false },
+  { id: 'adler', name: 'Adler', filename: 'adler.webp', premium: false },
+  { id: 'horney', name: 'Horney', filename: 'horney.webp', premium: true },
+  { id: 'morpheus', name: 'Morpheus', filename: 'morpheus.webp', premium: true },
+  { id: 'oracle', name: 'Oracle', filename: 'oracle.webp', premium: true },
+];
+
+interface SimpleAvatarProps {
+  avatarId: string;
+  size?: number;
+  style?: any;
+  isUser?: boolean;
+}
+
+export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({ 
+  avatarId, 
+  size = 50, 
+  style,
+  isUser = false 
 }) => {
-  // Get avatar style or use default
-  const avatarStyle = AVATAR_STYLES[avatarId] || AVATAR_STYLES.default;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(false);
+  
+  useEffect(() => {
+    if (isUser) {
+      fetchUserAvatar();
+    }
+  }, [isUser]);
+  
+  const fetchUserAvatar = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user found, using default avatar');
+        // Use the default user avatar
+        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.webp');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Try to get the user's profile
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        // If there's an error or no avatar_url, use default avatar
+        if (error || !data || !data.avatar_url) {
+          console.log('No custom avatar found, using default avatar');
+          setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.webp');
+          setLoading(false);
+          return;
+        }
+        
+        // If we have an avatar_url, get the public URL
+        if (data.avatar_url) {
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('avatars')
+            .getPublicUrl(data.avatar_url);
+          
+          setUserAvatarUrl(publicUrlData.publicUrl);
+        }
+      } catch (error) {
+        console.log('Error fetching user avatar, using default:', error);
+        // Use the default user avatar on error
+        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.webp');
+      }
+    } catch (error) {
+      console.log('Error in fetchUserAvatar, using default:', error);
+      // Use the default user avatar on error
+      setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.webp');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // For user avatar, show a user icon
+  if (isUser) {
+    return (
+      <View 
+        style={[
+          tw`bg-jung-purple rounded-full justify-center items-center`,
+          { width: size, height: size },
+          style
+        ]}
+      >
+        <User size={size * 0.6} color="white" weight="fill" />
+      </View>
+    );
+  }
+  
+  // For AI avatars, find the avatar metadata
+  const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
+  const avatarUrl = getAvatarUrl(avatar.filename);
+  const fallbackUrl = avatarUrl.replace('.webp', '.png');
   
   return (
-    <View style={[
-      { 
-        width: size, 
-        height: size, 
-        borderRadius: size / 2,
-        backgroundColor: avatarStyle.color,
-      },
-      tw`flex items-center justify-center shadow-sm`,
-      style
-    ]}>
-      <Text style={[
-        tw`text-white font-bold`,
-        { fontSize: size * 0.5 }
-      ]}>
-        {avatarStyle.initial}
-      </Text>
+    <View 
+      style={[
+        styles.container, 
+        { width: size, height: size, borderRadius: size / 2 },
+        style
+      ]}
+    >
+      {loading && (
+        <ActivityIndicator 
+          size="small" 
+          color="#8A2BE2" 
+          style={styles.loader} 
+        />
+      )}
+      
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="person" size={size * 0.6} color="#8A2BE2" />
+        </View>
+      ) : (
+        <Image
+          source={{ uri: usingFallback ? fallbackUrl : avatarUrl }}
+          style={styles.image}
+          onLoadStart={() => setLoading(true)}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            if (!usingFallback) {
+              console.log(`Trying fallback image: ${fallbackUrl}`);
+              setUsingFallback(true);
+            } else {
+              setLoading(false);
+              setError(true);
+              console.error(`Failed to load both WebP and fallback images for ${avatar.id}`);
+            }
+          }}
+        />
+      )}
     </View>
   );
 };
 
-// Get avatar name by ID
-export const getAvatarName = (avatarId) => {
-  const avatarStyle = AVATAR_STYLES[avatarId] || AVATAR_STYLES.default;
-  return avatarStyle.name;
-};
-
-// Export avatar styles for use in other components
-export const availableAvatars = Object.keys(AVATAR_STYLES)
-  .filter(id => id !== 'default' && id !== 'user' && id !== 'assistant')
-  .map(id => ({
-    id,
-    name: AVATAR_STYLES[id].name,
-    color: AVATAR_STYLES[id].color,
-    premium: ['morpheus', 'oracle'].includes(id)
-  })); 
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#f0e6ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  loader: {
+    position: 'absolute',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+}); 

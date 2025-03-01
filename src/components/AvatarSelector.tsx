@@ -1,8 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import tw from '../lib/tailwind';
-import { SimpleAvatar, availableAvatars } from './SimpleAvatar';
+import { SimpleAvatar, availableAvatars as avatarStyles } from './SimpleAvatar';
+import { getAvatarUrl } from '../lib/supabase';
+
+// Export the avatars so they can be imported elsewhere
+export const availableAvatars = avatarStyles;
+
+export interface Avatar {
+  id: string;
+  name: string;
+  filename: string;
+  premium: boolean;
+  image?: any; // Add this if your avatars have an image property
+}
 
 interface AvatarSelectorProps {
   selectedAvatar: string;
@@ -15,6 +27,16 @@ export const AvatarSelector = ({
   onSelectAvatar,
   hasPremiumAccess = false
 }: AvatarSelectorProps) => {
+  
+  // Add debug logging to help diagnose issues
+  useEffect(() => {
+    console.log('Available avatars:', availableAvatars);
+    availableAvatars.forEach((avatar: Avatar) => {
+      const url = getAvatarUrl(avatar.filename);
+      console.log(`Avatar ${avatar.id} URL: ${url}`);
+    });
+  }, []);
+  
   return (
     <View style={tw`mb-4`}>
       <Text style={tw`text-lg font-medium mb-2`}>Choose an Avatar</Text>

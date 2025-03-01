@@ -8,8 +8,11 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import { supabase } from '../lib/supabase';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { RootStackParamList } from './types';
+import { useAuth } from '../hooks/useAuth';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 // Add this function to check if user has seen disclaimer
 const checkDisclaimerStatus = async () => {
@@ -46,6 +49,7 @@ const checkDisclaimerStatus = async () => {
 
 const AppNavigator = () => {
   const [hasSeenDisclaimer, setHasSeenDisclaimer] = useState<boolean | null>(null);
+  const { user, initialized } = useAuth();
   
   useEffect(() => {
     const checkStatus = async () => {
@@ -61,15 +65,24 @@ const AppNavigator = () => {
     return <LoadingScreen />;
   }
   
+  if (!initialized) {
+    return null; // Or a loading screen
+  }
+  
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!hasSeenDisclaimer ? (
-        <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
+      {user ? (
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="Conversations" component={ConversationsScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </>
       ) : (
         <>
-          <Stack.Screen name="Conversations" component={ConversationsScreen} />
-          <Stack.Screen name="Chat" component={ChatScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Landing" component={LandingScreen} />
+          <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
         </>
       )}
     </Stack.Navigator>

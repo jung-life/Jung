@@ -6,12 +6,23 @@ import {
   TouchableOpacity, 
   TextInput, 
   Alert,
-  ScrollView 
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import tw from '../lib/tailwind';
+import { ArrowLeft, UserPlus, Check, Lock, Envelope, User } from 'phosphor-react-native';
+import { GradientBackground } from '../components/GradientBackground';
+import { SymbolicBackground } from '../components/SymbolicBackground';
+import { Typography } from '../components/Typography';
+import TouchableJung from '../components/TouchableJung';
+import { ensureUserPreferences } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const RegisterScreen = () => {
   const navigation = useNavigation();
@@ -20,38 +31,44 @@ export const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleBackToLanding = () => {
     navigation.navigate('Landing');
   };
 
   const handleRegister = async () => {
+    // Reset messages
+    setErrorMessage('');
+    setSuccessMessage('');
+    
     // Validate inputs
     if (!name.trim()) {
-      Alert.alert('Missing Information', 'Please enter your name.');
+      setErrorMessage('Please enter your name.');
       return;
     }
 
     if (!email.trim()) {
-      Alert.alert('Missing Information', 'Please enter your email address.');
+      setErrorMessage('Please enter your email address.');
       return;
     }
 
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Missing Information', 'Please enter a password.');
+      setErrorMessage('Please enter a password.');
       return;
     }
 
     // Enhanced password policy
     if (password.length < 8) {
-      Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+      setErrorMessage('Password must be at least 8 characters long.');
       return;
     }
 
@@ -62,119 +79,176 @@ export const RegisterScreen = () => {
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
-      Alert.alert(
-        'Weak Password', 
+      setErrorMessage(
         'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.'
       );
       return;
     }
 
     if (!confirmPassword.trim()) {
-      Alert.alert('Missing Information', 'Please confirm your password.');
+      setErrorMessage('Please confirm your password.');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+      setErrorMessage('Passwords do not match. Please try again.');
       return;
     }
 
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      
-      // Register the user with Supabase Auth with email confirmation
+      // Register the user with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { name },
-          emailRedirectTo: 'https://auth.expo.io/@infinitydata.ai/jungapp/callback'
+          emailRedirectTo: 'yourapp://confirm-email',
         },
       });
-
-      if (error) throw error;
-
-      if (data.user) {
-        Alert.alert(
-          'Registration Successful',
-          'Please check your email for a confirmation link to complete your registration.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Auth') }]
-        );
+      
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+      
+      // If registration is successful and user is created
+      if (data?.user) {
+        // Try to create user preferences immediately
+        // Note: This might not work if the user isn't fully authenticated yet
+        try {
+          // Store the user ID for later use
+          await AsyncStorage.setItem('pendingUserId', data.user.id);
+          
+          // Try to ensure user preferences exist
+          await ensureUserPreferences();
+        } catch (prefError) {
+          console.error('Error creating initial user preferences:', prefError);
+          // Continue anyway, we'll try again on login
+        }
+        
+        // Check if email confirmation is required
+        if (data.user.identities?.length === 0) {
+          setErrorMessage('This email is already registered');
+        } else if (data.user.confirmed_at) {
+          // User is already confirmed (rare case)
+          setSuccessMessage('Registration successful! You can now log in.');
+          setTimeout(() => navigation.navigate('Landing'), 2000);
+        } else {
+          // Email confirmation required
+          setSuccessMessage(
+            'Registration successful! Please check your email to confirm your account.'
+          );
+        }
       }
     } catch (error: any) {
-      console.error('Error registering:', error);
-      Alert.alert('Registration Failed', error.message || 'An error occurred during registration.');
+      console.error('Unexpected error during registration:', error);
+      setErrorMessage('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackToLanding}>
-          <AntDesign name="arrowleft" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }} />
-      </View>
-      
-      <ScrollView 
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Begin your journey of self-discovery</Text>
-
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
-          
-          <TouchableOpacity 
-            style={[styles.button, styles.registerButton]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
-            <Text style={styles.loginLink}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <GradientBackground>
+      <SafeAreaView style={tw`flex-1`}>
+        <SymbolicBackground opacity={0.03} />
+        
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={tw`flex-1`}
+        >
+          <ScrollView contentContainerStyle={tw`flex-grow`}>
+            <View style={tw`flex-row items-center px-5 py-4 border-b border-gray-200/50`}>
+              <TouchableJung
+                onPress={() => navigation.goBack()}
+                style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-gold`}
+              >
+                <ArrowLeft size={24} color="#D4AF37" weight="light" />
+              </TouchableJung>
+              
+              <Typography variant="title" style={tw`ml-4`}>Create Account</Typography>
+            </View>
+            
+            <View style={tw`flex-1 p-6 justify-center`}>
+              <View style={tw`bg-white/90 rounded-xl p-6 shadow-md`}>
+                <Typography variant="subtitle" style={tw`mb-6 text-center text-jung-purple`}>
+                  Join the Journey of Self-Discovery
+                </Typography>
+                
+                <View style={tw`mb-4`}>
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <Envelope size={20} color="#8A2BE2" weight="duotone" />
+                    <Text style={tw`ml-2 text-gray-600`}>Email</Text>
+                  </View>
+                  <TextInput
+                    style={tw`border border-gray-300 rounded-lg p-3 bg-white`}
+                    placeholder="Enter your email"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                </View>
+                
+                <View style={tw`mb-4`}>
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <Lock size={20} color="#8A2BE2" weight="duotone" />
+                    <Text style={tw`ml-2 text-gray-600`}>Password</Text>
+                  </View>
+                  <TextInput
+                    style={tw`border border-gray-300 rounded-lg p-3 bg-white`}
+                    placeholder="Create a password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                </View>
+                
+                <View style={tw`mb-6`}>
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <Check size={20} color="#8A2BE2" weight="duotone" />
+                    <Text style={tw`ml-2 text-gray-600`}>Confirm Password</Text>
+                  </View>
+                  <TextInput
+                    style={tw`border border-gray-300 rounded-lg p-3 bg-white`}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                  />
+                </View>
+                
+                <TouchableOpacity
+                  style={tw`bg-jung-purple rounded-lg py-4 flex-row items-center justify-center ${loading ? 'opacity-70' : ''}`}
+                  onPress={handleRegister}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <UserPlus size={24} color="white" weight="fill" style={tw`mr-2`} />
+                      <Text style={tw`text-white font-bold text-lg`}>Register</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={tw`mt-4`}
+                  onPress={() => navigation.navigate('Landing')}
+                >
+                  <Text style={tw`text-jung-purple text-center`}>
+                    Already have an account? Sign in
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 
@@ -229,8 +303,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  registerButton: {
-    backgroundColor: '#0284c7',
+  disabledButton: {
+    backgroundColor: '#93c5fd',
   },
   buttonText: {
     color: 'white',
@@ -250,5 +324,29 @@ const styles = StyleSheet.create({
     color: '#0284c7',
     fontSize: 14,
     fontWeight: '600',
+  },
+  errorContainer: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  errorText: {
+    color: '#b91c1c',
+    fontSize: 14,
+  },
+  successContainer: {
+    backgroundColor: '#dcfce7',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  successText: {
+    color: '#15803d',
+    fontSize: 14,
   },
 }); 

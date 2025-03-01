@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, checkDisclaimerStatus } from '../lib/supabase';
+import { supabase, checkDisclaimerStatus, storeAuthData } from '../lib/supabase';
+import { Alert } from 'react-native';
 
 // Create context with setIsNewUser
 export const AuthContext = createContext({
@@ -7,7 +8,9 @@ export const AuthContext = createContext({
   session: null,
   loading: true,
   isNewUser: false,
-  setIsNewUser: (value: boolean) => {}
+  setIsNewUser: (value: boolean) => {},
+  signIn: async (email: string, password: string) => {},
+  signOut: async () => {}
 });
 
 export const AuthProvider = ({ children }) => {
@@ -15,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(undefined);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Function to check disclaimer status
   const checkUserDisclaimerStatus = async (currentUser) => {
@@ -73,13 +77,61 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // Function to sign in with email and password
+  const signIn = async (email, password) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        // Handle specific error codes
+        if (error.message.includes('Invalid login credentials')) {
+          setErrorMessage('Invalid email or password');
+        } else {
+          setErrorMessage(error.message);
+        }
+        return false;
+      }
+      
+      // Session is automatically saved by our auth state change listener
+      setUser(data.user);
+      return true;
+    } catch (error) {
+      console.error('Error signing in:', error.message);
+      setErrorMessage('An unexpected error occurred');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to sign out
+  const signOut = async () => {
+    setLoading(true);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Error signing out:', error.message);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       loading, 
       isNewUser,
-      setIsNewUser 
+      setIsNewUser,
+      signIn,
+      signOut
     }}>
       {children}
     </AuthContext.Provider>

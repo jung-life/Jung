@@ -5,10 +5,12 @@ export type RootStackParamList = {
   Auth: undefined;
   Register: undefined;
   Home: undefined;
-  Conversations: { refresh?: number };
+  Conversations: { refresh?: boolean };
   Chat: { id: string };
   Disclaimer: undefined;
   Settings: undefined;
+  Profile: undefined;
+  AccountScreen: undefined;
 };
 
 // Add these types for navigation
