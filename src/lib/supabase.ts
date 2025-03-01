@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto'
 import { createClient } from '@supabase/supabase-js'
 import { HybridStorage } from './storage'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
@@ -9,94 +10,59 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Add this helper function to sanitize keys for storage
-const sanitizeKey = (key: string): string => {
-  // Replace any characters that might cause file system issues
-  return key.replace(/[\/\\:*?"<>|@]/g, '_');
-};
-
-// Update the LWAStorage implementation
-const LWAStorage = {
+// Create a custom storage adapter specifically for Supabase auth
+const SupabaseAuthStorage = {
   getItem: async (key: string): Promise<string | null> => {
-    const safeKey = sanitizeKey(key);
     try {
-      // Check if this is a large value that we've split
-      const isLargeValue = await AsyncStorage.getItem(`${safeKey}_isLarge`);
+      // Try AsyncStorage directly for auth tokens
+      const value = await AsyncStorage.getItem(key);
+      console.log(`Auth token ${key} ${value ? 'found' : 'not found'} in AsyncStorage`);
       
-      if (isLargeValue === 'true') {
-        // Retrieve from AsyncStorage instead
-        return await AsyncStorage.getItem(safeKey);
+      if (value) {
+        // Also update our memory cache
+        await HybridStorage.setItem(key, value);
+        return value;
       }
       
-      // Try SecureStore first for normal-sized values
-      return await SecureStore.getItemAsync(safeKey);
+      // Fall back to our hybrid storage
+      return await HybridStorage.getItem(key);
     } catch (error) {
-      console.log('SecureStore getItem error:', error);
-      // Fallback to AsyncStorage
-      try {
-        return await AsyncStorage.getItem(safeKey);
-      } catch (asyncError) {
-        console.log('AsyncStorage getItem error:', asyncError);
-        return null;
-      }
+      console.error('Error retrieving auth token:', error);
+      return null;
     }
   },
   
   setItem: async (key: string, value: string): Promise<void> => {
-    const safeKey = sanitizeKey(key);
     try {
-      // Check if value is too large for SecureStore
-      if (value.length > 2000) { // Using 2000 to be safe
-        // Mark this as a large value
-        await AsyncStorage.setItem(`${safeKey}_isLarge`, 'true');
-        // Store in AsyncStorage
-        await AsyncStorage.setItem(safeKey, value);
-        return;
-      }
+      // Store in AsyncStorage directly
+      await AsyncStorage.setItem(key, value);
+      console.log(`Auth token ${key} stored in AsyncStorage`);
       
-      // Store in SecureStore if it's small enough
-      await SecureStore.setItemAsync(safeKey, value);
+      // Also update our hybrid storage
+      await HybridStorage.setItem(key, value);
     } catch (error) {
-      console.log('SecureStore setItem error:', error);
-      // Fallback to AsyncStorage
-      try {
-        await AsyncStorage.setItem(safeKey, value);
-      } catch (asyncError) {
-        console.log('AsyncStorage setItem error:', asyncError);
-      }
+      console.error('Error storing auth token:', error);
     }
   },
   
   removeItem: async (key: string): Promise<void> => {
-    const safeKey = sanitizeKey(key);
     try {
-      // Check if this was a large value
-      const isLargeValue = await AsyncStorage.getItem(`${safeKey}_isLarge`);
-      if (isLargeValue === 'true') {
-        // Remove the marker and the value from AsyncStorage
-        await AsyncStorage.removeItem(`${safeKey}_isLarge`);
-        await AsyncStorage.removeItem(safeKey);
-        return;
-      }
+      // Remove from AsyncStorage
+      await AsyncStorage.removeItem(key);
+      console.log(`Auth token ${key} removed from AsyncStorage`);
       
-      // Otherwise remove from SecureStore
-      await SecureStore.deleteItemAsync(safeKey);
+      // Also remove from hybrid storage
+      await HybridStorage.removeItem(key);
     } catch (error) {
-      console.log('SecureStore removeItem error:', error);
-      // Try to remove from AsyncStorage as well
-      try {
-        await AsyncStorage.removeItem(`${safeKey}_isLarge`);
-        await AsyncStorage.removeItem(safeKey);
-      } catch (asyncError) {
-        console.log('AsyncStorage removeItem error:', asyncError);
-      }
+      console.error('Error removing auth token:', error);
     }
   }
 };
 
+// Create the Supabase client with our custom storage
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: HybridStorage,
+    storage: SupabaseAuthStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -141,21 +107,20 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
   }
 };
 
-// Increment the version to force all users to see the disclaimer
+// Current disclaimer version
 export const CURRENT_DISCLAIMER_VERSION = 2;
 
-// Update this function to check disclaimer version
+// Check if user has seen the current version of the disclaimer
 export const checkDisclaimerStatus = async () => {
   try {
-    console.log('Checking disclaimer status...');
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.log('No user found when checking disclaimer');
+      console.log('No authenticated user found');
       return false;
     }
     
-    console.log('Checking disclaimer for user:', user.id);
+    console.log('Checking disclaimer status for user:', user.id);
     
     const { data, error } = await supabase
       .from('user_preferences')
@@ -164,8 +129,7 @@ export const checkDisclaimerStatus = async () => {
       .single();
       
     if (error) {
-      console.log('Error fetching user preferences:', error);
-      console.log('Forcing disclaimer screen due to error');
+      console.error('Error fetching user preferences:', error);
       return false;
     }
     

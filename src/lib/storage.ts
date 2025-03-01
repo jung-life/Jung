@@ -1,82 +1,50 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import * as FileSystem from 'expo-file-system';
 
-// Create a dedicated directory for our app's storage with a unique name
-const APP_STORAGE_DIR = `${FileSystem.documentDirectory}jung_app_data_v1/`;
+// Memory cache to ensure data is available even if storage fails
+const memoryCache: Record<string, string> = {};
 
-// Ensure our storage directory exists
-const ensureStorageDir = async (): Promise<boolean> => {
-  try {
-    const dirInfo = await FileSystem.getInfoAsync(APP_STORAGE_DIR);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(APP_STORAGE_DIR, { intermediates: true });
-      console.log('Created storage directory:', APP_STORAGE_DIR);
-    }
-    return true;
-  } catch (error) {
-    console.error('Error ensuring storage directory exists:', error);
-    return false;
-  }
-};
-
-// Initialize storage directory
-let storageInitialized = false;
-const initStorage = async () => {
-  if (!storageInitialized) {
-    storageInitialized = await ensureStorageDir();
-    console.log('Storage initialization result:', storageInitialized);
-  }
-  return storageInitialized;
-};
-
-// Sanitize keys to be safe for file system
+// Sanitize keys to be safe for storage
 const sanitizeKey = (key: string): string => {
   return key.replace(/[\/\\:*?"<>|@]/g, '_');
 };
 
-// Memory cache to avoid excessive file operations
-const memoryCache: Record<string, string> = {};
-
-// Hybrid storage implementation with memory cache
+// Simple hybrid storage implementation that prioritizes in-memory cache
 export const HybridStorage = {
   getItem: async (key: string): Promise<string | null> => {
-    // Check memory cache first
-    if (memoryCache[key]) {
-      return memoryCache[key];
-    }
-    
     try {
-      // Try SecureStore first for sensitive data
-      const secureValue = await SecureStore.getItemAsync(sanitizeKey(key));
-      if (secureValue !== null) {
-        memoryCache[key] = secureValue; // Cache the result
-        return secureValue;
+      // Check memory cache first (fastest)
+      if (memoryCache[key]) {
+        console.log(`Memory cache hit for ${key}`);
+        return memoryCache[key];
       }
       
-      // If file storage is available, try that next
-      if (await initStorage()) {
-        const safeKey = sanitizeKey(key);
-        const filePath = `${APP_STORAGE_DIR}${safeKey}.json`;
-        
-        try {
-          const fileInfo = await FileSystem.getInfoAsync(filePath);
-          if (fileInfo.exists) {
-            const contents = await FileSystem.readAsStringAsync(filePath);
-            memoryCache[key] = contents; // Cache the result
-            return contents;
-          }
-        } catch (fileError) {
-          console.log(`File read error for ${key}:`, fileError);
+      // Try SecureStore for sensitive data
+      try {
+        const secureValue = await SecureStore.getItemAsync(sanitizeKey(key));
+        if (secureValue !== null) {
+          console.log(`SecureStore hit for ${key}`);
+          memoryCache[key] = secureValue; // Cache the result
+          return secureValue;
         }
+      } catch (secureError) {
+        console.log(`SecureStore read error for ${key}:`, secureError);
       }
       
-      // Last resort: try AsyncStorage
-      const asyncValue = await AsyncStorage.getItem(key);
-      if (asyncValue !== null) {
-        memoryCache[key] = asyncValue; // Cache the result
+      // Fall back to AsyncStorage
+      try {
+        const asyncValue = await AsyncStorage.getItem(key);
+        if (asyncValue !== null) {
+          console.log(`AsyncStorage hit for ${key}`);
+          memoryCache[key] = asyncValue; // Cache the result
+          return asyncValue;
+        }
+      } catch (asyncError) {
+        console.log(`AsyncStorage read error for ${key}:`, asyncError);
       }
-      return asyncValue;
+      
+      console.log(`No storage hit for ${key}`);
+      return null;
     } catch (error) {
       console.error(`Storage getItem error (${key}):`, error);
       return null;
@@ -86,63 +54,76 @@ export const HybridStorage = {
   setItem: async (key: string, value: string): Promise<void> => {
     // Update memory cache immediately
     memoryCache[key] = value;
+    console.log(`Updated memory cache for ${key}`);
     
-    try {
-      // For small values, use SecureStore
-      if (value.length < 2000) {
+    // Try to store in SecureStore if it's small enough
+    if (value.length < 2000) {
+      try {
         await SecureStore.setItemAsync(sanitizeKey(key), value);
-        return;
+        console.log(`Stored ${key} in SecureStore`);
+        return; // Success, no need to try AsyncStorage
+      } catch (secureError) {
+        console.log(`SecureStore write error for ${key}:`, secureError);
       }
-      
-      // For larger values, try file storage
-      if (await initStorage()) {
-        const safeKey = sanitizeKey(key);
-        const filePath = `${APP_STORAGE_DIR}${safeKey}.json`;
-        
-        try {
-          await FileSystem.writeAsStringAsync(filePath, value);
-          return;
-        } catch (fileError) {
-          console.log(`File write error for ${key}:`, fileError);
-        }
-      }
-      
-      // Last resort: try AsyncStorage
+    }
+    
+    // Fall back to AsyncStorage
+    try {
       await AsyncStorage.setItem(key, value);
-    } catch (error) {
-      console.error(`Storage setItem error (${key}):`, error);
-      // Don't throw - we've already updated the memory cache
+      console.log(`Stored ${key} in AsyncStorage`);
+    } catch (asyncError) {
+      console.log(`AsyncStorage write error for ${key}:`, asyncError);
     }
   },
   
   removeItem: async (key: string): Promise<void> => {
     // Remove from memory cache
     delete memoryCache[key];
+    console.log(`Removed ${key} from memory cache`);
     
+    // Try to remove from SecureStore
     try {
-      // Try to remove from all storage types
       await SecureStore.deleteItemAsync(sanitizeKey(key));
-      
-      if (await initStorage()) {
-        const safeKey = sanitizeKey(key);
-        const filePath = `${APP_STORAGE_DIR}${safeKey}.json`;
-        
-        try {
-          const fileInfo = await FileSystem.getInfoAsync(filePath);
-          if (fileInfo.exists) {
-            await FileSystem.deleteAsync(filePath);
-          }
-        } catch (fileError) {
-          console.log(`File delete error for ${key}:`, fileError);
-        }
-      }
-      
+      console.log(`Removed ${key} from SecureStore`);
+    } catch (secureError) {
+      console.log(`SecureStore delete error for ${key}:`, secureError);
+    }
+    
+    // Try to remove from AsyncStorage
+    try {
       await AsyncStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Storage removeItem error (${key}):`, error);
+      console.log(`Removed ${key} from AsyncStorage`);
+    } catch (asyncError) {
+      console.log(`AsyncStorage delete error for ${key}:`, asyncError);
     }
   }
 };
 
-// Initialize storage on import
-initStorage(); 
+// Add a function to persist the memory cache on app close
+export const persistMemoryCache = async (): Promise<void> => {
+  try {
+    // Store the entire cache as a JSON string
+    const cacheJson = JSON.stringify(memoryCache);
+    await AsyncStorage.setItem('_memory_cache_backup', cacheJson);
+    console.log('Memory cache persisted with', Object.keys(memoryCache).length, 'items');
+  } catch (error) {
+    console.error('Error persisting memory cache:', error);
+  }
+};
+
+// Add a function to restore the memory cache on app start
+export const restoreMemoryCache = async (): Promise<void> => {
+  try {
+    const cacheJson = await AsyncStorage.getItem('_memory_cache_backup');
+    if (cacheJson) {
+      const restoredCache = JSON.parse(cacheJson);
+      Object.assign(memoryCache, restoredCache);
+      console.log('Memory cache restored with', Object.keys(restoredCache).length, 'items');
+    }
+  } catch (error) {
+    console.error('Error restoring memory cache:', error);
+  }
+};
+
+// Initialize by restoring the cache
+restoreMemoryCache(); 

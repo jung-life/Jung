@@ -28,6 +28,8 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { ArrowLeft, PaperPlaneRight, PencilSimple } from 'phosphor-react-native';
 import { availableAvatars } from '../components/AvatarSelector';
+import { Avatar2D } from '../components/Avatar2D';
+import { SimpleAvatar } from '../components/SimpleAvatar';
 
 type Message = {
   id: string;
@@ -458,6 +460,18 @@ export const ChatScreen = () => {
     }
   };
 
+  const renderAvatar = (avatarId) => {
+    return (
+      <View style={tw`mr-3`}>
+        <SimpleAvatar 
+          avatarId={avatarId} 
+          size={40}
+          style={tw`border border-gray-200`}
+        />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={tw`flex-1 bg-jung-bg`}>
       <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200`}>
@@ -509,18 +523,17 @@ export const ChatScreen = () => {
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         renderItem={({ item }) => (
-          <View style={[
-            tw`px-4 py-3 mb-4 max-w-[85%]`,
-            item.role === 'user' 
-              ? tw`bg-jung-animus/90 self-end rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm shadow-sm` 
-              : tw`bg-jung-anima-light self-start rounded-tl-sm rounded-tr-2xl rounded-bl-2xl rounded-br-2xl shadow-sm border border-jung-anima/20`
-          ]}>
-            <Text style={[
-              tw`text-base leading-6`,
-              item.role === 'user' ? tw`text-white` : tw`text-jung-text`
+          <View style={tw`flex-row mb-4`}>
+            {item.role === 'assistant' && renderAvatar(item.role === 'assistant' ? item.role : 'jung')}
+            <View style={[
+              tw`p-3 rounded-lg max-w-[80%]`,
+              item.role === 'user' 
+                ? tw`bg-purple-100 ml-auto` 
+                : tw`bg-white`
             ]}>
-              {item.content}
-            </Text>
+              <Text style={tw`text-gray-800`}>{item.content}</Text>
+            </View>
+            {item.role === 'user' && renderAvatar('user')}
           </View>
         )}
         ListEmptyComponent={

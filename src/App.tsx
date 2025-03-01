@@ -9,6 +9,8 @@ import { ConversationsScreen } from './screens/ConversationsScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
 import { checkDisclaimerStatus } from './lib/supabase';
+import { persistMemoryCache } from './lib/storage';
+import { AppState } from 'react-native';
 
 const Stack = createStackNavigator();
 
@@ -52,6 +54,21 @@ const Navigation = () => {
       setIsNewUser(true);
     }
   }, [user, setIsNewUser]);
+  
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App is going to background or being closed
+        persistMemoryCache();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      // Also persist on unmount
+      persistMemoryCache();
+    };
+  }, []);
   
   if (loading) {
     return <LoadingScreen />;
