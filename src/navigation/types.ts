@@ -7,6 +7,8 @@ export type RootStackParamList = {
   Home: undefined;
   Conversations: { refresh?: number };
   Chat: { id: string };
+  Disclaimer: undefined;
+  Settings: undefined;
 };
 
 // Add these types for navigation

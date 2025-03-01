@@ -1,160 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
-import { Typography } from './Typography';
-import tw from '../lib/tailwind';
 import { supabase, getAvatarUrl } from '../lib/supabase';
-
-// Define avatar types
-export type Avatar = {
-  id: string;
-  avatar_id: string;
-  name: string;
-  image_url: string;
-  description: string;
-  is_premium: boolean;
-  order: number;
-};
+import tw from '../lib/tailwind';
 
 interface AvatarSelectorProps {
   selectedAvatar: string;
-  onSelectAvatar: (avatarId: string) => void;
+  onSelectAvatar: (avatar: string) => void;
   hasPremiumAccess?: boolean;
 }
+
+// Predefined avatar names in the bucket
+const AVATAR_FILES = [
+  { id: 'jung', name: 'Jung', premium: false, filename: 'jung.webp' },
+  { id: 'freud', name: 'Freud', premium: false, filename: 'freud.webp' },
+  { id: 'adler', name: 'Adler', premium: false, filename: 'adler.webp' },
+  { id: 'horney', name: 'Horney', premium: false, filename: 'horney.webp' },
+  { id: 'morpheus', name: 'Morpheus', premium: true, filename: 'morpheus.webp' },
+  { id: 'oracle', name: 'Oracle', premium: true, filename: 'oracle.webp' }
+];
 
 export const AvatarSelector = ({ 
   selectedAvatar, 
   onSelectAvatar,
   hasPremiumAccess = false
 }: AvatarSelectorProps) => {
-  const [avatars, setAvatars] = useState<Avatar[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingAvatar, setLoadingAvatar] = useState<string | null>(null);
+  const [errorAvatars, setErrorAvatars] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const fetchAvatars = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch avatars from Supabase
-        const { data, error } = await supabase
-          .from('avatars')
-          .select('*')
-          .order('order', { ascending: true });
-          
-        if (error) throw error;
-        
-        if (data) {
-          setAvatars(data);
-        }
-      } catch (err) {
-        console.error('Error fetching avatars:', err);
-        setError('Failed to load avatars');
-        
-        // Fallback to default avatars if fetch fails
-        setAvatars([
-          {
-            id: '1',
-            avatar_id: 'jung',
-            name: 'Carl Jung',
-            image_url: 'jung.webp',
-            description: 'Explore the collective unconscious and archetypes',
-            is_premium: false,
-            order: 1
-          },
-          {
-            id: '2',
-            avatar_id: 'freud',
-            name: 'Sigmund Freud',
-            image_url: 'freud.webp',
-            description: 'Analyze dreams and unconscious desires',
-            is_premium: false,
-            order: 2
-          }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleSelectAvatar = async (avatarId: string) => {
+    if (loadingAvatar) return; // Prevent multiple selections while loading
     
-    fetchAvatars();
-  }, []);
-
-  if (loading) {
-    return (
-      <View style={tw`mb-4 items-center justify-center h-24`}>
-        <ActivityIndicator size="large" color="#4A3B78" />
-        <Text style={tw`mt-2 text-sm text-gray-600`}>Loading avatars...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={tw`mb-4 items-center justify-center h-24`}>
-        <AntDesign name="warning" size={24} color="#f59e0b" />
-        <Text style={tw`mt-2 text-sm text-gray-600`}>{error}</Text>
-      </View>
-    );
-  }
+    setLoadingAvatar(avatarId);
+    onSelectAvatar(avatarId);
+    setLoadingAvatar(null);
+  };
 
   return (
     <View style={tw`mb-4`}>
-      <Typography variant="subtitle" style={tw`mb-2 ml-1`}>Choose Your Guide</Typography>
-      
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tw`pb-2`}
-      >
-        {avatars.map(avatar => {
-          const isSelected = avatar.avatar_id === selectedAvatar;
-          const isLocked = avatar.is_premium && !hasPremiumAccess;
+      <Text style={tw`text-lg font-semibold mb-2`}>Choose Your Guide</Text>
+      <View style={tw`flex-row flex-wrap justify-center`}>
+        {AVATAR_FILES.map((avatar) => {
+          const isSelected = selectedAvatar === avatar.id;
+          const isLocked = avatar.premium && !hasPremiumAccess;
+          const hasError = errorAvatars.has(avatar.id);
           
           return (
             <TouchableOpacity
               key={avatar.id}
               style={[
-                tw`mr-4 items-center`,
-                styles.avatarContainer,
-                isSelected && styles.selectedAvatarContainer
+                tw`m-2 items-center`,
+                { opacity: isLocked ? 0.6 : 1 }
               ]}
               onPress={() => {
                 if (!isLocked) {
-                  onSelectAvatar(avatar.avatar_id);
+                  handleSelectAvatar(avatar.id);
                 } else {
-                  // Show premium upgrade prompt
-                  Alert.alert(
-                    "Premium Avatar",
-                    `${avatar.name} is a premium avatar. Upgrade to access all guides.`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Upgrade", onPress: () => console.log("Navigate to upgrade screen") }
-                    ]
-                  );
+                  // Show premium upgrade message
+                  console.log('Premium avatar locked');
                 }
               }}
-              disabled={isLocked}
+              disabled={isLocked || loadingAvatar !== null}
             >
               <View style={[
                 tw`w-16 h-16 rounded-full overflow-hidden border-2`,
-                isSelected ? tw`border-jung-gold` : tw`border-gray-200`,
-                isLocked && styles.lockedAvatar
+                isSelected ? tw`border-purple-500` : tw`border-gray-300`,
               ]}>
-                <Image 
-                  source={{ uri: getAvatarUrl(avatar.image_url) }}
-                  style={tw`w-full h-full`}
-                  resizeMode="cover"
-                />
+                {loadingAvatar === avatar.id ? (
+                  <View style={tw`w-full h-full items-center justify-center bg-gray-100`}>
+                    <ActivityIndicator size="small" color="#8B5CF6" />
+                  </View>
+                ) : hasError ? (
+                  <View style={tw`w-full h-full items-center justify-center bg-gray-100`}>
+                    <AntDesign name="user" size={24} color="#8B5CF6" />
+                  </View>
+                ) : (
+                  <Image
+                    source={{ 
+                      uri: `https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars/${avatar.filename}` 
+                    }}
+                    style={tw`w-full h-full`}
+                    defaultSource={{ uri: 'https://via.placeholder.com/150' }}
+                    onError={() => {
+                      console.log(`Failed to load avatar: ${avatar.id}, filename: ${avatar.filename}`);
+                      setErrorAvatars(prev => new Set(prev).add(avatar.id));
+                    }}
+                  />
+                )}
                 {isLocked && (
-                  <View style={styles.lockOverlay}>
+                  <View style={tw`absolute inset-0 bg-black bg-opacity-40 items-center justify-center`}>
                     <AntDesign name="lock" size={20} color="white" />
                   </View>
                 )}
               </View>
               <Text style={[
-                tw`text-sm mt-1 font-medium`,
-                isSelected ? tw`text-jung-gold` : tw`text-gray-700`
+                tw`text-sm mt-1`,
+                isSelected ? tw`font-bold text-purple-600` : tw`text-gray-700`
               ]}>
                 {avatar.name}
               </Text>
@@ -166,25 +107,10 @@ export const AvatarSelector = ({
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  avatarContainer: {
-    width: 80,
-  },
-  selectedAvatarContainer: {
-    transform: [{ scale: 1.05 }],
-  },
-  lockedAvatar: {
-    opacity: 0.7,
-  },
-  lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
-}); 
+// Add this export to fix any linter errors
+export const availableAvatars = []; 

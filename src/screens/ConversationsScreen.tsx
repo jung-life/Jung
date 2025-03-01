@@ -23,7 +23,7 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SensualContainer } from '../components/SensualContainer';
 import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
-import { SignOut, Plus, Sparkle, Brain } from 'phosphor-react-native';
+import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf } from 'phosphor-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { generateAIResponse } from '../lib/api';
@@ -426,13 +426,25 @@ ${conversationText}`;
       const year = today.getFullYear();
       const defaultTitle = `Reflection_${month}/${day}/${year}`;
       
-      // Create a new conversation with the avatar information
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user session with better error handling
+      const { data, error: sessionError } = await supabase.auth.getSession();
       
-      if (!user) {
-        throw new Error('User not authenticated');
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        Alert.alert("Authentication Error", "Please log out and log back in to continue.");
+        return;
       }
       
+      if (!data.session || !data.session.user) {
+        console.error('No active session found');
+        Alert.alert("Authentication Error", "You need to be logged in to create a conversation.");
+        return;
+      }
+      
+      const user = data.session.user;
+      console.log('Creating conversation for user:', user.id);
+      
+      // Create a new conversation with the avatar information
       const { data: conversation, error } = await supabase
         .from('conversations')
         .insert({
@@ -445,6 +457,7 @@ ${conversationText}`;
         .single();
         
       if (error) {
+        console.error('Supabase insert error:', error);
         throw error;
       }
       
@@ -453,7 +466,7 @@ ${conversationText}`;
       
     } catch (error) {
       console.error('Error creating conversation:', error);
-      Alert.alert('Error', 'Failed to create conversation');
+      Alert.alert('Error', 'Failed to create conversation. Please try again.');
     }
   };
 
@@ -466,11 +479,29 @@ ${conversationText}`;
     >
       <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
         <View style={tw`bg-white w-5/6 rounded-xl p-5`}>
-          <Typography variant="title" style={tw`mb-4 text-center`}>Start a New Conversation</Typography>
+          <View style={tw`flex-row justify-between items-center mb-4`}>
+            <Typography variant="title" style={tw`text-center flex-1`}>Start a New Conversation</Typography>
+            <TouchableOpacity 
+              style={tw`p-2`}
+              onPress={() => setShowNewChatModal(false)}
+            >
+              <AntDesign name="close" size={24} color="red" />
+            </TouchableOpacity>
+          </View>
           
           <AvatarSelector
             selectedAvatar={selectedAvatar}
-            onSelectAvatar={setSelectedAvatar}
+            onSelectAvatar={(avatarId) => {
+              setSelectedAvatar(avatarId);
+              
+              // Set default title with current date in mm/dd/yyyy format
+              const today = new Date();
+              const month = (today.getMonth() + 1).toString().padStart(2, '0');
+              const day = today.getDate().toString().padStart(2, '0');
+              const year = today.getFullYear();
+              
+              setNewConversationTitle(`Reflection - ${month}/${day}/${year}`);
+            }}
             hasPremiumAccess={hasPremiumAccess}
           />
           
@@ -481,25 +512,44 @@ ${conversationText}`;
             value={newConversationTitle}
           />
           
-          <View style={tw`flex-row justify-end mt-2`}>
+          <View style={tw`flex-row justify-between items-center mt-2`}>
             <TouchableOpacity 
-              style={tw`px-4 py-2 mr-2`}
+              style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-300`}
               onPress={() => setShowNewChatModal(false)}
             >
-              <Text style={tw`text-gray-600`}>Cancel</Text>
+              <XCircle size={28} color="#F87171" weight="duotone" />
             </TouchableOpacity>
-            
+
             <TouchableOpacity 
-              style={tw`bg-jung-purple px-4 py-2 rounded-lg`}
+              style={tw`w-14 h-14 rounded-full flex items-center justify-center border-2 border-purple-300 bg-jung-purple`}
               onPress={() => createNewConversation(newConversationTitle)}
             >
-              <Text style={tw`text-white font-medium`}>Start</Text>
+              <FlowerLotus size={28} color="#A5F3FC" weight="duotone" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </Modal>
   );
+
+  const checkPremiumAccess = async (): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('is_active')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error || !data) return false;
+      return data.is_active === true;
+    } catch (error) {
+      console.error('Error checking premium access:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const checkPremium = async () => {
@@ -518,20 +568,18 @@ ${conversationText}`;
         <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200/50`}>
           <TouchableJung
             onPress={handleLogout}
-            style={tw`flex-row items-center py-2 px-3 rounded-lg`}
+            style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-gold`}
           >
-            <View style={tw`w-8 h-8 rounded-full border border-jung-gold flex items-center justify-center`}>
-              <SignOut size={16} color="#D4AF37" weight="light" />
-            </View>
+            <SignOut size={24} color="#D4AF37" weight="light" />
           </TouchableJung>
           
           <Typography variant="title">Reflections</Typography>
           
           <TouchableJung
             onPress={handleNewConversation}
-            style={tw`w-11 h-11 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
+            style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
           >
-            <Sparkle size={24} color="#E6C3C3" weight="light" />
+            <PencilLine size={24} color="#E6C3C3" weight="light" />
           </TouchableJung>
         </View>
         
