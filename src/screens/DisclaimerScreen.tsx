@@ -177,7 +177,7 @@ export const DisclaimerScreen = () => {
               style={tw`rounded-xl py-4 px-6 w-[48%] items-center shadow-md bg-gradient-to-r from-red-400 to-red-500 border border-red-300`}
               onPress={handleReject}
             >
-              <Text style={tw`text-gray-800 font-bold text-lg shadow-sm`}>I Reject</Text>
+              <Text style={tw`text-slate-700 font-bold text-lg shadow-sm`}>I Reject</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -191,7 +191,7 @@ export const DisclaimerScreen = () => {
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text style={tw`text-gray-800 font-bold text-lg shadow-sm`}>I Accept</Text>
+                <Text style={tw`text-slate-700 font-bold text-lg shadow-sm`}>I Accept</Text>
               )}
             </TouchableOpacity>
           </View>
