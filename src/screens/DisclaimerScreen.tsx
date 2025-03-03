@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
@@ -20,14 +20,19 @@ export const DisclaimerScreen = () => {
 
   const handleAccept = async () => {
     try {
+      console.log('Accept button pressed, healthDisclaimerChecked:', healthDisclaimerChecked);
       setLoading(true);
       
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error('No authenticated user found');
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+        return;
       }
+      
+      console.log('Updating preferences for user:', user.id);
       
       // Update the user_preferences table
       const { error } = await supabase
@@ -35,16 +40,21 @@ export const DisclaimerScreen = () => {
         .upsert({
           user_id: user.id,
           has_seen_disclaimer: true,
+          disclaimer_version: CURRENT_DISCLAIMER_VERSION,
           updated_at: new Date().toISOString()
         });
         
       if (error) {
+        console.error('Error updating user preferences:', error);
         throw error;
       }
+      
+      console.log('Successfully updated user preferences');
       
       // Update the auth context
       setIsNewUser(false);
       
+      console.log('Navigating to Conversations screen');
       // Navigate to the main app
       navigation.navigate('Conversations', { refresh: true });
     } catch (error) {
@@ -53,6 +63,34 @@ export const DisclaimerScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReject = () => {
+    Alert.alert(
+      "Reject Terms",
+      "You must accept the disclaimer to use Jung. Would you like to return to the landing page?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Return to Landing", 
+          onPress: async () => {
+            try {
+              // Sign out the user
+              await supabase.auth.signOut();
+              // Navigate to landing page
+              navigation.navigate('Landing');
+            } catch (error) {
+              console.error('Error signing out:', error);
+              // Force navigation to landing if sign out fails
+              navigation.navigate('Landing');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -80,10 +118,6 @@ export const DisclaimerScreen = () => {
             <Text style={tw`text-base mb-4 leading-6`}>
               This app is designed to enhance your self-reflection journey and improve communication with yourself, but it does not provide medical advice, diagnosis, or treatment.
             </Text>
-            
-            <Typography variant="subtitle" style={tw`mb-4 mt-2 text-jung-purple`}>
-              How to Use This App
-            </Typography>
             
             <Text style={tw`text-base mb-4 leading-6`}>
               • Use Jung as a complementary tool alongside professional therapy, not as a substitute
@@ -138,16 +172,29 @@ export const DisclaimerScreen = () => {
             </Text>
           </View>
           
-          <TouchableOpacity
-            style={[
-              tw`bg-jung-purple rounded-xl py-4 px-6 w-full items-center`,
-              (!healthDisclaimerChecked) && tw`opacity-50`
-            ]}
-            onPress={handleAccept}
-            disabled={!healthDisclaimerChecked}
-          >
-            <Text style={tw`text-white font-bold text-lg`}>I Accept</Text>
-          </TouchableOpacity>
+          <View style={tw`flex-row justify-between w-full mb-6`}>
+            <TouchableOpacity
+              style={tw`rounded-xl py-4 px-6 w-[48%] items-center shadow-md bg-gradient-to-r from-red-400 to-red-500 border border-red-300`}
+              onPress={handleReject}
+            >
+              <Text style={tw`text-gray-800 font-bold text-lg shadow-sm`}>I Reject</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                tw`rounded-xl py-4 px-6 w-[48%] items-center shadow-md bg-gradient-to-r from-indigo-500 to-purple-600 border border-indigo-300`,
+                (!healthDisclaimerChecked) && tw`opacity-50`,
+              ]}
+              onPress={handleAccept}
+              disabled={!healthDisclaimerChecked || loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={tw`text-gray-800 font-bold text-lg shadow-sm`}>I Accept</Text>
+              )}
+            </TouchableOpacity>
+          </View>
           
           <View style={tw`items-center mt-2`}>
             <Text style={tw`text-xs text-gray-500`}>

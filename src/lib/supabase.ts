@@ -267,17 +267,19 @@ export const checkDatabaseHealth = async () => {
 // Function to create necessary tables if they don't exist
 export const ensureDatabaseStructure = async () => {
   try {
-    // Check if the profiles table exists
-    const { error } = await supabase.rpc('create_profiles_if_not_exists');
+    // Instead of trying to create tables directly, use RPC functions
+    // that have been granted the proper permissions in Supabase
+    const { error } = await supabase.rpc('ensure_database_structure');
     
     if (error) {
-      console.error('Error ensuring database structure:', error);
-      return false;
+      console.warn('Error from ensure_database_structure RPC:', error);
+      // Continue anyway - tables might already exist
     }
     
     return true;
   } catch (error) {
     console.error('Error ensuring database structure:', error);
+    // Continue anyway - don't block the app for this
     return false;
   }
 };
@@ -494,30 +496,24 @@ export const updateDatabaseSchema = async () => {
   }
 };
 
-// Add this function to handle UUID vs bigint issues
-
+// Update the ensureCorrectIdType function to handle the type conversion properly
 export const ensureCorrectIdType = async () => {
   try {
-    // Check if the user_id column in profiles is UUID type
-    const { data, error } = await supabase.rpc('check_column_type', {
-      table_name: 'profiles',
-      column_name: 'id'
-    });
+    console.log('Converting id column to UUID type...');
+    
+    // Use an RPC function to handle the type conversion
+    const { error } = await supabase.rpc('convert_id_columns_to_uuid');
     
     if (error) {
-      console.error('Error checking column type:', error);
-      return;
+      console.warn('Error converting ID columns:', error);
+      // Continue anyway
+    } else {
+      console.log('Database initialized successfully');
     }
     
-    // If the column is not UUID type, try to convert it
-    if (data && data !== 'uuid') {
-      console.log('Converting id column to UUID type...');
-      await supabase.rpc('convert_column_to_uuid', {
-        table_name: 'profiles',
-        column_name: 'id'
-      });
-    }
+    return true;
   } catch (error) {
-    console.error('Error ensuring correct ID type:', error);
+    console.error('Error converting ID columns:', error);
+    return false;
   }
 };

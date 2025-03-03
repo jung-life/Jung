@@ -155,9 +155,8 @@ const Navigation = () => {
   }, []);
   
   useEffect(() => {
-    const checkDatabase = async () => {
-      const isHealthy = await checkDatabaseHealth();
-      
+    // Check database health but don't try to modify structure
+    checkDatabaseHealth().then(isHealthy => {
       if (!isHealthy) {
         Alert.alert(
           'Database Connection Issue',
@@ -165,12 +164,12 @@ const Navigation = () => {
           [{ text: 'OK' }]
         );
       }
-      
-      // Ensure all required tables exist
-      await ensureDatabaseStructure();
-    };
+    });
     
-    checkDatabase();
+    // Skip these operations that require high permissions
+    // updateDatabaseSchema();
+    // initializeDatabase();
+    // ensureCorrectIdType();
   }, []);
   
   useEffect(() => {
