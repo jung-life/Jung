@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,7 +8,8 @@ import {
   TextInput, 
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,8 +22,73 @@ import { supabase } from '../lib/supabase';
 import { ensureUserPreferences } from '../lib/supabase';
 import tw from '../lib/tailwind';
 import { Compass, Sparkle, Spiral, MoonStars, Lighthouse, MapTrifold } from 'phosphor-react-native';
+import { GradientText } from '../components/GradientText';
+import { AnimatedTitle } from '../components/AnimatedTitle';
+import { Easing } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Landing'>;
+
+const AnimatedJungTitle = () => {
+  const fadeAnim = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0)
+  ]).current;
+  
+  const moveAnim = useRef([
+    new Animated.Value(20),
+    new Animated.Value(20),
+    new Animated.Value(20),
+    new Animated.Value(20)
+  ]).current;
+  
+  useEffect(() => {
+    const animations = fadeAnim.map((anim, index) => {
+      return Animated.parallel([
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 600,
+          delay: 300 * index,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.back(1.5))
+        }),
+        Animated.timing(moveAnim[index], {
+          toValue: 0,
+          duration: 600,
+          delay: 300 * index,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.back(1.5))
+        })
+      ]);
+    });
+    
+    Animated.stagger(100, animations.flat()).start();
+  }, []);
+  
+  const letters = ['J', 'U', 'N', 'G'];
+  const colors = ['#1A1A1A', '#0047AB', '#8B0000', '#2E8B57'];
+  
+  return (
+    <View style={tw`flex-row mb-2`}>
+      {letters.map((letter, index) => (
+        <Animated.Text
+          key={index}
+          style={[
+            tw`text-6xl font-extrabold tracking-wider`,
+            { 
+              color: colors[index],
+              opacity: fadeAnim[index],
+              transform: [{ translateY: moveAnim[index] }]
+            }
+          ]}
+        >
+          {letter}
+        </Animated.Text>
+      ))}
+    </View>
+  );
+};
 
 export const LandingScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -56,7 +122,7 @@ export const LandingScreen = () => {
       setIsLoading(true);
       console.log('Attempting login with:', email);
       
-      // Add detailed logging
+      // Call the signIn function from AuthContext
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -86,6 +152,8 @@ export const LandingScreen = () => {
         const session = await supabase.auth.getSession();
         console.log('Session after login:', session.data.session ? 'Valid' : 'Missing');
       }
+      
+      // Navigation will be handled by App.tsx based on isNewUser state
     } catch (error) {
       console.error('Unexpected login error:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
@@ -132,8 +200,22 @@ export const LandingScreen = () => {
     >
       <StatusBar style="auto" />
       <View style={styles.content}>
-        <Text style={styles.title}>Jung</Text>
-        <Text style={styles.subtitle}>AI-Guided Self-Discovery</Text>
+        <View style={tw`items-center mb-8 mt-12`}>
+          <AnimatedJungTitle />
+          
+          <View style={tw`flex-row justify-center flex-wrap px-6 mb-2`}>
+            <Text style={tw`text-base italic font-medium`}>
+              <Text style={{ color: '#1A1A1A', fontWeight: 'bold' }}>J</Text>
+              <Text style={tw`text-gray-800`}>ourney into </Text>
+              <Text style={{ color: '#0047AB', fontWeight: 'bold' }}>U</Text>
+              <Text style={tw`text-gray-800`}>nveiling </Text>
+              <Text style={{ color: '#8B0000', fontWeight: 'bold' }}>N</Text>
+              <Text style={tw`text-gray-800`}>ew </Text>
+              <Text style={{ color: '#2E8B57', fontWeight: 'bold' }}>G</Text>
+              <Text style={tw`text-gray-800`}>rowth</Text>
+            </Text>
+          </View>
+        </View>
         
         {!showLoginForm ? (
           <>

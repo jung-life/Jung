@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isNewUser, setIsNewUser] = useState(undefined);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   // Function to check disclaimer status
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
           console.log("AuthContext: User signed in/up, checking disclaimer");
           await checkUserDisclaimerStatus(session?.user);
         } else if (event === 'SIGNED_OUT') {
-          setIsNewUser(undefined);
+          setIsNewUser(false);
         }
         
         setLoading(false);
@@ -78,31 +78,37 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Function to sign in with email and password
-  const signIn = async (email, password) => {
-    setLoading(true);
+  const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) {
-        // Handle specific error codes
-        if (error.message.includes('Invalid login credentials')) {
-          setErrorMessage('Invalid email or password');
-        } else {
-          setErrorMessage(error.message);
-        }
-        return false;
+      if (error) throw error;
+      
+      if (data?.user) {
+        // Check if user has seen disclaimer
+        const hasSeenDisclaimer = await checkDisclaimerStatus();
+        
+        // Set isNewUser based on disclaimer status
+        setIsNewUser(!hasSeenDisclaimer);
+        
+        // Store the user in state
+        setUser(data.user);
+        
+        return { success: true, isNewUser: !hasSeenDisclaimer };
       }
       
-      // Session is automatically saved by our auth state change listener
-      setUser(data.user);
-      return true;
+      return { success: false };
     } catch (error) {
-      console.error('Error signing in:', error.message);
-      setErrorMessage('An unexpected error occurred');
-      return false;
+      console.error('Error signing in:', error);
+      return { 
+        success: false, 
+        error: error.message || 'An error occurred during sign in' 
+      };
     } finally {
       setLoading(false);
     }

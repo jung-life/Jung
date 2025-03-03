@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
@@ -14,34 +14,44 @@ import { CURRENT_DISCLAIMER_VERSION } from '../lib/supabase';
 export const DisclaimerScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [healthDisclaimerChecked, setHealthDisclaimerChecked] = useState(false);
   const { setIsNewUser } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleAccept = async () => {
     try {
-      // Mark that the user has seen the disclaimer
+      setLoading(true);
+      
+      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        await supabase
-          .from('user_preferences')
-          .upsert({
-            user_id: user.id,
-            has_seen_disclaimer: true,
-            disclaimer_version: CURRENT_DISCLAIMER_VERSION,
-            updated_at: new Date().toISOString()
-          });
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      // Update the user_preferences table
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          has_seen_disclaimer: true,
+          updated_at: new Date().toISOString()
+        });
+        
+      if (error) {
+        throw error;
       }
       
       // Update the auth context
       setIsNewUser(false);
       
-      // Navigate to the main screen
-      navigation.replace('Conversations', { refresh: true });
+      // Navigate to the main app
+      navigation.navigate('Conversations', { refresh: true });
     } catch (error) {
-      console.error('Error saving disclaimer acknowledgment:', error);
-      // Navigate anyway even if saving fails
-      setIsNewUser(false);
-      navigation.replace('Conversations', { refresh: true });
+      console.error('Error accepting disclaimer:', error);
+      Alert.alert('Error', 'Failed to save your acceptance. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,33 +109,44 @@ export const DisclaimerScreen = () => {
               By continuing to use this application, you acknowledge that you understand and agree to these terms.
             </Text>
             
-            <TouchableOpacity
-              style={tw`flex-row items-center mb-4`}
-              onPress={() => setHasAcknowledged(!hasAcknowledged)}
-            >
-              <View style={[
-                tw`w-6 h-6 rounded-md border-2 border-jung-purple mr-3 items-center justify-center`,
-                hasAcknowledged && tw`bg-jung-purple`
-              ]}>
-                {hasAcknowledged && <AntDesign name="check" size={16} color="white" />}
-              </View>
-              <Text style={tw`text-base flex-1`}>
-                I understand that this app is not a replacement for professional mental health therapy
+            <View style={tw`flex-row items-start mb-6`}>
+              <TouchableOpacity 
+                style={tw`p-2 mr-2`} 
+                onPress={() => setHealthDisclaimerChecked(!healthDisclaimerChecked)}
+              >
+                <View style={tw`w-6 h-6 border-2 border-red-500 rounded items-center justify-center`}>
+                  {healthDisclaimerChecked && (
+                    <View style={tw`w-4 h-4 bg-red-500 rounded`} />
+                  )}
+                </View>
+              </TouchableOpacity>
+              <Text style={tw`flex-1 text-gray-700`}>
+                I understand that Jung is not a healthcare provider and does not offer medical advice. 
+                I will seek professional help for any mental health concerns.
               </Text>
-            </TouchableOpacity>
+            </View>
           </ScrollView>
+          
+          <View style={tw`bg-red-50 border border-red-200 rounded-xl p-4 mb-6`}>
+            <Text style={tw`text-lg font-bold text-red-800 mb-2`}>
+              Important Health Notice
+            </Text>
+            <Text style={tw`text-red-700 leading-5`}>
+              Jung is not a healthcare provider and does not offer medical advice, diagnosis, or treatment. 
+              This app is designed for self-reflection and exploration only. If you're experiencing mental 
+              health concerns, please consult with a qualified healthcare professional.
+            </Text>
+          </View>
           
           <TouchableOpacity
             style={[
-              tw`bg-jung-purple rounded-xl py-4 items-center`,
-              !hasAcknowledged && tw`opacity-50`
+              tw`bg-jung-purple rounded-xl py-4 px-6 w-full items-center`,
+              (!healthDisclaimerChecked) && tw`opacity-50`
             ]}
             onPress={handleAccept}
-            disabled={!hasAcknowledged}
+            disabled={!healthDisclaimerChecked}
           >
-            <Text style={tw`text-white font-medium text-lg`}>
-              I Understand & Accept
-            </Text>
+            <Text style={tw`text-white font-bold text-lg`}>I Accept</Text>
           </TouchableOpacity>
           
           <View style={tw`items-center mt-2`}>

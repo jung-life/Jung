@@ -23,9 +23,14 @@ import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
 import { ensureUserPreferences } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+
+// Define the navigation prop type
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const RegisterScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,12 +38,17 @@ export const RegisterScreen = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [hasConsented, setHasConsented] = useState(false);
 
   const handleBackToLanding = () => {
     navigation.navigate('Landing');
   };
 
   const handleRegister = async () => {
+    if (!hasConsented) {
+      Alert.alert('Consent Required', 'You must consent to the Privacy Policy and Terms of Service to create an account.');
+      return;
+    }
     // Reset messages
     setErrorMessage('');
     setSuccessMessage('');
@@ -218,6 +228,33 @@ export const RegisterScreen = () => {
                     onChangeText={setConfirmPassword}
                     secureTextEntry
                   />
+                </View>
+                
+                <View style={tw`flex-row items-start mb-4`}>
+                  <TouchableOpacity 
+                    style={tw`mt-1 mr-2`} 
+                    onPress={() => setHasConsented(!hasConsented)}
+                  >
+                    <View style={[
+                      tw`w-5 h-5 border border-gray-400 rounded`,
+                      hasConsented && tw`bg-blue-500 border-blue-500`
+                    ]}>
+                      {hasConsented && <Check size={16} color="white" weight="bold" />}
+                    </View>
+                  </TouchableOpacity>
+                  <Text style={tw`text-sm text-gray-700 flex-1`}>
+                    I consent to the <Text 
+                      style={tw`text-blue-500 underline`}
+                      onPress={() => navigation.navigate('PrivacyPolicy')}
+                    >
+                      Privacy Policy
+                    </Text> and <Text 
+                      style={tw`text-blue-500 underline`}
+                      onPress={() => navigation.navigate('TermsOfService')}
+                    >
+                      Terms of Service
+                    </Text>, including the processing of my personal data.
+                  </Text>
                 </View>
                 
                 <TouchableOpacity

@@ -105,17 +105,17 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
     }
   };
   
-  // For user avatar, show a user icon
+  // For user avatar, show a user icon with a darker color
   if (isUser) {
     return (
       <View 
         style={[
-          tw`bg-jung-purple rounded-full justify-center items-center`,
+          tw`bg-indigo-700 rounded-full justify-center items-center`,
           { width: size, height: size },
           style
         ]}
       >
-        <User size={size * 0.6} color="white" weight="fill" />
+        <User size={size * 0.6} color="#F3F4F6" weight="fill" />
       </View>
     );
   }

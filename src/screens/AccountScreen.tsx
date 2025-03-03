@@ -33,9 +33,13 @@ import {
   ArrowLeft,
   CheckCircle,
   Crown,
-  Sparkle
+  Sparkle,
+  Download,
+  Trash
 } from 'phosphor-react-native';
 import { RootStackNavigationProp } from '../navigation/types';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 type UserProfile = {
   id: string;
@@ -58,6 +62,8 @@ export const AccountScreen = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form state
   const [fullName, setFullName] = useState('');
@@ -101,9 +107,9 @@ export const AccountScreen = () => {
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile doesn't exist, create it
-          const newProfile = {
+          const newProfile: UserProfile = {
             id: user.id,
-            email: user.email,
+            email: user.email || '',
             full_name: null,
             avatar_url: null,
             is_premium: false,
@@ -392,6 +398,53 @@ export const AccountScreen = () => {
     }
   };
   
+  const handleExportData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+        return;
+      }
+      
+      // Get user data from Supabase
+      const { data: userData, error: userError } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      const { data: conversationsData, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (userError || convError) {
+        throw new Error('Failed to fetch your data');
+      }
+      
+      // Create export file
+      const exportData = {
+        user_preferences: userData,
+        conversations: conversationsData,
+        exported_at: new Date().toISOString()
+      };
+      
+      const fileUri = FileSystem.documentDirectory + 'jung_data_export.json';
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
+      
+      // Share the file
+      await Sharing.shareAsync(fileUri);
+    } catch (error: any) {
+      Alert.alert('Export Failed', error.message || 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
@@ -656,4 +709,54 @@ export const AccountScreen = () => {
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
-                  style={tw`
+                  style={tw`flex-row items-center p-3 rounded-lg ${themePreference === 'dark' ? 'bg-purple-100' : 'bg-gray-100'} mb-2`}
+                  onPress={() => setThemePreference('dark')}
+                >
+                  <View style={tw`w-6 h-6 rounded-full border-2 border-gray-400 mr-3 items-center justify-center`}>
+                    {themePreference === 'dark' && (
+                      <View style={tw`w-3 h-3 rounded-full bg-jung-purple`} />
+                    )}
+                  </View>
+                  <Text style={tw`text-gray-800`}>Dark</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={tw`flex-row items-center p-3 rounded-lg ${themePreference === 'system' ? 'bg-purple-100' : 'bg-gray-100'} mb-2`}
+                  onPress={() => setThemePreference('system')}
+                >
+                  <View style={tw`w-6 h-6 rounded-full border-2 border-gray-400 mr-3 items-center justify-center`}>
+                    {themePreference === 'system' && (
+                      <View style={tw`w-3 h-3 rounded-full bg-jung-purple`} />
+                    )}
+                  </View>
+                  <Text style={tw`text-gray-800`}>System</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {/* Your Data */}
+            <View style={tw`mt-6 border-t border-gray-200 pt-6`}>
+              <Text style={tw`text-lg font-bold mb-4`}>Your Data</Text>
+              
+              <TouchableOpacity 
+                style={tw`flex-row items-center py-3 border-b border-gray-200`}
+                onPress={handleExportData}
+              >
+                <Download size={24} color="#4a5568" />
+                <Text style={tw`ml-3 text-base`}>Export My Data</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={tw`flex-row items-center py-3 border-b border-gray-200`}
+                onPress={() => setShowDeleteConfirm(true)}
+              >
+                <Trash size={24} color="#e53e3e" />
+                <Text style={tw`ml-3 text-base text-red-600`}>Delete My Account & Data</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        )}
+      </SafeAreaView>
+    </GradientBackground>
+  );
+};

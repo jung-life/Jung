@@ -18,7 +18,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, PaperPlaneTilt, User } from 'phosphor-react-native';
+import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf } from 'phosphor-react-native';
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -45,7 +45,7 @@ type Conversation = {
 export const ChatScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<ChatScreenRouteProp>();
-  const { id: conversationId } = route.params;
+  const { conversationId } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -157,19 +157,20 @@ export const ChatScreen = () => {
     
     try {
       // Create a new message object for the user's message
-      const userMessage: Partial<Message> = {
+      const userMessage: Message = {
         id: uuidv4(),
         conversation_id: conversationId,
         content: currentInput,
         role: 'user',
-        is_from_user: true,
         created_at: new Date().toISOString()
       };
       
       // Add the message to the UI immediately
-      setMessages(prevMessages => [...prevMessages, userMessage as Message]);
+      setMessages(prevMessages => [...prevMessages, userMessage]);
       
-      // Save the message to the database
+      console.log('Added user message to state:', userMessage);
+      
+      // Save the message to the database WITHOUT is_from_user
       try {
         const { error } = await supabase
           .from('messages')
@@ -177,29 +178,14 @@ export const ChatScreen = () => {
             conversation_id: conversationId,
             content: currentInput,
             role: 'user',
-            is_from_user: true,
             created_at: userMessage.created_at
           });
-          
+        
         if (error) {
-          if (error.code === 'PGRST204' && error.message.includes('is_from_user')) {
-            // Try again without the is_from_user column
-            console.log('Retrying without is_from_user column');
-            await supabase
-              .from('messages')
-              .insert({
-                conversation_id: conversationId,
-                content: currentInput,
-                role: 'user',
-                created_at: userMessage.created_at
-              });
-          } else {
-            throw error;
-          }
+          console.error('Error saving message:', error);
         }
       } catch (error) {
         console.error('Error saving user message:', error);
-        // Continue anyway to get AI response
       }
       
       // Generate AI response
@@ -216,7 +202,6 @@ export const ChatScreen = () => {
           conversation_id: conversationId,
           content: aiResponse,
           role: 'assistant',
-          is_from_user: false,
           created_at: new Date().toISOString()
         };
         
@@ -231,7 +216,6 @@ export const ChatScreen = () => {
               conversation_id: conversationId,
               content: aiMessage.content,
               role: 'assistant',
-              is_from_user: false,
               created_at: aiMessage.created_at
             });
         } catch (error) {
@@ -250,10 +234,8 @@ export const ChatScreen = () => {
   };
   
   const renderMessage = ({ item }: { item: Message }) => {
-    // Check both role and is_from_user to determine if it's a user message
-    const isUser = item.role === 'user' || item.is_from_user === true;
-    
-    console.log(`Rendering message: ${item.id}, role: ${item.role}, is_from_user: ${item.is_from_user}, content: ${item.content.substring(0, 20)}...`);
+    // Only use role to determine if it's a user message
+    const isUser = item.role === 'user';
     
     return (
       <View style={tw`flex-row ${isUser ? 'justify-end' : 'justify-start'} mb-4 px-4`}>
@@ -267,15 +249,16 @@ export const ChatScreen = () => {
         
         <View 
           style={tw`
-            ${isUser ? 'bg-jung-purple' : 'bg-gray-100'} 
+            ${isUser ? 'bg-indigo-100 border border-indigo-200' : 'bg-gray-100'} 
             rounded-2xl 
             p-3 
             max-w-[80%]
+            shadow-sm
           `}
         >
           <Text 
             style={tw`
-              ${isUser ? 'text-white' : 'text-gray-800'} 
+              ${isUser ? 'text-indigo-900' : 'text-gray-800'} 
               text-base
             `}
           >
@@ -286,6 +269,7 @@ export const ChatScreen = () => {
         {isUser && (
           <SimpleAvatar 
             isUser={true}
+            avatarId="user"
             size={40} 
             style={tw`ml-2 mt-1`}
           />
@@ -335,8 +319,16 @@ export const ChatScreen = () => {
               keyExtractor={(item) => item.id}
               renderItem={renderMessage}
               contentContainerStyle={tw`p-4 pb-4`}
-              onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onLayout={() => {
+                if (messages.length > 0) {
+                  flatListRef.current?.scrollToEnd({ animated: false });
+                }
+              }}
+              onContentSizeChange={() => {
+                if (messages.length > 0) {
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }
+              }}
               ListEmptyComponent={
                 <View style={tw`flex-1 justify-center items-center p-8`}>
                   <Text style={tw`text-lg text-gray-500 text-center`}>
@@ -367,7 +359,9 @@ export const ChatScreen = () => {
               {sending ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <PaperPlaneTilt size={20} color="white" weight="bold" />
+                <View style={tw`items-center justify-center`}>
+                  <FlowerLotus size={36} color="#D4AF37" weight="fill" />
+                </View>
               )}
             </TouchableOpacity>
           </View>

@@ -119,7 +119,7 @@ export const ConversationsScreen = () => {
   };
 
   const handleSelectConversation = (id: string) => {
-    navigation.navigate('Chat', { id });
+    navigation.navigate('Chat', { conversationId: id });
   };
   
   const handleLogout = async () => {
@@ -464,7 +464,7 @@ ${conversationText}`;
       setNewConversationTitle('');
       
       // Navigate to the chat screen with the new conversation ID
-      navigation.navigate('Chat', { id: data.id });
+      navigation.navigate('Chat', { conversationId: data.id });
       
     } catch (error) {
       console.error('Error creating conversation:', error);

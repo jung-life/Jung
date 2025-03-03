@@ -6,11 +6,14 @@ export type RootStackParamList = {
   Register: undefined;
   Home: undefined;
   Conversations: { refresh?: boolean };
-  Chat: { id: string };
+  Chat: { conversationId: string };
   Disclaimer: undefined;
   Settings: undefined;
   Profile: undefined;
   AccountScreen: undefined;
+  SecurityScreen: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };
 
 // Add these types for navigation
