@@ -49,7 +49,7 @@ const checkDisclaimerStatus = async () => {
 
 const AppNavigator = () => {
   const [hasSeenDisclaimer, setHasSeenDisclaimer] = useState<boolean | null>(null);
-  const { user, initialized } = useAuth();
+  const { user, initialized, isNewUser } = useAuth();
   
   useEffect(() => {
     const checkStatus = async () => {
@@ -68,21 +68,28 @@ const AppNavigator = () => {
   if (!initialized) {
     return null; // Or a loading screen
   }
-  
+
+  console.log('Available screens in navigator:', 
+    Stack.Navigator.name ? 
+    Object.keys(Stack.Navigator.screens || {}) : 
+    'Unable to determine screens');
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {user ? (
-        <>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Chat" component={ChatScreen} />
-          <Stack.Screen name="Conversations" component={ConversationsScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-        </>
-      ) : (
+      {!user ? (
         <>
           <Stack.Screen name="Landing" component={LandingScreen} />
-          <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
+      ) : isNewUser ? (
+        <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
+      ) : (
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Conversations" component={ConversationsScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
         </>
       )}
     </Stack.Navigator>

@@ -43,6 +43,7 @@ import * as FileSystem from 'expo-file-system';
 
 type UserProfile = {
   id: string;
+  user_id: string;
   email: string;
   full_name: string | null;
   avatar_url: string | null;
@@ -74,14 +75,43 @@ export const AccountScreen = () => {
   const [insights, setInsights] = useState(true);
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('system');
   
+  // Add this state variable near your other state declarations
+  const [formState, setFormState] = useState({
+    full_name: '',
+    email: '',
+    avatar_url: null,
+    theme_preference: 'system' as const,
+    notification_preferences: {
+      daily_reminders: false,
+      new_features: true,
+      insights: true
+    }
+  });
+  
   useEffect(() => {
-    fetchProfile();
+    fetchUserProfile();
   }, []);
   
-  const fetchProfile = async () => {
+  useEffect(() => {
+    if (formState) {
+      setFullName(formState.full_name);
+      setEmail(formState.email);
+      setAvatarUrl(formState.avatar_url);
+      setThemePreference(formState.theme_preference);
+      
+      if (formState.notification_preferences) {
+        setDailyReminders(formState.notification_preferences.daily_reminders);
+        setNewFeatures(formState.notification_preferences.new_features);
+        setInsights(formState.notification_preferences.insights);
+      }
+    }
+  }, [formState]);
+  
+  const fetchUserProfile = async () => {
     try {
       setLoading(true);
       
+      // Get current user with full metadata
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -89,77 +119,80 @@ export const AccountScreen = () => {
         return;
       }
       
-      // Try to create profiles table if it doesn't exist
-      try {
-        await supabase.rpc('create_profiles_if_not_exists');
-      } catch (error) {
-        console.log('Error creating profiles table:', error);
-        // Continue anyway
-      }
+      console.log('Fetching profile for user ID:', user.id);
+      console.log('User metadata:', user.user_metadata);
       
-      // Fetch profile data
+      // Try to get profile from profiles table
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
-        .single();
-        
+        .filter('user_id', 'eq', user.id)
+        .maybeSingle();
+      
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create it
-          const newProfile: UserProfile = {
-            id: user.id,
-            email: user.email || '',
-            full_name: null,
-            avatar_url: null,
-            is_premium: false,
-            notification_preferences: {
-              daily_reminders: false,
-              new_features: true,
-              insights: true
-            },
-            theme_preference: 'system',
-            created_at: new Date().toISOString()
-          };
-          
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert(newProfile);
-            
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
-          } else {
-            setProfile(newProfile);
-            updateFormState(newProfile);
-          }
-        } else {
-          console.error('Error fetching profile:', error);
-        }
-      } else if (data) {
+        console.error('Error fetching profile:', error);
+      }
+      
+      // If profile exists in database, use that
+      if (data) {
         setProfile(data);
         updateFormState(data);
+      } else {
+        // Otherwise, create a profile using auth metadata
+        const newProfile: UserProfile = {
+          id: user.id,
+          user_id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || null,
+          avatar_url: null,
+          is_premium: false,
+          notification_preferences: {
+            daily_reminders: false,
+            new_features: true,
+            insights: true
+          },
+          theme_preference: 'system',
+          created_at: new Date().toISOString()
+        };
+        
+        // Save this profile to the database
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(newProfile);
+          
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          Alert.alert('Error', 'Failed to create your profile. Please try again.');
+        } else {
+          setProfile(newProfile);
+          updateFormState(newProfile);
+        }
       }
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
+      console.error('Error fetching profile:', error);
+      Alert.alert('Error', 'An unexpected error occurred while loading your profile.');
     } finally {
       setLoading(false);
     }
   };
   
-  const updateFormState = (profile: UserProfile) => {
-    setFullName(profile.full_name || '');
-    setEmail(profile.email || '');
-    setAvatarUrl(profile.avatar_url);
+  const updateFormState = (profileData: any) => {
+    setFormState({
+      full_name: profileData.full_name || '',
+      email: profileData.email || '',
+      avatar_url: profileData.avatar_url || null,
+      theme_preference: profileData.theme_preference || 'system',
+      notification_preferences: profileData.notification_preferences || {
+        daily_reminders: false,
+        new_features: true,
+        insights: true
+      }
+    });
     
-    // Set notification preferences
-    if (profile.notification_preferences) {
-      setDailyReminders(profile.notification_preferences.daily_reminders);
-      setNewFeatures(profile.notification_preferences.new_features);
-      setInsights(profile.notification_preferences.insights);
+    // Also update avatar URL for display
+    if (profileData.avatar_url) {
+      setAvatarUrl(profileData.avatar_url);
     }
-    
-    // Set theme preference
-    setThemePreference(profile.theme_preference || 'system');
   };
   
   const handleSaveProfile = async () => {
@@ -232,77 +265,73 @@ export const AccountScreen = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
-        base64: true,
+        quality: 0.5,
       });
       
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const asset = result.assets[0];
-        if (asset.base64) {
-          await uploadImage(asset.base64);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setUploadingImage(true);
+        
+        // Get file extension
+        const fileExtension = uri.split('.').pop();
+        const fileName = `${Date.now()}.${fileExtension}`;
+        const filePath = `avatars/${fileName}`;
+        
+        // Get the current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
         }
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
-  
-  const uploadImage = async (base64Image: string) => {
-    try {
-      setUploadingImage(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to upload a profile picture');
-        return;
-      }
-      
-      // Create a unique file name
-      const fileName = `${user.id}_${new Date().getTime()}.jpg`;
-      
-      // Upload the image
-      const { data, error } = await supabase
-        .storage
-        .from('avatars')
-        .upload(fileName, decode(base64Image), {
-          contentType: 'image/jpeg',
-          upsert: true
-        });
         
-      if (error) {
-        throw error;
-      }
-      
-      // Get the public URL
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+        // Convert image to blob
+        const response = await fetch(uri);
+        const blob = await response.blob();
         
-      const publicUrl = publicUrlData.publicUrl;
-      
-      // Update the profile with the new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: fileName })
-        .eq('id', user.id);
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, blob, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+          
+        if (uploadError) {
+          throw uploadError;
+        }
         
-      if (updateError) {
-        throw updateError;
+        // Get public URL
+        const { data: urlData } = await supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+          
+        const publicUrl = urlData?.publicUrl;
+        
+        if (!publicUrl) {
+          throw new Error('Failed to get public URL for uploaded image');
+        }
+        
+        // Update profile with new avatar URL
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('user_id', user.id);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
+        // Update local state
+        setAvatarUrl(publicUrl);
+        if (profile) {
+          setProfile({
+            ...profile,
+            avatar_url: publicUrl
+          });
+        }
+        
+        Alert.alert('Success', 'Profile picture updated successfully!');
       }
-      
-      // Update local state
-      setAvatarUrl(fileName);
-      if (profile) {
-        setProfile({
-          ...profile,
-          avatar_url: fileName
-        });
-      }
-      
-      Alert.alert('Success', 'Profile picture updated successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
       Alert.alert('Error', 'Failed to upload image. Please try again.');

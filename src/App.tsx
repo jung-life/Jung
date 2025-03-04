@@ -8,7 +8,7 @@ import { DisclaimerScreen } from './screens/DisclaimerScreen';
 import { ConversationsScreen } from './screens/ConversationsScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
-import { checkDisclaimerStatus, checkDatabaseHealth, ensureDatabaseStructure, ensureUserPreferences, initializeDatabase, updateDatabaseSchema, ensureCorrectIdType } from './lib/supabase';
+import { checkDisclaimerStatus, checkDatabaseHealth, ensureDatabaseStructure, ensureUserPreferences, initializeDatabase, updateDatabaseSchema, ensureCorrectIdType, fixDatabaseSchema } from './lib/supabase';
 import { persistMemoryCache } from './lib/storage';
 import { AppState, Linking, Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -197,6 +197,24 @@ const Navigation = () => {
       // Ensure ID columns are the correct type
       ensureCorrectIdType();
     });
+  }, []);
+  
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        // First try to fix any database schema issues
+        await fixDatabaseSchema();
+        
+        // Then initialize the database
+        await initializeDatabase();
+        
+        // Continue with other initialization...
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
+    };
+    
+    initApp();
   }, []);
   
   if (loading) {

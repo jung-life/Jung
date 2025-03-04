@@ -105,10 +105,14 @@ export const checkSession = async () => {
     if (data.session) {
       console.log('Session found:', data.session.user.id)
       // Check token expiry
-      const expiresAt = new Date(data.session.expires_at * 1000)
-      const now = new Date()
-      console.log('Token expires at:', expiresAt.toLocaleString())
-      console.log('Token is', expiresAt > now ? 'valid' : 'expired')
+      if (data.session.expires_at) {  // Add null check here
+        const expiresAt = new Date(data.session.expires_at * 1000)
+        const now = new Date()
+        console.log('Token expires at:', expiresAt.toLocaleString())
+        console.log('Token is', expiresAt > now ? 'valid' : 'expired')
+      } else {
+        console.log('No expiration time found in session')
+      }
     } else {
       console.log('No session found')
     }
@@ -121,7 +125,7 @@ export const checkSession = async () => {
 }
 
 // Function to manually store auth data
-export const storeAuthData = async (session) => {
+export const storeAuthData = async (session: any) => {
   if (!session) return
   
   try {
@@ -355,17 +359,17 @@ export const testSupabaseConnection = async () => {
       authStatus: 'OK',
       message: 'Connection successful'
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Unexpected error testing Supabase connection:', error);
     return {
       success: false,
-      error: error.message || 'Unexpected error',
+      error: error instanceof Error ? error.message : 'Unexpected error',
       details: error
     };
   }
 };
 
-// Function to ensure user preferences exist
+// Simplified user preferences function
 export const ensureUserPreferences = async () => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -375,41 +379,25 @@ export const ensureUserPreferences = async () => {
       return false;
     }
     
-    // Check if user preferences already exist
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-      
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking user preferences:', error);
-      return false;
-    }
+    console.log('Ensuring user preferences for user ID:', user.id);
     
-    // If user preferences don't exist, create them
-    if (!data) {
-      console.log('Creating user preferences for user:', user.id);
-      
-      const { error: insertError } = await supabase
-        .from('user_preferences')
-        .insert({
-          user_id: user.id,
-          has_seen_disclaimer: false,
-          disclaimer_version: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (insertError) {
-        console.error('Error creating user preferences:', insertError);
-        return false;
-      }
+    // Use a direct SQL approach to avoid type issues
+    const { error } = await supabase.rpc('execute_sql', {
+      sql_query: `
+        INSERT INTO public.user_preferences (user_id, has_seen_disclaimer, disclaimer_version)
+        VALUES ('${user.id}', false, 0)
+        ON CONFLICT (user_id) DO NOTHING;
+      `
+    });
+    
+    if (error) {
+      console.error('Error ensuring user preferences:', error);
+      return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error ensuring user preferences:', error);
+    console.error('Error in ensureUserPreferences:', error);
     return false;
   }
 };
@@ -439,21 +427,35 @@ export const verifyEnvironmentVariables = () => {
   };
 };
 
-// Add this function to your supabase.ts file
-
+// Simplified database initialization
 export const initializeDatabase = async () => {
   try {
-    // Check if tables exist and create them if needed
-    const { error } = await supabase.rpc('initialize_database');
+    console.log('Initializing database...');
+    
+    // Create the user_preferences table with correct UUID type
+    const { error } = await supabase.rpc('execute_sql', {
+      sql_query: `
+        -- Create user_preferences table if it doesn't exist
+        CREATE TABLE IF NOT EXISTS public.user_preferences (
+          id SERIAL PRIMARY KEY,
+          user_id UUID NOT NULL,
+          has_seen_disclaimer BOOLEAN DEFAULT false,
+          disclaimer_version INTEGER DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+        
+        -- Create index for faster lookups
+        CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id 
+        ON public.user_preferences(user_id);
+      `
+    });
     
     if (error) {
       console.error('Error initializing database:', error);
-      
-      // Fallback: Try to create tables directly
-      await supabase.rpc('create_tables_if_not_exist');
+    } else {
+      console.log('Database initialized successfully');
     }
-    
-    console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error in database initialization:', error);
   }
@@ -514,6 +516,65 @@ export const ensureCorrectIdType = async () => {
     return true;
   } catch (error) {
     console.error('Error converting ID columns:', error);
+    return false;
+  }
+};
+
+// Fix the information_schema query
+export const fixDatabaseSchema = async () => {
+  try {
+    console.log('Attempting to fix database schema type issues...');
+    
+    // Create the table directly with SQL
+    const { error: createError } = await supabase.rpc('execute_sql', {
+      sql_query: `
+        CREATE TABLE IF NOT EXISTS public.user_preferences (
+          id SERIAL PRIMARY KEY,
+          user_id UUID NOT NULL,
+          has_seen_disclaimer BOOLEAN DEFAULT false,
+          disclaimer_version INTEGER DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+      `
+    });
+    
+    if (createError) {
+      console.error('Error creating table:', createError);
+    } else {
+      console.log('Successfully created user_preferences table');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in fixDatabaseSchema:', error);
+    return false;
+  }
+};
+
+// Add this function to check disclaimer status using direct SQL
+export const checkDisclaimerStatusDirect = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('No authenticated user found when checking disclaimer');
+      return false;
+    }
+    
+    // Use direct SQL to check disclaimer status
+    const { data, error } = await supabase.rpc('check_disclaimer_status', {
+      user_id_param: user.id
+    });
+    
+    if (error) {
+      console.error('Error checking disclaimer status:', error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error('Error in checkDisclaimerStatusDirect:', error);
     return false;
   }
 };

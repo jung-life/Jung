@@ -9,6 +9,7 @@ export const AuthContext = createContext({
   loading: true,
   isNewUser: false,
   setIsNewUser: (value: boolean) => {},
+  handleDisclaimerAccepted: () => {},
   signIn: async (email: string, password: string) => {},
   signOut: async () => {}
 });
@@ -129,6 +130,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const handleDisclaimerAccepted = () => {
+    console.log('Disclaimer accepted, updating isNewUser state');
+    setIsNewUser(false);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -136,6 +142,7 @@ export const AuthProvider = ({ children }) => {
       loading, 
       isNewUser,
       setIsNewUser,
+      handleDisclaimerAccepted,
       signIn,
       signOut
     }}>

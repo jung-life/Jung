@@ -44,6 +44,35 @@ export const RegisterScreen = () => {
     navigation.navigate('Landing');
   };
 
+  const saveUserProfile = async (userId: string, userData: { email: string, fullName?: string }) => {
+    try {
+      console.log('Saving user profile for:', userId);
+      
+      const profileData = {
+        user_id: userId,
+        email: userData.email,
+        full_name: userData.fullName || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .insert(profileData);
+        
+      if (error) {
+        console.error('Error saving user profile:', error);
+        return false;
+      }
+      
+      console.log('User profile saved successfully');
+      return true;
+    } catch (error) {
+      console.error('Unexpected error saving user profile:', error);
+      return false;
+    }
+  };
+
   const handleRegister = async () => {
     if (!hasConsented) {
       Alert.alert('Consent Required', 'You must consent to the Privacy Policy and Terms of Service to create an account.');
@@ -113,7 +142,9 @@ export const RegisterScreen = () => {
         email,
         password,
         options: {
-          data: { name },
+          data: {
+            full_name: name || null
+          },
           emailRedirectTo: 'yourapp://confirm-email',
         },
       });
@@ -123,20 +154,12 @@ export const RegisterScreen = () => {
         return;
       }
       
-      // If registration is successful and user is created
       if (data?.user) {
-        // Try to create user preferences immediately
-        // Note: This might not work if the user isn't fully authenticated yet
-        try {
-          // Store the user ID for later use
-          await AsyncStorage.setItem('pendingUserId', data.user.id);
-          
-          // Try to ensure user preferences exist
-          await ensureUserPreferences();
-        } catch (prefError) {
-          console.error('Error creating initial user preferences:', prefError);
-          // Continue anyway, we'll try again on login
-        }
+        // Save user profile data
+        await saveUserProfile(data.user.id, { 
+          email, 
+          fullName: name 
+        });
         
         // Check if email confirmation is required
         if (data.user.identities?.length === 0) {
