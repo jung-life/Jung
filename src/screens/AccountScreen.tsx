@@ -42,19 +42,13 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 
 type UserProfile = {
-  id: string;
-  user_id: string;
+  id?: string;
+  user_id?: string;
   email: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  is_premium: boolean;
-  notification_preferences: {
-    daily_reminders: boolean;
-    new_features: boolean;
-    insights: boolean;
-  } | null;
-  theme_preference: 'light' | 'dark' | 'system';
-  created_at: string;
+  username?: string | null;
+  avatar_url?: string | null;
+  created_at?: string;
+  [key: string]: any; // Allow any other properties
 };
 
 export const AccountScreen = () => {
@@ -76,11 +70,23 @@ export const AccountScreen = () => {
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('system');
   
   // Add this state variable near your other state declarations
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<{
+    full_name: string;
+    email: string;
+    username?: string;
+    avatar_url: string | null;
+    theme_preference: 'light' | 'dark' | 'system';
+    notification_preferences: {
+      daily_reminders: boolean;
+      new_features: boolean;
+      insights: boolean;
+    };
+  }>({
     full_name: '',
     email: '',
+    username: '',
     avatar_url: null,
-    theme_preference: 'system' as const,
+    theme_preference: 'system',
     notification_preferences: {
       daily_reminders: false,
       new_features: true,
@@ -98,12 +104,9 @@ export const AccountScreen = () => {
       setEmail(formState.email);
       setAvatarUrl(formState.avatar_url);
       setThemePreference(formState.theme_preference);
-      
-      if (formState.notification_preferences) {
-        setDailyReminders(formState.notification_preferences.daily_reminders);
-        setNewFeatures(formState.notification_preferences.new_features);
-        setInsights(formState.notification_preferences.insights);
-      }
+      setDailyReminders(formState.notification_preferences.daily_reminders);
+      setNewFeatures(formState.notification_preferences.new_features);
+      setInsights(formState.notification_preferences.insights);
     }
   }, [formState]);
   
@@ -111,152 +114,74 @@ export const AccountScreen = () => {
     try {
       setLoading(true);
       
-      // Get current user with full metadata
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.error('No authenticated user found');
-        return;
+        throw new Error('No authenticated user found');
       }
-      
-      console.log('Fetching profile for user ID:', user.id);
-      console.log('User metadata:', user.user_metadata);
-      
-      // Try to get profile from profiles table
+
+      // Fetch the profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .filter('user_id', 'eq', user.id)
-        .maybeSingle();
-      
+        .eq('user_id', user.id)
+        .single();
+
       if (error) {
-        console.error('Error fetching profile:', error);
+        throw error;
       }
-      
-      // If profile exists in database, use that
+
       if (data) {
         setProfile(data);
-        updateFormState(data);
+        setFormState({
+          full_name: data.full_name || user.user_metadata?.full_name || '',
+          email: data.email || user?.email || '',
+          username: data.username || user?.email?.split('@')[0] || '',
+          avatar_url: data.avatar_url,
+          theme_preference: data.theme_preference || 'system',
+          notification_preferences: {
+            daily_reminders: data.notification_preferences?.daily_reminders || false,
+            new_features: data.notification_preferences?.new_features || true,
+            insights: data.notification_preferences?.insights || true
+          }
+        });
+
+        if (data.avatar_url) {
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('avatars')
+            .getPublicUrl(data.avatar_url);
+          setAvatarUrl(publicUrlData.publicUrl);
+        }
       } else {
-        // Otherwise, create a profile using auth metadata
-        const newProfile: UserProfile = {
-          id: user.id,
-          user_id: user.id,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || null,
+        setFormState({
+          full_name: user.user_metadata?.full_name || '',
+          email: user?.email || '',
+          username: '',
           avatar_url: null,
-          is_premium: false,
+          theme_preference: 'system',
           notification_preferences: {
             daily_reminders: false,
             new_features: true,
             insights: true
-          },
-          theme_preference: 'system',
-          created_at: new Date().toISOString()
-        };
-        
-        // Save this profile to the database
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert(newProfile);
-          
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          Alert.alert('Error', 'Failed to create your profile. Please try again.');
-        } else {
-          setProfile(newProfile);
-          updateFormState(newProfile);
-        }
+          }
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'An unexpected error occurred while loading your profile.');
+      Alert.alert('Error', 'Failed to load profile.');
     } finally {
       setLoading(false);
     }
   };
   
-  const updateFormState = (profileData: any) => {
-    setFormState({
-      full_name: profileData.full_name || '',
-      email: profileData.email || '',
-      avatar_url: profileData.avatar_url || null,
-      theme_preference: profileData.theme_preference || 'system',
-      notification_preferences: profileData.notification_preferences || {
-        daily_reminders: false,
-        new_features: true,
-        insights: true
-      }
-    });
-    
-    // Also update avatar URL for display
-    if (profileData.avatar_url) {
-      setAvatarUrl(profileData.avatar_url);
-    }
-  };
-  
-  const handleSaveProfile = async () => {
-    try {
-      setSaving(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to update your profile');
-        return;
-      }
-      
-      const updates = {
-        id: user.id,
-        full_name: fullName.trim(),
-        notification_preferences: {
-          daily_reminders: dailyReminders,
-          new_features: newFeatures,
-          insights: insights
-        },
-        theme_preference: themePreference,
-        updated_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-        
-      if (error) {
-        throw error;
-      }
-      
-      Alert.alert('Success', 'Profile updated successfully');
-      
-      // Update local state
-      if (profile) {
-        setProfile({
-          ...profile,
-          full_name: fullName.trim(),
-          notification_preferences: {
-            daily_reminders: dailyReminders,
-            new_features: newFeatures,
-            insights: insights
-          },
-          theme_preference: themePreference
-        });
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-  
   const handlePickImage = async () => {
     try {
-      // Request permissions
+      // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow access to your photo library to upload a profile picture.');
+        Alert.alert('Permission Required', 'Please allow access to your photo library to upload an avatar.');
         return;
       }
       
@@ -265,165 +190,134 @@ export const AccountScreen = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
+        quality: 0.8,
       });
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        setUploadingImage(true);
-        
-        // Get file extension
-        const fileExtension = uri.split('.').pop();
-        const fileName = `${Date.now()}.${fileExtension}`;
-        const filePath = `avatars/${fileName}`;
-        
-        // Get the current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          throw new Error('No authenticated user found');
-        }
-        
-        // Convert image to blob
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, blob, {
-            contentType: 'image/jpeg',
-            upsert: true
-          });
-          
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        // Get public URL
-        const { data: urlData } = await supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-          
-        const publicUrl = urlData?.publicUrl;
-        
-        if (!publicUrl) {
-          throw new Error('Failed to get public URL for uploaded image');
-        }
-        
-        // Update profile with new avatar URL
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ avatar_url: publicUrl })
-          .eq('user_id', user.id);
-          
-        if (updateError) {
-          throw updateError;
-        }
-        
-        // Update local state
-        setAvatarUrl(publicUrl);
-        if (profile) {
-          setProfile({
-            ...profile,
-            avatar_url: publicUrl
-          });
-        }
-        
-        Alert.alert('Success', 'Profile picture updated successfully!');
+        await uploadAvatar(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      Alert.alert('Error', 'Failed to upload image. Please try again.');
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+  
+  const uploadAvatar = async (uri: string) => {
+    try {
+      setUploadingImage(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+        return;
+      }
+      
+      // Convert image to base64
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      // Create a unique file path
+      const fileExt = uri.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      // Upload the image to Supabase Storage
+      const { error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(filePath, blob);
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      // Update the profile with the new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          avatar_url: filePath,
+          updated_at: new Date().toISOString()
+        });
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Update the UI
+      setAvatarUrl(publicUrlData.publicUrl);
+      setFormState(prev => ({
+        ...prev,
+        avatar_url: filePath
+      }));
+      
+      Alert.alert('Success', 'Avatar uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      Alert.alert('Error', 'Failed to upload avatar. Please try again.');
     } finally {
       setUploadingImage(false);
     }
   };
   
-  const handleLogout = async () => {
+  const handleSaveProfile = async () => {
     try {
-      Alert.alert(
-        "Logout",
-        "Are you sure you want to logout?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          { 
-            text: "Logout", 
-            onPress: async () => {
-              try {
-                await supabase.auth.signOut();
-                // The auth state change will automatically redirect to Landing
-              } catch (error) {
-                console.error('Error signing out:', error);
-                Alert.alert('Error', 'Failed to sign out. Please try again.');
-              }
-            }
-          }
-        ]
-      );
+      setSaving(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+        return;
+      }
+      
+      // Prepare the profile data
+      const profileData = {
+        id: user.id,
+        full_name: fullName,
+        email: email,
+        avatar_url: formState.avatar_url,
+        theme_preference: themePreference,
+        notification_preferences: {
+          daily_reminders: dailyReminders,
+          new_features: newFeatures,
+          insights: insights
+        },
+        updated_at: new Date().toISOString()
+      };
+      
+      // Update the profile
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Update the local state
+      setProfile({
+        ...profile,
+        ...profileData
+      });
+      
+      Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
-      console.error('Error showing logout dialog:', error);
-    }
-  };
-  
-  const handleSubscribe = async () => {
-    try {
-      // You can implement in-app purchase logic here
-      Alert.alert(
-        "Premium Subscription",
-        "Would you like to upgrade to premium for $4.99/month?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Subscribe",
-            onPress: async () => {
-              // Placeholder for subscription logic
-              Alert.alert(
-                "Coming Soon",
-                "Premium subscriptions will be available soon. Thank you for your interest!"
-              );
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error in subscription process:', error);
-      Alert.alert('Error', 'Failed to process subscription. Please try again later.');
-    }
-  };
-  
-  const handleManageSubscription = async () => {
-    try {
-      // Placeholder for subscription management
-      Alert.alert(
-        "Manage Subscription",
-        "Your premium subscription is active. Would you like to manage your subscription?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Manage",
-            onPress: () => {
-              // Placeholder for subscription management logic
-              Alert.alert(
-                "Coming Soon",
-                "Subscription management will be available soon. Thank you for your patience!"
-              );
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error managing subscription:', error);
-      Alert.alert('Error', 'Failed to manage subscription. Please try again later.');
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
   
@@ -435,42 +329,191 @@ export const AccountScreen = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error('No authenticated user found');
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
         return;
       }
       
-      // Get user data from Supabase
-      const { data: userData, error: userError } = await supabase
-        .from('user_preferences')
+      // Fetch user data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
         
-      const { data: conversationsData, error: convError } = await supabase
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+      
+      // Fetch conversations
+      const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
         .select('*')
         .eq('user_id', user.id);
         
-      if (userError || convError) {
-        throw new Error('Failed to fetch your data');
+      if (conversationsError) {
+        throw conversationsError;
       }
       
-      // Create export file
+      // Prepare the export data
       const exportData = {
-        user_preferences: userData,
-        conversations: conversationsData,
-        exported_at: new Date().toISOString()
+        profile: profileData || {},
+        conversations: conversationsData || [],
+        exportDate: new Date().toISOString()
       };
       
-      const fileUri = FileSystem.documentDirectory + 'jung_data_export.json';
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
+      // Convert to JSON
+      const jsonData = JSON.stringify(exportData, null, 2);
+      
+      // Save to a temporary file
+      const fileUri = `${FileSystem.documentDirectory}jung-data-export.json`;
+      await FileSystem.writeAsStringAsync(fileUri, jsonData);
       
       // Share the file
-      await Sharing.shareAsync(fileUri);
-    } catch (error: any) {
-      Alert.alert('Export Failed', error.message || 'An unknown error occurred');
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/json',
+        dialogTitle: 'Export Your Jung Data',
+        UTI: 'public.json'
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      Alert.alert('Error', 'Failed to export data. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleDeleteAccount = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+        return;
+      }
+      
+      // Delete the user's data
+      await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+        
+      // Delete the user's conversations
+      await supabase
+        .from('conversations')
+        .delete()
+        .eq('user_id', user.id);
+        
+      // Delete the user's account
+      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Sign out
+      await supabase.auth.signOut();
+      
+      // Navigate to the landing screen
+      navigation.navigate('Landing');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+  
+  const handleSubscribe = async () => {
+    try {
+      Alert.alert(
+        "Premium Subscription",
+        "Would you like to upgrade to a premium subscription?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Subscribe",
+            onPress: () => {
+              // Placeholder for subscription logic
+              Alert.alert(
+                "Coming Soon",
+                "Premium subscriptions will be available soon. Thank you for your interest!"
+              );
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error initiating subscription:', error);
+      Alert.alert('Error', 'Failed to initiate subscription process. Please try again later.');
+    }
+  };
+  
+  const handleCreateProfile = async () => {
+    try {
+      setSaving(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+        return;
+      }
+      
+      // Create a new profile
+      const { data: insertData, error } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: user.id,
+            email: user.email,
+            full_name: fullName,
+            theme_preference: 'system',
+            notification_preferences: {
+              daily_reminders: false,
+              new_features: true,
+              insights: true
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select();
+        
+      if (error) {
+        console.error('Error creating profile:', error);
+        Alert.alert('Error', 'Failed to create profile. Please try again.');
+      } else {
+        console.log('Profile created successfully:', insertData);
+        if (insertData && insertData.length > 0) {
+          setProfile(insertData[0]);
+          Alert.alert('Success', 'Profile created successfully!');
+        }
+      }
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      Alert.alert('Error', 'Failed to create profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigation.navigate('Landing'); // Navigate to an existing screen
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
   
@@ -480,309 +523,264 @@ export const AccountScreen = () => {
         <SymbolicBackground opacity={0.03} />
         
         {/* Header */}
-        <View style={tw`flex-row items-center p-4 border-b border-gray-200`}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
+        <View style={tw`flex-row items-center justify-between px-4 py-2`}>
+          <TouchableOpacity
             style={tw`p-2`}
+            onPress={() => navigation.goBack()}
           >
-            <ArrowLeft size={24} color="#333" />
+            <ArrowLeft size={24} color="#4A3B78" weight="bold" />
           </TouchableOpacity>
           
-          <Text style={tw`ml-2 text-xl font-semibold`}>
-            Account
-          </Text>
+          <Text style={tw`text-xl font-bold text-jung-purple`}>My Account</Text>
+          
+          <View style={tw`w-10`} />
         </View>
         
         {loading ? (
           <View style={tw`flex-1 justify-center items-center`}>
-            <ActivityIndicator size="large" color="#6b46c1" />
-            <Text style={tw`mt-4 text-gray-600`}>Loading your profile...</Text>
+            <ActivityIndicator size="large" color="#4A3B78" />
+            <Text style={tw`mt-4 text-jung-purple`}>Loading your profile...</Text>
           </View>
         ) : (
-          <ScrollView style={tw`flex-1 p-4`}>
-            {/* Profile Section */}
-            <View style={tw`bg-white rounded-xl p-5 shadow-sm mb-6`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <User size={24} color="#6b46c1" weight="duotone" />
-                <Text style={tw`ml-2 text-lg font-semibold text-gray-800`}>
-                  Profile
-                </Text>
-              </View>
-              
-              {/* Profile Picture */}
-              <View style={tw`items-center mb-6`}>
+          <ScrollView 
+            style={tw`flex-1 px-4`}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={tw`pb-10`}
+          >
+            {/* Profile Card */}
+            <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6 mt-2`}>
+              <View style={tw`items-center mb-4`}>
                 <View style={tw`relative`}>
-                  {uploadingImage ? (
-                    <View style={tw`w-24 h-24 rounded-full bg-gray-200 justify-center items-center`}>
-                      <ActivityIndicator size="small" color="#6b46c1" />
-                    </View>
-                  ) : avatarUrl ? (
+                  {avatarUrl ? (
                     <Image
-                      source={{ 
-                        uri: supabase.storage.from('avatars').getPublicUrl(avatarUrl).data.publicUrl 
-                      }}
+                      source={{ uri: avatarUrl }}
                       style={tw`w-24 h-24 rounded-full bg-gray-200`}
                     />
                   ) : (
-                    <View style={tw`w-24 h-24 rounded-full bg-gray-200 justify-center items-center`}>
-                      <User size={40} color="#9CA3AF" weight="duotone" />
+                    <View style={tw`w-24 h-24 rounded-full bg-gray-200 items-center justify-center`}>
+                      <Text style={tw`text-3xl text-gray-400`}>
+                        {profile?.username ? profile.username.charAt(0).toUpperCase() : '?'}
+                      </Text>
                     </View>
                   )}
-                  
-                  <TouchableOpacity 
-                    style={tw`absolute bottom-0 right-0 bg-jung-purple w-8 h-8 rounded-full justify-center items-center border-2 border-white`}
+                  <TouchableOpacity
+                    style={tw`absolute bottom-0 right-0 bg-jung-purple w-8 h-8 rounded-full items-center justify-center border-2 border-white`}
                     onPress={handlePickImage}
                   >
-                    <Camera size={16} color="white" weight="bold" />
+                    <Camera size={16} color="#FFFFFF" weight="bold" />
                   </TouchableOpacity>
                 </View>
                 
-                <TouchableOpacity 
-                  style={tw`mt-2`}
-                  onPress={handlePickImage}
-                >
-                  <Text style={tw`text-jung-purple text-sm font-medium`}>
-                    Change Profile Picture
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Name */}
-              <View style={tw`mb-4`}>
-                <Text style={tw`text-gray-700 mb-1`}>Name</Text>
-                <TextInput
-                  style={tw`bg-gray-100 rounded-lg p-3 text-gray-800`}
-                  placeholder="Enter your name"
-                  value={fullName}
-                  onChangeText={setFullName}
-                />
-              </View>
-              
-              {/* Email */}
-              <View style={tw`mb-4`}>
-                <Text style={tw`text-gray-700 mb-1`}>Email</Text>
-                <TextInput
-                  style={tw`bg-gray-100 rounded-lg p-3 text-gray-500`}
-                  value={email}
-                  editable={false}
-                />
-                <Text style={tw`text-xs text-gray-500 mt-1`}>
-                  Email cannot be changed. Contact support for assistance.
+                <Text style={tw`mt-4 text-xl font-bold text-gray-800`}>
+                  {profile?.full_name || email?.split('@')[0] || 'User'}
                 </Text>
-              </View>
-              
-              {/* Premium Status */}
-              <View style={tw`bg-gray-100 rounded-lg p-4 mb-2`}>
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View style={tw`flex-row items-center`}>
-                    <Crown size={20} color={profile?.is_premium ? "#FFD700" : "#9CA3AF"} weight="fill" />
-                    <Text style={tw`ml-2 font-medium ${profile?.is_premium ? "text-gray-800" : "text-gray-600"}`}>
-                      {profile?.is_premium ? "Premium Member" : "Free Account"}
-                    </Text>
-                  </View>
-                  
-                  {profile?.is_premium ? (
-                    <TouchableOpacity 
-                      style={tw`bg-gray-200 rounded-lg py-1 px-3`}
-                      onPress={handleManageSubscription}
-                    >
-                      <Text style={tw`text-sm text-gray-700`}>Manage</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity 
-                      style={tw`bg-jung-purple rounded-lg py-1 px-3`}
-                      onPress={handleSubscribe}
-                    >
-                      <Text style={tw`text-sm text-white`}>Upgrade</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            </View>
-            
-            {/* Subscription Section */}
-            <View style={tw`bg-white rounded-xl p-5 shadow-sm mb-6`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <CreditCard size={24} color="#6b46c1" weight="duotone" />
-                <Text style={tw`ml-2 text-lg font-semibold text-gray-800`}>
-                  Subscription
-                </Text>
-              </View>
-              
-              <View>
+                <Text style={tw`text-gray-500`}>{email}</Text>
+                
+                {/* Premium Badge or Upgrade Button */}
                 {profile?.is_premium ? (
-                  <View>
-                    <View style={tw`flex-row items-center mb-4 bg-purple-50 p-3 rounded-lg`}>
-                      <CheckCircle size={20} color="#6b46c1" weight="fill" />
-                      <Text style={tw`ml-2 text-gray-800`}>Premium features unlocked</Text>
-                    </View>
-                    
-                    <TouchableOpacity 
-                      style={tw`bg-gray-100 rounded-lg py-3 px-4 items-center`}
-                      onPress={handleManageSubscription}
-                    >
-                      <Text style={tw`text-gray-700 font-medium`}>Manage Subscription</Text>
-                    </TouchableOpacity>
+                  <View style={tw`flex-row items-center mt-2 bg-yellow-100 px-3 py-1 rounded-full`}>
+                    <Crown size={16} color="#D4AF37" weight="fill" />
+                    <Text style={tw`ml-1 text-yellow-800 font-medium text-sm`}>Premium Member</Text>
                   </View>
                 ) : (
-                  <View>
-                    <Text style={tw`text-gray-700 mb-4`}>
-                      Upgrade to premium to unlock all features:
-                    </Text>
-                    
-                    <View style={tw`mb-4`}>
-                      <View style={tw`flex-row items-center mb-2`}>
-                        <Sparkle size={18} color="#6b46c1" weight="fill" />
-                        <Text style={tw`ml-2 text-gray-700`}>Access to all premium avatars</Text>
-                      </View>
-                      
-                      <View style={tw`flex-row items-center mb-2`}>
-                        <Sparkle size={18} color="#6b46c1" weight="fill" />
-                        <Text style={tw`ml-2 text-gray-700`}>Unlimited conversations</Text>
-                      </View>
-                      
-                      <View style={tw`flex-row items-center mb-2`}>
-                        <Sparkle size={18} color="#6b46c1" weight="fill" />
-                        <Text style={tw`ml-2 text-gray-700`}>Advanced insights and analysis</Text>
-                      </View>
-                    </View>
-                    
-                    <TouchableOpacity 
-                      style={tw`bg-jung-purple rounded-lg py-3 px-4 items-center`}
-                      onPress={handleSubscribe}
-                    >
-                      <Text style={tw`text-white font-medium`}>Upgrade to Premium</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity
+                    style={[
+                      tw`flex-row items-center justify-center rounded-xl py-3 px-4 shadow-md mt-2`,
+                      {
+                        backgroundImage: 'linear-gradient(to right, #FF0080, #FF8C00, #FFD700, #00FF00, #00BFFF, #8A2BE2)',
+                        backgroundSize: '200% 100%',
+                        animation: 'rainbow-animation 6s linear infinite'
+                      }
+                    ]}
+                    onPress={handleSubscribe}
+                  >
+                    <Crown size={20} color="#ffffff" weight="fill" />
+                    <Text style={tw`ml-2 text-white font-bold`}>Upgrade to Premium</Text>
+                  </TouchableOpacity>
                 )}
+              </View>
+              
+              {/* Profile Form */}
+              <View style={tw`mt-6`}>
+                <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Profile Information</Text>
+                
+                <View style={tw`mb-4`}>
+                  <Text style={tw`text-gray-600 mb-1`}>Full Name</Text>
+                  <TextInput
+                    style={tw`bg-gray-100 rounded-lg px-4 py-3 text-gray-800`}
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="Enter your full name"
+                  />
+                </View>
+                
+                <View style={tw`mb-4`}>
+                  <Text style={tw`text-gray-600 mb-1`}>Email</Text>
+                  <TextInput
+                    style={tw`bg-gray-100 rounded-lg px-4 py-3 text-gray-800`}
+                    value={email}
+                    editable={false}
+                    placeholder="Your email address"
+                  />
+                </View>
+                
+                <TouchableOpacity
+                  style={tw`bg-jung-purple rounded-xl py-3 px-4 items-center mt-2`}
+                  onPress={handleSaveProfile}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={tw`text-white font-bold`}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
             
-            {/* Notification Preferences */}
-            <View style={tw`bg-white rounded-xl p-5 shadow-sm mb-6`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <Bell size={24} color="#6b46c1" weight="duotone" />
-                <Text style={tw`ml-2 text-lg font-semibold text-gray-800`}>
-                  Notifications
-                </Text>
+            {/* Preferences Card */}
+            <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
+              <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Preferences</Text>
+              
+              {/* Theme Preference */}
+              <View style={tw`mb-6`}>
+                <Text style={tw`text-gray-600 mb-2`}>Theme</Text>
+                
+                <View style={tw`flex-row justify-between`}>
+                  <TouchableOpacity
+                    style={[
+                      tw`flex-1 items-center p-3 rounded-lg mr-2`,
+                      themePreference === 'light' ? tw`bg-jung-purple` : tw`bg-gray-100`
+                    ]}
+                    onPress={() => setThemePreference('light')}
+                  >
+                    <Text style={[
+                      tw`font-medium`,
+                      themePreference === 'light' ? tw`text-white` : tw`text-gray-700`
+                    ]}>Light</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      tw`flex-1 items-center p-3 rounded-lg mr-2`,
+                      themePreference === 'dark' ? tw`bg-jung-purple` : tw`bg-gray-100`
+                    ]}
+                    onPress={() => setThemePreference('dark')}
+                  >
+                    <Text style={[
+                      tw`font-medium`,
+                      themePreference === 'dark' ? tw`text-white` : tw`text-gray-700`
+                    ]}>Dark</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      tw`flex-1 items-center p-3 rounded-lg`,
+                      themePreference === 'system' ? tw`bg-jung-purple` : tw`bg-gray-100`
+                    ]}
+                    onPress={() => setThemePreference('system')}
+                  >
+                    <Text style={[
+                      tw`font-medium`,
+                      themePreference === 'system' ? tw`text-white` : tw`text-gray-700`
+                    ]}>System</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               
+              {/* Notifications */}
+              <Text style={tw`text-gray-600 mb-2`}>Notifications</Text>
+              
               <View style={tw`mb-3`}>
-                <View style={tw`flex-row justify-between items-center mb-1`}>
-                  <Text style={tw`text-gray-700`}>Daily Reminders</Text>
+                <View style={tw`flex-row items-center justify-between`}>
+                  <View style={tw`flex-row items-center`}>
+                    <Bell size={20} color="#4A3B78" />
+                    <Text style={tw`ml-2 text-gray-700`}>Daily Reminders</Text>
+                  </View>
                   <Switch
                     value={dailyReminders}
                     onValueChange={setDailyReminders}
-                    trackColor={{ false: '#D1D5DB', true: '#8B5CF6' }}
-                    thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : dailyReminders ? '#6b46c1' : '#F3F4F6'}
+                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
+                    thumbColor={dailyReminders ? '#4A3B78' : '#F9FAFB'}
                   />
                 </View>
-                <Text style={tw`text-gray-500 text-sm`}>
-                  Receive daily reminders to reflect and journal
-                </Text>
               </View>
               
               <View style={tw`mb-3`}>
-                <View style={tw`flex-row justify-between items-center mb-1`}>
-                  <Text style={tw`text-gray-700`}>New Features</Text>
+                <View style={tw`flex-row items-center justify-between`}>
+                  <View style={tw`flex-row items-center`}>
+                    <Sparkle size={20} color="#4A3B78" />
+                    <Text style={tw`ml-2 text-gray-700`}>New Features</Text>
+                  </View>
                   <Switch
                     value={newFeatures}
                     onValueChange={setNewFeatures}
-                    trackColor={{ false: '#D1D5DB', true: '#8B5CF6' }}
-                    thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : newFeatures ? '#6b46c1' : '#F3F4F6'}
+                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
+                    thumbColor={newFeatures ? '#4A3B78' : '#F9FAFB'}
                   />
                 </View>
-                <Text style={tw`text-gray-500 text-sm`}>
-                  Get notified about new app features and updates
-                </Text>
               </View>
               
               <View style={tw`mb-3`}>
-                <View style={tw`flex-row justify-between items-center mb-1`}>
-                  <Text style={tw`text-gray-700`}>Insights</Text>
+                <View style={tw`flex-row items-center justify-between`}>
+                  <View style={tw`flex-row items-center`}>
+                    <Gear size={20} color="#4A3B78" />
+                    <Text style={tw`ml-2 text-gray-700`}>Insights</Text>
+                  </View>
                   <Switch
                     value={insights}
                     onValueChange={setInsights}
-                    trackColor={{ false: '#D1D5DB', true: '#8B5CF6' }}
-                    thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : insights ? '#6b46c1' : '#F3F4F6'}
+                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
+                    thumbColor={insights ? '#4A3B78' : '#F9FAFB'}
                   />
                 </View>
-                <Text style={tw`text-gray-500 text-sm`}>
-                  Receive personalized Jungian insights based on your reflections
-                </Text>
               </View>
             </View>
             
-            {/* Theme Preferences */}
-            <View style={tw`bg-white rounded-xl p-5 shadow-sm mb-6`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <Gear size={24} color="#6b46c1" weight="duotone" />
-                <Text style={tw`ml-2 text-lg font-semibold text-gray-800`}>
-                  Appearance
-                </Text>
-              </View>
-              
-              <View style={tw`mb-2`}>
-                <Text style={tw`text-gray-700 mb-3`}>Theme</Text>
-                
-                <TouchableOpacity 
-                  style={tw`flex-row items-center p-3 rounded-lg ${themePreference === 'light' ? 'bg-purple-100' : 'bg-gray-100'} mb-2`}
-                  onPress={() => setThemePreference('light')}
-                >
-                  <View style={tw`w-6 h-6 rounded-full border-2 border-gray-400 mr-3 items-center justify-center`}>
-                    {themePreference === 'light' && (
-                      <View style={tw`w-3 h-3 rounded-full bg-jung-purple`} />
-                    )}
-                  </View>
-                  <Text style={tw`text-gray-800`}>Light</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={tw`flex-row items-center p-3 rounded-lg ${themePreference === 'dark' ? 'bg-purple-100' : 'bg-gray-100'} mb-2`}
-                  onPress={() => setThemePreference('dark')}
-                >
-                  <View style={tw`w-6 h-6 rounded-full border-2 border-gray-400 mr-3 items-center justify-center`}>
-                    {themePreference === 'dark' && (
-                      <View style={tw`w-3 h-3 rounded-full bg-jung-purple`} />
-                    )}
-                  </View>
-                  <Text style={tw`text-gray-800`}>Dark</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={tw`flex-row items-center p-3 rounded-lg ${themePreference === 'system' ? 'bg-purple-100' : 'bg-gray-100'} mb-2`}
-                  onPress={() => setThemePreference('system')}
-                >
-                  <View style={tw`w-6 h-6 rounded-full border-2 border-gray-400 mr-3 items-center justify-center`}>
-                    {themePreference === 'system' && (
-                      <View style={tw`w-3 h-3 rounded-full bg-jung-purple`} />
-                    )}
-                  </View>
-                  <Text style={tw`text-gray-800`}>System</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            {/* Your Data */}
-            <View style={tw`mt-6 border-t border-gray-200 pt-6`}>
-              <Text style={tw`text-lg font-bold mb-4`}>Your Data</Text>
+            {/* Data Management Card */}
+            <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
+              <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Data Management</Text>
               
               <TouchableOpacity 
-                style={tw`flex-row items-center py-3 border-b border-gray-200`}
+                style={tw`flex-row items-center py-3`}
                 onPress={handleExportData}
               >
-                <Download size={24} color="#4a5568" />
-                <Text style={tw`ml-3 text-base`}>Export My Data</Text>
+                <Download size={20} color="#4A3B78" />
+                <Text style={tw`ml-3 text-gray-700`}>Export My Data</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={tw`flex-row items-center py-3 border-b border-gray-200`}
+                style={tw`flex-row items-center py-3`}
                 onPress={() => setShowDeleteConfirm(true)}
               >
-                <Trash size={24} color="#e53e3e" />
-                <Text style={tw`ml-3 text-base text-red-600`}>Delete My Account & Data</Text>
+                <Trash size={20} color="#E53E3E" />
+                <Text style={tw`ml-3 text-red-600`}>Delete My Account</Text>
               </TouchableOpacity>
             </View>
+            
+            {/* Create Profile Button (if needed) */}
+            {!profile?.id && (
+              <TouchableOpacity
+                style={tw`bg-jung-purple rounded-xl py-4 px-6 shadow-md mb-6`}
+                onPress={handleCreateProfile}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={tw`text-white font-bold text-center text-lg`}>Create Profile</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            
+            {/* Sign Out Button */}
+            <TouchableOpacity
+              style={tw`flex-row items-center justify-center py-3 mb-10`}
+              onPress={handleSignOut}
+            >
+              <SignOut size={20} color="#4A3B78" />
+              <Text style={tw`ml-2 text-jung-purple font-medium`}>Sign Out</Text>
+            </TouchableOpacity>
           </ScrollView>
         )}
       </SafeAreaView>

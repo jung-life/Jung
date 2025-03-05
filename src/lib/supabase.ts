@@ -185,17 +185,14 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
 };
 
 // Current disclaimer version
-export const CURRENT_DISCLAIMER_VERSION = 2;
+export const CURRENT_DISCLAIMER_VERSION = 1;
 
-// Check if user has seen the current version of the disclaimer
+// Function to check if user has seen disclaimer
 export const checkDisclaimerStatus = async () => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) {
-      console.log('No authenticated user found');
-      return false;
-    }
+    if (!user) return false;
     
     console.log('Checking disclaimer status for user:', user.id);
     
@@ -206,44 +203,13 @@ export const checkDisclaimerStatus = async () => {
       .single();
       
     if (error) {
-      console.error('Error fetching user preferences:', error);
+      console.error('Error checking disclaimer status:', error);
       return false;
     }
     
-    if (!data) {
-      console.log('No user preferences found, creating default entry');
-      // Create default entry
-      const { error: insertError } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          has_seen_disclaimer: false,
-          disclaimer_version: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (insertError) {
-        console.error('Error creating user preferences:', insertError);
-      }
-      
-      return false;
-    }
-    
-    // Check if user has seen the current version of the disclaimer
-    const hasSeenCurrentVersion = 
-      data.has_seen_disclaimer === true && 
-      data.disclaimer_version === CURRENT_DISCLAIMER_VERSION;
-    
-    console.log('User has seen disclaimer:', data.has_seen_disclaimer);
-    console.log('User disclaimer version:', data.disclaimer_version);
-    console.log('Current disclaimer version:', CURRENT_DISCLAIMER_VERSION);
-    console.log('Has seen current version:', hasSeenCurrentVersion);
-    
-    return hasSeenCurrentVersion;
+    return data?.has_seen_disclaimer && data?.disclaimer_version >= CURRENT_DISCLAIMER_VERSION;
   } catch (error) {
-    console.error('Error checking disclaimer status:', error);
-    // Default to showing disclaimer on error
+    console.error('Exception checking disclaimer status:', error);
     return false;
   }
 };
@@ -577,4 +543,12 @@ export const checkDisclaimerStatusDirect = async () => {
     console.error('Error in checkDisclaimerStatusDirect:', error);
     return false;
   }
+};
+
+// Add this helper function to check auth state
+export const checkAuthState = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  console.log('Current auth state:', data?.session ? 'Authenticated' : 'Not authenticated');
+  if (error) console.error('Auth state error:', error);
+  return data;
 };

@@ -39,6 +39,8 @@ export const RegisterScreen = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [hasConsented, setHasConsented] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   const handleBackToLanding = () => {
     navigation.navigate('Landing');
@@ -143,7 +145,7 @@ export const RegisterScreen = () => {
         password,
         options: {
           data: {
-            full_name: name || null
+            full_name: `${firstName} ${lastName}`
           },
           emailRedirectTo: 'yourapp://confirm-email',
         },
@@ -158,7 +160,7 @@ export const RegisterScreen = () => {
         // Save user profile data
         await saveUserProfile(data.user.id, { 
           email, 
-          fullName: name 
+          fullName: `${firstName} ${lastName}` 
         });
         
         // Check if email confirmation is required

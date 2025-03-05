@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -27,6 +27,11 @@ export const DisclaimerScreen = () => {
   const { setIsNewUser, handleDisclaimerAccepted } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const routes = navigation.getState()?.routes || [];
+    console.log('Available routes:', routes.map(route => route.name));
+  }, []);
+
   const handleAccept = async () => {
     try {
       console.log('Accept button pressed, healthDisclaimerChecked:', healthDisclaimerChecked);
@@ -43,6 +48,56 @@ export const DisclaimerScreen = () => {
       }
       
       console.log('Updating preferences for user:', user.id, '(type:', typeof user.id, ')');
+      
+      // First check if user_preferences table exists
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('count(*)', { count: 'exact', head: true });
+          
+        console.log('user_preferences table check:', data, error);
+        
+        if (error && error.code === '42P01') {
+          console.log('user_preferences table does not exist, creating it');
+          // Table doesn't exist, create it
+          await supabase.rpc('execute_sql', {
+            sql_query: `
+              CREATE TABLE IF NOT EXISTS public.user_preferences (
+                id SERIAL PRIMARY KEY,
+                user_id UUID REFERENCES auth.users(id) NOT NULL,
+                has_seen_disclaimer BOOLEAN DEFAULT false,
+                disclaimer_version INTEGER DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+              );
+              
+              CREATE INDEX IF NOT EXISTS user_preferences_user_id_idx ON public.user_preferences(user_id);
+              
+              ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+              
+              CREATE POLICY "Users can view their own preferences"
+                ON public.user_preferences
+                FOR SELECT
+                USING (auth.uid()::text = user_id::text);
+                
+              CREATE POLICY "Users can update their own preferences"
+                ON public.user_preferences
+                FOR UPDATE
+                USING (auth.uid()::text = user_id::text);
+                
+              CREATE POLICY "Users can insert their own preferences"
+                ON public.user_preferences
+                FOR INSERT
+                WITH CHECK (auth.uid()::text = user_id::text);
+                
+              GRANT ALL ON public.user_preferences TO authenticated;
+              GRANT ALL ON public.user_preferences TO service_role;
+            `
+          });
+        }
+      } catch (e) {
+        console.error('Error checking/creating user_preferences table:', e);
+      }
       
       // Try direct SQL approach to avoid type issues
       const { error } = await supabase.rpc('execute_sql', {
@@ -71,35 +126,10 @@ export const DisclaimerScreen = () => {
         handleDisclaimerAccepted();
       }
       
-      // Try different navigation approaches with better error handling
-      try {
-        console.log('Attempting to navigate to main app screens');
-        
-        // First, try simple navigation instead of reset
-        navigation.navigate('Landing');
-        console.log('Navigation to Landing successful');
-      } catch (navError) {
-        console.error('Navigation error:', navError);
-        
-        // Use a type-safe array of screens
-        const availableScreens: (keyof RootStackParamList)[] = ['Landing', 'Home', 'Profile', 'Settings'];
-        
-        // Define a function to handle navigation with proper typing
-        const navigateToScreen = (screenName: keyof RootStackParamList) => {
-          (navigation.navigate as any)(screenName);
-        };
-        
-        for (const screen of availableScreens) {
-          try {
-            console.log(`Trying to navigate to ${screen}`);
-            navigateToScreen(screen);
-            console.log(`Successfully navigated to ${screen}`);
-            break;
-          } catch (e) {
-            console.log(`Failed to navigate to ${screen}`);
-          }
-        }
-      }
+      // Navigate to a screen that definitely exists in your navigation stack
+      // Replace 'Landing' with a screen name that exists in your app
+      navigation.navigate('Home'); // Or try 'Auth', 'Profile', etc.
+      
     } catch (error) {
       console.error('Error accepting disclaimer:', error);
       Alert.alert('Error', 'Failed to save your acceptance. Please try again.');
