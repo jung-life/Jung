@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -34,13 +34,11 @@ export const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [hasConsented, setHasConsented] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
 
   const handleBackToLanding = () => {
     navigation.navigate('Landing');
@@ -48,8 +46,6 @@ export const RegisterScreen = () => {
 
   const saveUserProfile = async (userId: string, userData: { email: string, fullName?: string }) => {
     try {
-      console.log('Saving user profile for:', userId);
-      
       const profileData = {
         user_id: userId,
         email: userData.email,
@@ -64,15 +60,27 @@ export const RegisterScreen = () => {
         
       if (error) {
         console.error('Error saving user profile:', error);
+        Alert.alert('Profile Creation Failed', 'An error occurred while saving your profile.');
         return false;
       }
       
       console.log('User profile saved successfully');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unexpected error saving user profile:', error);
+      Alert.alert('Profile Creation Failed', 'An unexpected error occurred.');
       return false;
     }
+  };
+
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    return /\S+@\S+\.\S+/.test(email);
+  };
+
+  // Password validation function
+  const isValidPassword = (password: string) => {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password);
   };
 
   const handleRegister = async () => {
@@ -80,98 +88,67 @@ export const RegisterScreen = () => {
       Alert.alert('Consent Required', 'You must consent to the Privacy Policy and Terms of Service to create an account.');
       return;
     }
-    // Reset messages
-    setErrorMessage('');
-    setSuccessMessage('');
-    
-    // Validate inputs
-    if (!name.trim()) {
-      setErrorMessage('Please enter your name.');
+    if (!fullName.trim()) {
+      Alert.alert('Validation Error', 'Full name is required.');
       return;
     }
-
-    if (!email.trim()) {
-      setErrorMessage('Please enter your email address.');
+    if (!isValidEmail(email)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
       return;
     }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    if (!password.trim()) {
-      setErrorMessage('Please enter a password.');
-      return;
-    }
-
-    // Enhanced password policy
-    if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters long.');
-      return;
-    }
-
-    // Check for password complexity
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
-      setErrorMessage(
-        'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.'
-      );
-      return;
-    }
-
-    if (!confirmPassword.trim()) {
-      setErrorMessage('Please confirm your password.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match. Please try again.');
+    if (!isValidPassword(password)) {
+      Alert.alert('Validation Error', 'Password must be at least 8 characters long and include uppercase, lowercase, numeric, and special characters.');
       return;
     }
 
     setLoading(true);
-    
+    setErrorMessage('');
+
     try {
-      // Register the user with Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      const response = await supabase.auth.signUp({
+        email: email,
+        password: password,
         options: {
-          data: {
-            full_name: `${firstName} ${lastName}`
-          },
           emailRedirectTo: 'yourapp://confirm-email',
-        },
+          data: {
+            full_name: fullName
+          }
+        }
       });
-      
-      if (error) {
-        setErrorMessage(error.message);
+
+      if (response.error) {
+        Alert.alert('Registration Failed', response.error.message);
+        setLoading(false);
         return;
       }
-      
-      if (data?.user) {
-        // Save user profile data
-        await saveUserProfile(data.user.id, { 
+
+      if (response.data.user) {
+        const profileSaved = await saveUserProfile(response.data.user.id, { 
           email, 
-          fullName: `${firstName} ${lastName}` 
+          fullName: fullName 
         });
         
-        // Check if email confirmation is required
-        if (data.user.identities?.length === 0) {
-          setErrorMessage('This email is already registered');
-        } else if (data.user.confirmed_at) {
-          // User is already confirmed (rare case)
+        if (!profileSaved) {
+          return;
+        }
+        
+        if (response.data.user.confirmed_at) {
           setSuccessMessage('Registration successful! You can now log in.');
-          setTimeout(() => navigation.navigate('Landing'), 2000);
+          // Log in the user after successful registration
+          const { error: signInError } = await supabase.auth.signIn({
+            email: email,
+            password: password,
+          });
+
+          if (signInError) {
+            Alert.alert('Login Failed', 'An error occurred while logging in. Please try again.');
+            setLoading(false);
+            return;
+          }
+
+          // Navigate to the ReflectionsPage
+          setTimeout(() => navigation.navigate('ReflectionsPage'), 2000);
         } else {
-          // Email confirmation required
           setSuccessMessage(
             'Registration successful! Please check your email to confirm your account.'
           );
@@ -179,8 +156,7 @@ export const RegisterScreen = () => {
       }
     } catch (error: any) {
       console.error('Unexpected error during registration:', error);
-      setErrorMessage('An unexpected error occurred. Please try again.');
-    } finally {
+      Alert.alert('Registration Failed', 'An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
@@ -211,6 +187,20 @@ export const RegisterScreen = () => {
                 <Typography variant="subtitle" style={tw`mb-6 text-center text-jung-purple`}>
                   Join the Journey of Self-Discovery
                 </Typography>
+                
+                <View style={tw`mb-4`}>
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <Envelope size={20} color="#8A2BE2" weight="duotone" />
+                    <Text style={tw`ml-2 text-gray-600`}>Full Name</Text>
+                  </View>
+                  <TextInput
+                    style={tw`border border-gray-300 rounded-lg p-3 bg-white`}
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    autoCapitalize="words"
+                  />
+                </View>
                 
                 <View style={tw`mb-4`}>
                   <View style={tw`flex-row items-center mb-2`}>
@@ -283,7 +273,7 @@ export const RegisterScreen = () => {
                 </View>
                 
                 <TouchableOpacity
-                  style={tw`bg-jung-purple rounded-lg py-4 flex-row items-center justify-center ${loading ? 'opacity-70' : ''}`}
+                  style={tw`bg-jung-purple rounded-lg py-4 flex-row items-center justify-center ${loading ? 'opacity-70' : ''} shadow-md border border-jung-purple-light`}
                   onPress={handleRegister}
                   disabled={loading}
                 >
@@ -291,8 +281,8 @@ export const RegisterScreen = () => {
                     <ActivityIndicator size="small" color="white" />
                   ) : (
                     <>
-                      <UserPlus size={24} color="white" weight="fill" style={tw`mr-2`} />
-                      <Text style={tw`text-white font-bold text-lg`}>Register</Text>
+                      <UserPlus size={24} color={tw.color('jung-animus')} weight="fill" style={tw`mr-2`} />
+                      <Text style={tw`text-jung-animus font-bold text-lg`}>Join the Adventure!</Text>
                     </>
                   )}
                 </TouchableOpacity>

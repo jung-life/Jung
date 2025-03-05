@@ -1,4 +1,6 @@
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ConversationScreen } from '../screens/ConversationScreen';
+import { ReflectionsPage } from '../screens/ReflectionsPage';
 
 export type RootStackParamList = {
   Landing: undefined;
@@ -14,6 +16,8 @@ export type RootStackParamList = {
   SecurityScreen: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  ConversationScreen: undefined;
+  ReflectionsPage: undefined;
 };
 
 // Add these types for navigation
