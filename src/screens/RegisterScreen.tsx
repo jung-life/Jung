@@ -135,7 +135,7 @@ export const RegisterScreen = () => {
         if (response.data.user.confirmed_at) {
           setSuccessMessage('Registration successful! You can now log in.');
           // Log in the user after successful registration
-          const { error: signInError } = await supabase.auth.signIn({
+          const { error: signInError } = await supabase.auth.signInWithPassword({
             email: email,
             password: password,
           });
@@ -146,8 +146,8 @@ export const RegisterScreen = () => {
             return;
           }
 
-          // Navigate to the ReflectionsPage
-          setTimeout(() => navigation.navigate('ReflectionsPage'), 2000);
+          // Navigate to the PostLoginScreen
+          setTimeout(() => navigation.navigate('PostLoginScreen'), 2000);
         } else {
           setSuccessMessage(
             'Registration successful! Please check your email to confirm your account.'

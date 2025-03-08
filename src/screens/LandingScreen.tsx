@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Animated
+  Animated,
+  Image
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -67,7 +68,7 @@ const AnimatedJungTitle = () => {
   }, []);
   
   const letters = ['J', 'U', 'N', 'G'];
-  const colors = ['#1A1A1A', '#0047AB', '#8B0000', '#2E8B57'];
+  const colors = ['#A8DADC', '#457B9D', '#1D3557', '#2C3E50'];
   
   return (
     <View style={tw`flex-row mb-2`}>
@@ -203,6 +204,12 @@ export const LandingScreen = () => {
         <View style={tw`items-center mb-8 mt-12`}>
           <AnimatedJungTitle />
           
+          <Image
+            source={require('../../assets/shiva-sakthi-logo.webp')}
+            style={tw`w-48 h-48 mt-4`}
+            resizeMode="contain"
+          />
+          
           <View style={tw`flex-row justify-center flex-wrap px-6 mb-2`}>
             <Text style={tw`text-base italic font-medium`}>
               <Text style={{ color: '#1A1A1A', fontWeight: 'bold' }}>J</Text>
@@ -225,28 +232,7 @@ export const LandingScreen = () => {
               unconscious, and grow through reflection.
             </Text>
             
-            <View style={styles.quoteContainer}>
-              <AnimatedText
-                text={quotes[currentQuoteIndex].text}
-                onComplete={handleQuoteComplete}
-                style={styles.quote}
-              />
-              <Text style={styles.author}>— {quotes[currentQuoteIndex].author}</Text>
-            </View>
-            
             <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.nextButton,
-                  !isQuoteComplete && styles.disabledButton,
-                ]}
-                onPress={handleNextQuote}
-                disabled={!isQuoteComplete}
-              >
-                <Text style={styles.buttonText}>Next Quote</Text>
-              </TouchableOpacity>
-              
               <TouchableOpacity
                 style={[styles.button, styles.loginButton]}
                 onPress={() => setShowLoginForm(true)}
@@ -405,9 +391,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 8,
     alignItems: 'center',
-  },
-  nextButton: {
-    backgroundColor: '#4a5568',
   },
   loginButton: {
     backgroundColor: '#0284c7',

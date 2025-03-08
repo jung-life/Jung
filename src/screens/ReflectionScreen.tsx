@@ -75,7 +75,7 @@ export const ReflectionScreen = () => {
           >
             <ArrowLeft size={24} color="#333" />
           </TouchableOpacity>
-          <Typography variant="h2" style={tw`ml-2`}>Daily Reflection</Typography>
+          <Typography variant="title" style={tw`ml-2`}>Daily Reflection</Typography>
         </View>
         
         <KeyboardAvoidingView 
