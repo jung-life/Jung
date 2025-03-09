@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Jung AI",
-    "slug": "jung-ai",
+    "name": "jung",
+    "slug": "jung",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/JungAppLogoAlpha.webp",
@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.jungai",
       "associatedDomains": [
-        "applinks:yourapp.page.link"
+        "applinks:auth.expo.io"
       ],
       "config": {
         "googleSignIn": {
@@ -40,10 +40,10 @@
           "data": [
             {
               "scheme": "https",
-              "host": "*.yourapp.page.link"
+              "host": "auth.expo.io"
             },
             {
-              "scheme": "yourapp"
+              "scheme": "jung"
             }
           ],
           "category": [
@@ -57,9 +57,10 @@
       ]
     },
     "web": {
-      "favicon": "./assets/JungAppLogoAlpha.png"
+      "favicon": "./assets/JungAppLogoAlpha.png",
+      "bundler": "metro"
     },
-    "scheme": "yourapp",
+    "scheme": "jung",
     "extra": {
       "eas": {
         "projectId": "your-project-id"

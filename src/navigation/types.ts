@@ -6,6 +6,7 @@ import { PostLoginScreen } from '../screens/PostLoginScreen';
 
 export type RootStackParamList = {
   Landing: undefined;
+  Login: undefined;
   Auth: undefined;
   Register: undefined;
   Home: undefined;
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   ReflectionsPage: undefined;
   DailyMotivationScreen: undefined;
   PostLoginScreen: undefined;
+  Account: undefined;
 };
 
 // Add these types for navigation

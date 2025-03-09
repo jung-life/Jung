@@ -194,6 +194,11 @@ export const LandingScreen = () => {
     }
   };
 
+  const handleBeginJourney = () => {
+    // Navigate to the Login screen
+    navigation.navigate('Login');
+  };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -235,7 +240,7 @@ export const LandingScreen = () => {
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.loginButton]}
-                onPress={() => setShowLoginForm(true)}
+                onPress={handleBeginJourney}
               >
                 <View style={tw`flex-row items-center justify-center`}>
                   <Spiral size={24} color="white" weight="duotone" style={tw`mr-2`} />
