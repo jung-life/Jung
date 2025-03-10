@@ -25,7 +25,8 @@
       },
       "infoPlist": {
         "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library."
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -54,7 +55,8 @@
       ],
       "permissions": [
         "WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/JungAppLogoAlpha.png",
@@ -68,7 +70,8 @@
     },
     "owner": "infinitydata.ai",
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin"
     ]
   }
 }

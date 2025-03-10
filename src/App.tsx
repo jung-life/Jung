@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -12,10 +12,11 @@ import { AccountScreen } from './screens/AccountScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
 import PostLoginScreen from './screens/PostLoginScreen';
 import { AuthProvider } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
+import { SupabaseProvider, useSupabase } from './contexts/SupabaseContext';
 import * as Linking from 'expo-linking';
-import AuthCallback from './auth/callback';
 import { AuthUrlHandler } from './components/AuthUrlHandler';
+import { navigationRef } from './navigation/navigationService';
+import * as NavigationService from './navigation/navigationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,87 +35,51 @@ const linking = {
   },
 };
 
-export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const AppNavigator = () => {
+  const { isLoggedIn, loading } = useSupabase();
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        setIsAuthenticated(!!data.session);
-        setIsLoading(false);
-      } catch (e) {
-        console.error('Unexpected error checking auth:', e);
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    // Set up auth state listener with better error handling
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        setIsAuthenticated(!!session);
-        
-        // If user just signed in, navigate to post-login screen
-        if (event === 'SIGNED_IN' && session) {
-          // You could trigger navigation here if needed
-        }
-      }
-    );
-
-    return () => {
-      // Clean up the subscription
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
-  }, []);
-
-  // Use the AuthCallback component to handle deep links
-  // This is in addition to the URL handler you already have
-  AuthCallback();
-
-  if (isLoading) {
+  if (loading) {
     return <LoadingScreen />;
   }
+ 
+  return (
+    <NavigationContainer ref={navigationRef} linking={linking}>
+      <Stack.Navigator 
+        initialRouteName="Landing"
+        screenOptions={{ 
+          headerShown: false,
+          animation: 'fade'
+        }}
+      >
+        {isLoggedIn ? (
+          // Authenticated user routes
+          <>
+            <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="AccountScreen" component={AccountScreen} />
+          </>
+        ) : (
+          // Non-authenticated user routes
+          <>
+            <Stack.Screen name="Landing" component={LandingScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
+export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AuthUrlHandler />
-        <NavigationContainer linking={linking}>
-          <Stack.Navigator 
-            initialRouteName="Landing"
-            screenOptions={{ 
-              headerShown: false,
-              animation: 'fade'
-            }}
-          >
-            {isAuthenticated ? (
-              // Authenticated user routes
-              <>
-                <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
-                <Stack.Screen name="Home" component={HomeScreen} />
-                <Stack.Screen name="AccountScreen" component={AccountScreen} />
-              </>
-            ) : (
-              // Non-authenticated user routes
-              <>
-                <Stack.Screen name="Landing" component={LandingScreen} />
-                <Stack.Screen name="Login" component={LoginScreen} />
-                <Stack.Screen name="Register" component={RegisterScreen} />
-              </>
-            )}
-          </Stack.Navigator>
-        </NavigationContainer>
-        <StatusBar style="auto" />
+        <SupabaseProvider>
+          <AuthUrlHandler />
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </SupabaseProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

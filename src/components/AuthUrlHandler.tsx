@@ -2,43 +2,48 @@ import React, { useEffect } from 'react';
 import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
 import { Alert } from 'react-native';
+import * as NavigationService from '../navigation/navigationService';
 
 export function AuthUrlHandler() {
   useEffect(() => {
     const handleDeepLink = async (url: string) => {
       console.log('Deep link detected:', url);
-      if (!url.includes('#') && !url.includes('?')) {
-        console.log('No parameters found in URL');
-        return;
-      }
       
       try {
-        let params: URLSearchParams;
+        // Extract parameters from URL
+        let params: URLSearchParams | null = null;
         
-        // Handle both hash and query parameters
+        // Handle different URL formats
         if (url.includes('#')) {
           params = new URLSearchParams(url.split('#')[1]);
-        } else {
+        } else if (url.includes('?')) {
           params = new URLSearchParams(url.split('?')[1]);
+        }
+        
+        if (!params) {
+          console.log('No parameters found in URL');
+          return;
         }
         
         console.log('Parsed params:', Object.fromEntries(params.entries()));
         
-        // Check for error parameters first
-        if (params.has('error') || params.has('error_description')) {
-          console.error('Auth error:', params.get('error'), params.get('error_description'));
-          Alert.alert('Authentication Error', params.get('error_description') || 'Failed to authenticate');
+        // Check for error parameters
+        if (params.has('error')) {
+          console.error('Auth error:', params.get('error'));
+          Alert.alert('Authentication Error', params.get('error') || 'Failed to authenticate');
           return;
         }
         
-        if (params.has('access_token') && params.has('refresh_token')) {
-          console.log('Found auth tokens in URL, setting session');
+        // Handle access token
+        if (params.has('access_token')) {
+          console.log('Found access token in URL, setting session...');
+          
           const session = {
             access_token: params.get('access_token')!,
-            refresh_token: params.get('refresh_token')!,
+            refresh_token: params.get('refresh_token') || '',
           };
           
-          const { error } = await supabase.auth.setSession(session);
+          const { data, error } = await supabase.auth.setSession(session);
           
           if (error) {
             console.error('Error setting session:', error);
@@ -46,13 +51,10 @@ export function AuthUrlHandler() {
             return;
           }
           
-          const { data } = await supabase.auth.getUser();
-          console.log('User authenticated:', data.user?.id);
+          console.log('Session set successfully:', data);
           
-          // Refresh the session to ensure we have the latest data
-          await supabase.auth.refreshSession();
-        } else {
-          console.log('Required tokens not found in URL');
+          // Force navigation to PostLoginScreen
+          NavigationService.reset('PostLoginScreen');
         }
       } catch (error) {
         console.error('Error processing auth redirect:', error);
