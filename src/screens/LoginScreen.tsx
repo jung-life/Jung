@@ -8,8 +8,7 @@ import {
   TextInput, 
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
-  Linking
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -26,7 +25,6 @@ import Constants from 'expo-constants';
 import { useSupabase } from '../contexts/SupabaseContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
-import * as NavigationService from '../navigation/navigationService';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -81,84 +79,50 @@ export const LoginScreen = () => {
       setLoading(true);
       console.log('Starting Google login flow...');
       
-      // Use a more reliable redirect URL
-      const redirectUrl = Linking.createURL('auth/callback');
-      console.log('Using redirect URL:', redirectUrl);
-      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: AuthSession.makeRedirectUri({ useProxy: true }),
           skipBrowserRedirect: false,
         }
       });
-      
-      console.log('OAuth response:', data);
-      
+
       if (error) {
         console.error('Supabase OAuth error:', error);
         Alert.alert('Login Error', error.message);
         return;
       }
-      
+
       if (data?.url) {
         console.log('Opening auth URL:', data.url);
-        
-        // Use WebBrowser with the same redirect URL
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          redirectUrl
+          AuthSession.makeRedirectUri({ useProxy: true })
         );
-        
-        console.log('WebBrowser result type:', result.type);
-        
+
+        console.log('WebBrowser result:', result);
+
         if (result.type === 'success') {
-          console.log('Success URL:', result.url);
-          
-          // Extract tokens from URL
           const url = result.url;
-          let params = new URLSearchParams();
-          
-          if (url.includes('#')) {
-            params = new URLSearchParams(url.split('#')[1]);
-          } else if (url.includes('?')) {
-            params = new URLSearchParams(url.split('?')[1]);
-          }
-          
-          console.log('Extracted params:', Object.fromEntries(params.entries()));
+          const params = new URLSearchParams(url.split('#')[1]);
           
           if (params.has('access_token')) {
-            console.log('Found access token, setting session manually');
-            
             const session = {
               access_token: params.get('access_token')!,
               refresh_token: params.get('refresh_token') || '',
             };
+
+            const { error } = await supabase.auth.setSession(session);
             
-            // Set session manually
-            const { data, error } = await supabase.auth.setSession(session);
-            
-            if (error) {
-              console.error('Error setting session:', error);
-            } else {
-              console.log('Session set successfully:', data);
-              
-              // Force navigation
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'PostLoginScreen' }]
-              });
-            }
-          } else {
-            console.log('No access token found in URL');
+            if (error) throw error;
+
+            navigation.navigate('Home');
           }
-        } else {
-          console.log('Authentication was dismissed or failed');
         }
       }
     } catch (error) {
       console.error('Google login error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -173,43 +137,6 @@ export const LoginScreen = () => {
       Alert.alert('Error', 'An error occurred during Apple login.');
     }
   };
-
-  // Add this effect to handle auth state changes
-  useEffect(() => {
-    // Set up an auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change event:', event);
-      
-      if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in, navigating to PostLoginScreen');
-        
-        // Use navigation service for more reliable navigation
-        NavigationService.reset('PostLoginScreen');
-        
-        // Or use the navigation prop directly
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'PostLoginScreen' }]
-        });
-      }
-    });
-
-    // Check if already signed in on component mount
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        console.log('Existing session found, navigating to PostLoginScreen');
-        NavigationService.reset('PostLoginScreen');
-      }
-    };
-    
-    checkSession();
-
-    // Cleanup subscription
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigation]);
 
   return (
     <GradientBackground>

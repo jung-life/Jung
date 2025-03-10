@@ -459,4 +459,6 @@ const styles = StyleSheet.create({
     color: '#0284c7',
     fontSize: 14,
   },
-}); 
+});
+
+export default LandingScreen; 

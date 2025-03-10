@@ -21,5 +21,9 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { session, loading };
+  return { 
+    session, 
+    loading, 
+    isNewUser: false // or your logic
+  };
 }; 

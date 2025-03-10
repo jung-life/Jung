@@ -142,28 +142,36 @@ export const AuthScreen = () => {
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
-      const response = await promptAsync();
       
-      if (response?.type === 'success') {
-        const { access_token } = response.params;
-
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'jung://auth/callback'
-          }
-        });
-
-        if (error) throw error;
-        console.log('Signed in:', data);
-
-        if (data?.url) {
-          await WebBrowser.openBrowserAsync(data.url);
+      // Method 1: Using Supabase's built-in OAuth flow
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: Linking.createURL('auth/callback'),
+        }
+      });
+  
+      if (error) throw error;
+      
+      if (data?.url) {
+        // Open the URL in a browser
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          Linking.createURL('auth/callback')
+        );
+        
+        if (result.type === 'success') {
+          // The user was redirected back to your app
+          const { url } = result;
+          // Extract tokens from URL
+          const params = new URLSearchParams(url.split('#')[1]);
+          // Refresh session
+          await supabase.auth.getSession();
         }
       }
-    } catch (error: any) {
-      console.error('Error signing in with Google:', error.message);
-      alert('Error signing in with Google');
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      Alert.alert('Error', 'Failed to sign in with Google');
     } finally {
       setGoogleLoading(false);
     }
