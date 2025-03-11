@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { AuthNavigator } from './AuthNavigator';
 import { DisclaimerScreen } from '../screens/DisclaimerScreen';
 import { ConversationsScreen } from '../screens/ConversationsScreen';
 import { ChatScreen } from '../screens/ChatScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import { supabase } from '../lib/supabase';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { RootStackParamList } from './types';
 import { useAuth } from '../hooks/useAuth';
+import { RegisterScreen } from '../screens/RegisterScreen';
+import LandingScreen from '../screens/LandingScreen';
+import { HomeScreen } from '../screens/HomeScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -49,7 +51,8 @@ const checkDisclaimerStatus = async () => {
 
 const AppNavigator = () => {
   const [hasSeenDisclaimer, setHasSeenDisclaimer] = useState<boolean | null>(null);
-  const { user, initialized, isNewUser } = useAuth();
+  const { session, isNewUser } = useAuth();
+  const user = session?.user; // Access user from session
   
   useEffect(() => {
     const checkStatus = async () => {
@@ -65,20 +68,15 @@ const AppNavigator = () => {
     return <LoadingScreen />;
   }
   
-  if (!initialized) {
+  if (!session) {
     return null; // Or a loading screen
   }
-
-  console.log('Available screens in navigator:', 
-    Stack.Navigator.name ? 
-    Object.keys(Stack.Navigator.screens || {}) : 
-    'Unable to determine screens');
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
         <>
-          <Stack.Screen name="Landing" component={LandingScreen} />
+          <Stack.Screen name="LandingScreen" component={LandingScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
       ) : isNewUser ? (

@@ -1,13 +1,9 @@
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ConversationScreen } from '../screens/ConversationScreen';
-import { ReflectionsPage } from '../screens/ReflectionsPage';
-import { DailyMotivationScreen } from '../screens/DailyMotivationScreen';
-import { PostLoginScreen } from '../screens/PostLoginScreen';
+import DailyMotivationScreen from '../screens/DailyMotivationScreen';
 
 export type RootStackParamList = {
-  Landing: undefined;
+  LandingScreen: undefined;
   Login: undefined;
-  Auth: undefined;
   Register: undefined;
   Home: undefined;
   Conversations: { refresh?: boolean };
@@ -24,6 +20,7 @@ export type RootStackParamList = {
   DailyMotivationScreen: undefined;
   PostLoginScreen: undefined;
   Account: undefined;
+  Auth: undefined;
 };
 
 // Add these types for navigation

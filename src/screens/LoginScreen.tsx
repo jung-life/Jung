@@ -56,6 +56,24 @@ export const LoginScreen = () => {
                         Constants.expoConfig?.extra?.googleClientId ||
                         '';
   
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in, navigating to PostLoginScreen');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'PostLoginScreen' }]
+        });
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigation]);
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
@@ -283,3 +301,5 @@ export const LoginScreen = () => {
     </GradientBackground>
   );
 };
+
+export default LoginScreen;

@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
-import { LandingScreen } from './screens/LandingScreen';
+import LandingScreen from './screens/LandingScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -17,6 +17,7 @@ import * as Linking from 'expo-linking';
 import { AuthUrlHandler } from './components/AuthUrlHandler';
 import { navigationRef } from './navigation/navigationService';
 import * as NavigationService from './navigation/navigationService';
+import AppNavigator from './navigation/AppNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,7 +26,7 @@ const linking = {
   prefixes: [Linking.createURL('/')],
   config: {
     screens: {
-      Landing: 'landing',
+      LandingScreen: 'landing',
       Login: 'login',
       Register: 'register',
       PostLoginScreen: 'post-login',
@@ -33,42 +34,6 @@ const linking = {
       Account: 'account',
     },
   },
-};
-
-const AppNavigator = () => {
-  const { isLoggedIn, loading } = useSupabase();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
- 
-  return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator 
-        initialRouteName="Landing"
-        screenOptions={{ 
-          headerShown: false,
-          animation: 'fade'
-        }}
-      >
-        {isLoggedIn ? (
-          // Authenticated user routes
-          <>
-            <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="AccountScreen" component={AccountScreen} />
-          </>
-        ) : (
-          // Non-authenticated user routes
-          <>
-            <Stack.Screen name="Landing" component={LandingScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
 };
 
 export default function App() {
