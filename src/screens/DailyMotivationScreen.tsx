@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, ActivityIndicator } from 'react-native';
-import { useLLM } from '../hooks/useLLM'; // Assuming you have a hook for LLM interactions
+import useLLM from '../hooks/useLLM'; // Assuming you have a hook for LLM interactions
 
 const DailyMotivationScreen = () => {
   const [quote, setQuote] = useState<string>('');
