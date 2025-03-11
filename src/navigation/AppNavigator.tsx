@@ -24,9 +24,10 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="Login" 
+        initialRouteName="LandingScreen"
         screenOptions={{ headerShown: false }}
       >
+        <Stack.Screen name="LandingScreen" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
