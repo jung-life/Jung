@@ -9,7 +9,6 @@ import { useAuth } from '../hooks/useAuth';
 import { RootStackParamList } from './types';
 import { ConversationsScreen } from '../screens/ConversationsScreen';
 import { ChatScreen } from '../screens/ChatScreen';
-import ConversationScreen from '../screens/ConversationScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import PostLoginScreen from '../screens/PostLoginScreen';
@@ -32,11 +31,10 @@ const AppNavigator = () => {
         <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
-        <Stack.Screen name="Conversations" component={ConversationsScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="Account" component={AccountScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="ConversationScreen" component={ConversationScreen} />
+        <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} />
         <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} />
       </Stack.Navigator>
     </NavigationContainer>

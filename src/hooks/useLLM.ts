@@ -10,7 +10,7 @@ const useLLM = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'gpt-4', // or 'gpt-3.5-turbo' if preferred
@@ -23,6 +23,12 @@ const useLLM = () => {
       });
 
       const data = await response.json();
+      
+      // Check if response contains valid data
+      if (!data?.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response from OpenAI API');
+      }
+      
       return data.choices[0].message.content; // Extract the generated quote
     } catch (error) {
       console.error('Error generating quote:', error);

@@ -24,7 +24,7 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SensualContainer } from '../components/SensualContainer';
 import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
-import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf, User } from 'phosphor-react-native';
+import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf, User, ArrowLeft } from 'phosphor-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { generateAIResponse } from '../lib/api';
@@ -48,7 +48,7 @@ type Analysis = {
   created_at: string;
 };
 
-type ConversationsScreenRouteProp = RouteProp<RootStackParamList, 'Conversations'>;
+type ConversationsScreenRouteProp = RouteProp<RootStackParamList, 'ConversationsScreen'>;
 
 export const ConversationsScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -650,39 +650,36 @@ ${conversationText}`;
     return titles[randomIndex];
   };
 
+  useEffect(() => {
+    console.log('ConversationsScreen mounted');
+    console.log('Route params:', route.params);
+    console.log('Loading state:', loading);
+    console.log('Conversations:', conversations);
+  }, []);
+
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        <View style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200/50`}>
-          <TouchableJung
-            onPress={handleLogout}
-            style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-gold`}
+        <View style={tw`flex-row items-center mb-6 p-4`}>
+          <TouchableOpacity 
+            style={tw`p-2`}
+            onPress={() => navigation.goBack()}
           >
-            <SignOut size={24} color="#D4AF37" weight="light" />
-          </TouchableJung>
-          
-          <Typography variant="title">Reflections</Typography>
-          
-          <View style={tw`flex-row`}>
-            <TouchableJung
-              onPress={() => navigation.navigate('AccountScreen')}
-              style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima mr-2`}
-            >
-              <User size={24} color="#6b46c1" />
-            </TouchableJung>
-            
-            <TouchableJung
-              onPress={handleNewConversation}
-              style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-anima`}
-            >
-              <PencilLine size={24} color="#E6C3C3" weight="light" />
-            </TouchableJung>
-          </View>
+            <ArrowLeft size={24} color="#4A3B78" />
+          </TouchableOpacity>
+          <Text style={tw`ml-4 text-2xl font-bold text-jung-deep`}>
+            Conversations
+          </Text>
         </View>
         
-        {conversations.length === 0 && !loading ? (
+        {loading ? (
+          <View style={tw`flex-1 justify-center items-center`}>
+            <ActivityIndicator size="large" color="#4A3B78" />
+            <Text style={tw`mt-4 text-jung-purple`}>Loading conversations...</Text>
+          </View>
+        ) : conversations.length === 0 ? (
           <View style={tw`flex-1 justify-center items-center p-5`}>
             <Text style={tw`text-xl font-bold text-gray-900 mb-2`}>No conversations yet</Text>
             <Text style={tw`text-base text-gray-600 text-center mb-6`}>

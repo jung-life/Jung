@@ -419,7 +419,7 @@ export const AccountScreen = () => {
       await supabase.auth.signOut();
       
       // Navigate to the landing screen
-      navigation.navigate('Landing');
+      navigation.navigate('LandingScreen');
     } catch (error) {
       console.error('Error deleting account:', error);
       Alert.alert('Error', 'Failed to delete account. Please try again.');
@@ -511,7 +511,7 @@ export const AccountScreen = () => {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      navigation.navigate('Landing'); // Navigate to an existing screen
+      navigation.navigate('LandingScreen'); // Navigate to an existing screen
     } catch (error) {
       console.error('Error signing out:', error);
     }

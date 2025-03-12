@@ -26,6 +26,12 @@ module.exports = {
         // Background - soft, inviting
         'jung-bg': '#F9F7F4',
         'jung-text': '#333333',
+        
+        // Primary purple
+        'jung-purple': '#4A3B78',
+        
+        // Light purple
+        'jung-purple-light': '#9D94BC',
       },
     },
   },

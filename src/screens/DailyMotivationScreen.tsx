@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Button, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackNavigationProp } from '../navigation/types';
 import useLLM from '../hooks/useLLM'; // Assuming you have a hook for LLM interactions
+import { ArrowLeft } from 'phosphor-react-native';
 
 const DailyMotivationScreen = () => {
+  const navigation = useNavigation<RootStackNavigationProp>();
   const [quote, setQuote] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const { generateQuote } = useLLM(); // Hook to interact with the LLM
@@ -21,6 +25,7 @@ const DailyMotivationScreen = () => {
       setQuote(generatedQuote);
     } catch (error) {
       console.error('Error fetching quote:', error);
+      Alert.alert('Error', 'Failed to fetch a motivational quote. Please try again.');
       setQuote('Failed to fetch a motivational quote. Please try again.');
     } finally {
       setLoading(false);
@@ -28,11 +33,20 @@ const DailyMotivationScreen = () => {
   };
 
   useEffect(() => {
+    console.log('Currently on DailyMotivationScreen');
     fetchMotivationalQuote();
   }, []);
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <ArrowLeft size={24} color="#4A3B78" />
+      </TouchableOpacity>
+
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
@@ -55,6 +69,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    padding: 10,
   },
   quoteText: {
     fontSize: 18,

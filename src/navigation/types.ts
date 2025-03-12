@@ -6,7 +6,6 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
-  Conversations: { refresh?: boolean };
   Chat: { conversationId: string };
   Disclaimer: undefined;
   Settings: undefined;
@@ -21,6 +20,7 @@ export type RootStackParamList = {
   PostLoginScreen: undefined;
   Account: undefined;
   Auth: undefined;
+  ConversationsScreen: { refresh?: boolean };
 };
 
 // Add these types for navigation

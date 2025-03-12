@@ -201,7 +201,7 @@ export const AuthScreen = () => {
   };
 
   const handleBackToLanding = () => {
-    navigation.navigate('Landing');
+    navigation.navigate('LandingScreen');
   };
 
   return (

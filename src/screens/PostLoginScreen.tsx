@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import tw from '../lib/tailwind';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import { ChatCircleDots, Brain, Sparkle } from 'phosphor-react-native';
+import tw from '../lib/tailwind';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -11,19 +12,31 @@ const PostLoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
   return (
-    <View style={tw`flex-1 justify-center items-center bg-white`}>
-      <Text style={tw`text-xl font-bold text-jung-purple mb-8`}>Choose Your Path</Text>
+    <View style={tw`flex-1 justify-center items-center bg-jung-bg p-6`}>
+      <Text style={tw`text-2xl font-bold text-jung-deep mb-8`}>Choose Your Path</Text>
+      
+      {/* Conversations Button */}
       <TouchableOpacity
-        style={tw`bg-jung-purple rounded-lg py-4 px-8 mb-4`}
-        onPress={() => navigation.navigate('ConversationScreen')}
+        style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+        onPress={() => navigation.navigate('ConversationsScreen')}
       >
-        <Text style={tw`text-white font-bold text-lg`}>Go to Conversations</Text>
+        <ChatCircleDots size={28} color="#4A3B78" weight="fill" />
+        <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>
+          Start a Conversation
+        </Text>
+        <Sparkle size={20} color="#4A3B78" weight="fill" style={tw`ml-auto`} />
       </TouchableOpacity>
+
+      {/* Motivation Button */}
       <TouchableOpacity
-        style={tw`bg-jung-animus rounded-lg py-4 px-8`}
+        style={tw`bg-jung-anima-light rounded-xl p-6 w-full flex-row items-center shadow-sm`}
         onPress={() => navigation.navigate('DailyMotivationScreen')}
       >
-        <Text style={tw`text-white font-bold text-lg`}>Get Daily Motivation</Text>
+        <Brain size={28} color="#E6C3C3" weight="fill" />
+        <Text style={tw`ml-4 text-jung-anima text-lg font-semibold`}>
+          Daily Motivation
+        </Text>
+        <Sparkle size={20} color="#E6C3C3" weight="fill" style={tw`ml-auto`} />
       </TouchableOpacity>
     </View>
   );
