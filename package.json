@@ -48,7 +48,8 @@
     "react-native-svg": "^15.11.2",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
-    "twrnc": "^4.6.1"
+    "twrnc": "^4.6.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

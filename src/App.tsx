@@ -18,6 +18,8 @@ import { AuthUrlHandler } from './components/AuthUrlHandler';
 import { navigationRef } from './navigation/navigationService';
 import * as NavigationService from './navigation/navigationService';
 import AppNavigator from './navigation/AppNavigator';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,14 +40,22 @@ const linking = {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <SupabaseProvider>
-          <AuthUrlHandler />
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </SupabaseProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <SupabaseProvider>
+            <AuthUrlHandler />
+            <AppNavigator />
+            <StatusBar style="auto" />
+          </SupabaseProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+}); 
