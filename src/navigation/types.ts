@@ -6,7 +6,11 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
-  Chat: { conversationId: string };
+  Chat: { 
+    conversationId: string;
+    avatarId?: string;
+    title?: string;
+  };
   Disclaimer: undefined;
   Settings: undefined;
   Profile: undefined;
@@ -14,7 +18,6 @@ export type RootStackParamList = {
   SecurityScreen: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
-  ConversationScreen: undefined;
   ReflectionsPage: undefined;
   DailyMotivationScreen: undefined;
   PostLoginScreen: undefined;

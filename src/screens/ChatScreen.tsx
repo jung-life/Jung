@@ -45,7 +45,7 @@ type Conversation = {
 export const ChatScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<ChatScreenRouteProp>();
-  const { conversationId } = route.params;
+  const { conversationId, avatarId, title } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -54,8 +54,8 @@ export const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   
-  // Get avatar details for the header
-  const avatarDetails = availableAvatars.find(a => a.id === conversation?.avatar_id) || availableAvatars[0];
+  // Use the avatarId in your chat interface
+  const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
   
   // Fetch conversation details including the avatar_id and title
   const fetchConversation = async () => {
@@ -291,11 +291,11 @@ export const ChatScreen = () => {
           </TouchableOpacity>
           
           <SimpleAvatar 
-            avatarId={conversation?.avatar_id || 'jung'} 
+            avatarId={avatar.id} 
             size={80} 
           />
           <Text style={tw`mt-2 text-lg font-medium`}>
-            {avatarDetails.name}
+            {avatar.name}
           </Text>
           <Text style={tw`text-sm text-gray-500`}>
             {conversation?.title || 'New Conversation'}
@@ -332,7 +332,7 @@ export const ChatScreen = () => {
               ListEmptyComponent={
                 <View style={tw`flex-1 justify-center items-center p-8`}>
                   <Text style={tw`text-lg text-gray-500 text-center`}>
-                    Start a conversation with {avatarDetails.name}
+                    Start a conversation with {avatar.name}
                   </Text>
                 </View>
               }

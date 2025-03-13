@@ -252,6 +252,31 @@ export const ConversationsScreen = () => {
   };
 
   const handleAnalyzeChat = async (conversationId: string, title: string) => {
+    Alert.alert(
+      'Analyze Conversation',
+      'What would you like to do?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Read Analysis',
+          onPress: () => showAnalysis(conversationId, title)
+        },
+        {
+          text: 'Export Analysis',
+          onPress: () => handleExportAnalysis(conversationId)
+        },
+        {
+          text: 'Save Analysis',
+          onPress: () => handleSaveAnalysis(conversationId)
+        }
+      ]
+    );
+  };
+
+  const showAnalysis = async (conversationId: string, title: string) => {
     try {
       setAnalyzing(conversationId);
       
@@ -334,31 +359,93 @@ export const ConversationsScreen = () => {
       setCurrentConversationTitle(title);
       setShowAnalysisModal(true);
     } catch (error) {
-      console.error('Error analyzing conversation:', error);
-      Alert.alert('Error', 'Failed to analyze conversation');
+      console.error('Error showing analysis:', error);
+      Alert.alert('Error', 'Failed to show analysis');
+    } finally {
+      setAnalyzing(null);
+    }
+  };
+
+  const handleExportAnalysis = async (conversationId: string) => {
+    try {
+      setAnalyzing(conversationId);
+      
+      // Show confirmation dialog before proceeding
+      const shouldProceed = await new Promise((resolve) => {
+        Alert.alert(
+          'Export Analysis',
+          'Are you sure you want to export this analysis?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                setAnalyzing(null);
+                setShowAnalysisModal(false);
+                resolve(false);
+              }
+            },
+            {
+              text: 'Export',
+              onPress: () => resolve(true)
+            }
+          ]
+        );
+      });
+      
+      if (!shouldProceed) {
+        return;
+      }
+      
+      // Fetch analysis if not already cached
+      if (!analysesCache[conversationId]) {
+        await showAnalysis(conversationId, '');
+      }
+      
+      // Export the analysis
+      await handleShareAnalysis();
+      
+    } catch (error) {
+      console.error('Error exporting analysis:', error);
+      Alert.alert('Error', 'Failed to export analysis');
+    } finally {
+      setAnalyzing(null);
+    }
+  };
+
+  const handleSaveAnalysis = async (conversationId: string) => {
+    try {
+      setAnalyzing(conversationId);
+      
+      // Fetch analysis if not already cached
+      if (!analysesCache[conversationId]) {
+        await showAnalysis(conversationId, '');
+      }
+      
+      // Save the analysis
+      await handleCopyAnalysis();
+      Alert.alert('Success', 'Analysis saved to clipboard');
+      
+    } catch (error) {
+      console.error('Error saving analysis:', error);
+      Alert.alert('Error', 'Failed to save analysis');
     } finally {
       setAnalyzing(null);
     }
   };
 
   const handleShareAnalysis = async () => {
-    if (!currentAnalysis) return;
-    
     try {
-      const fileName = `Jung_Analysis_${new Date().toISOString().split('T')[0]}.txt`;
-      const filePath = `${FileSystem.documentDirectory}${fileName}`;
+      if (!currentAnalysis) return;
       
-      // Write analysis to file
-      await FileSystem.writeAsStringAsync(filePath, currentAnalysis.content);
-      
-      // Share file
-      await Sharing.shareAsync(filePath, {
-        mimeType: 'text/plain',
-        dialogTitle: 'Share Conversation Analysis',
+      // Share directly as text
+      await Share.share({
+        message: currentAnalysis.content,
+        title: 'Jung Analysis'
       });
     } catch (error) {
       console.error('Error sharing analysis:', error);
-      Alert.alert('Error', 'Failed to share analysis');
+      Alert.alert('Error', 'Failed to share analysis. Please try again.');
     }
   };
 
@@ -389,27 +476,17 @@ export const ConversationsScreen = () => {
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => setShowAnalysisModal(false)}
+                onPress={() => {
+                  setShowAnalysisModal(false);
+                  navigation.navigate('PostLoginScreen');
+                }}
               >
                 <X size={24} color="#4A3B78" />
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 Analysis: {currentConversationTitle}
               </Text>
-              <View style={tw`flex-row`}>
-                <TouchableOpacity 
-                  style={tw`p-2 mr-2`}
-                  onPress={handleCopyAnalysis}
-                >
-                  <NotePencil size={24} color="#4A3B78" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={tw`p-2`}
-                  onPress={handleShareAnalysis}
-                >
-                  <Share size={24} color="#4A3B78" />
-                </TouchableOpacity>
-              </View>
+              <View style={tw`w-10`} />
             </View>
             
             <ScrollView style={tw`flex-1 p-4`}>
@@ -417,6 +494,21 @@ export const ConversationsScreen = () => {
                 {currentAnalysis.content}
               </Text>
             </ScrollView>
+
+            <View style={tw`flex-row justify-between p-4 border-t border-gray-200`}>
+              <TouchableOpacity
+                style={tw`flex-1 bg-jung-purple-light py-3 px-6 rounded-lg mr-2`}
+                onPress={handleCopyAnalysis}
+              >
+                <Text style={tw`text-jung-purple text-center font-semibold`}>Copy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`flex-1 bg-jung-purple py-3 px-6 rounded-lg`}
+                onPress={handleShareAnalysis}
+              >
+                <Text style={tw`text-white text-center font-semibold`}>Export</Text>
+              </TouchableOpacity>
+            </View>
           </SafeAreaView>
         </View>
       </Modal>
@@ -610,7 +702,12 @@ export const ConversationsScreen = () => {
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => setShowNewChatModal(false)}
+                onPress={() => {
+                  setLoading(false);
+                  setAnalyzing(null);
+                  setShowNewChatModal(false);
+                  navigation.navigate('PostLoginScreen');
+                }}
               >
                 <X size={24} color="#4A3B78" />
               </TouchableOpacity>
@@ -726,9 +823,14 @@ export const ConversationsScreen = () => {
         <View style={tw`flex-row items-center justify-between mb-6 p-4`}>
           <TouchableOpacity 
             style={tw`p-2`}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              setLoading(false);
+              setAnalyzing(null);
+              setShowNewChatModal(false);
+              navigation.navigate('PostLoginScreen');
+            }}
           >
-            <ArrowLeft size={24} color="#4A3B78" />
+            <X size={24} color="#4A3B78" />
           </TouchableOpacity>
           
           <Text style={tw`text-2xl font-bold text-jung-deep`}>
