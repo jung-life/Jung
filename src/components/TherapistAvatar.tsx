@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { View, Image, Text, ImageSourcePropType } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
@@ -20,7 +20,7 @@ interface TherapistAvatarProps {
   avatarId?: string;
 }
 
-export const TherapistAvatar = ({ isSpeaking, message, avatarId = 'jung' }: TherapistAvatarProps) => {
+const TherapistAvatar = memo(({ isSpeaking, message, avatarId = 'jung' }: TherapistAvatarProps) => {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
   const opacity = useSharedValue(0.8);
@@ -136,4 +136,6 @@ export const TherapistAvatar = ({ isSpeaking, message, avatarId = 'jung' }: Ther
       )}
     </View>
   );
-}; 
+});
+
+export default TherapistAvatar; 

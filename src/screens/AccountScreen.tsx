@@ -114,29 +114,70 @@ export const AccountScreen = () => {
     try {
       setLoading(true);
       
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       
-      if (!user) {
-        throw new Error('No authenticated user found');
+      if (!userData?.user?.id) {
+        console.log('No user ID found');
+        setLoading(false);
+        return;
       }
-
-      // Fetch the profile
+      
+      // Check the profiles table structure first
+      console.log('Fetching profile for user ID:', userData.user.id);
+      
+      // Use maybeSingle() instead of single() to handle no rows gracefully
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
-
+        .eq('user_id', userData.user.id) // Try user_id instead of id
+        .maybeSingle();
+      
       if (error) {
-        throw error;
+        console.error('Error fetching profile with user_id:', error);
+        
+        // Try with id field instead
+        const { data: dataById, error: errorById } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userData.user.id)
+          .maybeSingle();
+          
+        if (errorById) {
+          console.error('Error fetching profile with id:', errorById);
+          throw errorById;
+        }
+        
+        if (dataById) {
+          setProfile(dataById);
+          // Set form state with the profile data
+          setFormState({
+            full_name: dataById.full_name || userData.user.user_metadata?.full_name || '',
+            email: dataById.email || userData.user?.email || '',
+            username: dataById.username || userData.user?.email?.split('@')[0] || '',
+            avatar_url: dataById.avatar_url,
+            theme_preference: dataById.theme_preference || 'system',
+            notification_preferences: {
+              daily_reminders: dataById.notification_preferences?.daily_reminders || false,
+              new_features: dataById.notification_preferences?.new_features || true,
+              insights: dataById.notification_preferences?.insights || true
+            }
+          });
+          return;
+        }
+        
+        // If we get here, we need to create a profile
+        await createUserProfile(userData.user.id);
+        return;
       }
-
+      
       if (data) {
         setProfile(data);
+        // Set form state with the profile data
         setFormState({
-          full_name: data.full_name || user.user_metadata?.full_name || '',
-          email: data.email || user?.email || '',
-          username: data.username || user?.email?.split('@')[0] || '',
+          full_name: data.full_name || userData.user.user_metadata?.full_name || '',
+          email: data.email || userData.user?.email || '',
+          username: data.username || userData.user?.email?.split('@')[0] || '',
           avatar_url: data.avatar_url,
           theme_preference: data.theme_preference || 'system',
           notification_preferences: {
@@ -154,24 +195,54 @@ export const AccountScreen = () => {
           setAvatarUrl(publicUrlData.publicUrl);
         }
       } else {
-        setFormState({
-          full_name: user.user_metadata?.full_name || '',
-          email: user?.email || '',
-          username: '',
-          avatar_url: null,
-          theme_preference: 'system',
-          notification_preferences: {
-            daily_reminders: false,
-            new_features: true,
-            insights: true
-          }
-        });
+        // Create profile if it doesn't exist
+        await createUserProfile(userData.user.id);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile.');
+      Alert.alert('Error', 'Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Helper function to create a user profile
+  const createUserProfile = async (userId: string) => {
+    try {
+      console.log('Creating new profile for user ID:', userId);
+      
+      // First, check if the profiles table has user_id or id as the foreign key
+      const { data: tableInfo, error: tableError } = await supabase
+        .rpc('get_table_info', { table_name: 'profiles' });
+        
+      if (tableError) {
+        console.error('Error getting table info:', tableError);
+      }
+      
+      console.log('Profiles table structure:', tableInfo);
+      
+      // Try inserting with both id and user_id to be safe
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          user_id: userId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error creating profile:', error);
+        throw error;
+      }
+      
+      console.log('Profile created successfully:', data);
+      setProfile(data);
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
+      throw error;
     }
   };
   
@@ -325,12 +396,12 @@ export const AccountScreen = () => {
     try {
       setIsLoading(true);
       
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       
-      if (!user) {
-        console.error('No authenticated user found');
-        Alert.alert('Error', 'No authenticated user found. Please try logging in again.');
+      if (!userData?.user?.id) {
+        console.log('No user ID found');
+        setIsLoading(false);
         return;
       }
       
@@ -338,8 +409,8 @@ export const AccountScreen = () => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
-        .single();
+        .eq('id', userData.user.id)
+        .maybeSingle();
         
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError;
@@ -349,7 +420,7 @@ export const AccountScreen = () => {
       const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', userData.user.id);
         
       if (conversationsError) {
         throw conversationsError;
@@ -377,7 +448,7 @@ export const AccountScreen = () => {
       });
     } catch (error) {
       console.error('Error exporting data:', error);
-      Alert.alert('Error', 'Failed to export data. Please try again.');
+      Alert.alert('Error', 'Failed to export data');
     } finally {
       setIsLoading(false);
     }

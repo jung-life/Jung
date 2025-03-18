@@ -33,6 +33,10 @@ import { AvatarSelector, availableAvatars } from '../components/AvatarSelector';
 import { SimpleAvatar } from '../components/SimpleAvatar';
 import { Avatar } from '../components/AvatarSelector';
 import { generateUUID } from '../lib/uuid-polyfill';
+import i18n from '../lib/i18n';
+import { trackEvent } from '../lib/analytics';
+import useAuthStore from '../store/useAuthStore';
+import { HamburgerMenu } from '../components/HamburgerMenu';
 
 type Conversation = {
   id: string;
@@ -73,19 +77,12 @@ export const ConversationsScreen = () => {
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [currentConversationTitle, setCurrentConversationTitle] = useState('');
 
+  const { user } = useAuthStore();
+
   const fetchConversations = useCallback(async () => {
     try {
       console.log('Fetching conversations...');
       setLoading(true);
-      
-      // Add a fallback mechanism
-      setTimeout(() => {
-        if (loading) {
-          console.log('Fetch timeout - forcing loading to false');
-          setLoading(false);
-          setError('Connection timeout. Please check your internet connection and try again.');
-        }
-      }, 15000); // 15 second absolute timeout
       
       // Check if Supabase is initialized
       if (!supabase) {
@@ -109,30 +106,26 @@ export const ConversationsScreen = () => {
         return;
       }
       
+      // Use userData.user.id instead of user from useAuthStore
       console.log('User found:', userData.user.id);
       
       // Fetch conversations with timeout
-      const fetchPromise = supabase
+      const { data } = await supabase
         .from('conversations')
         .select('*')
         .eq('user_id', userData.user.id)
-        .order('created_at', { ascending: false });
-        
-      // Add a timeout to prevent infinite loading
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Fetch timeout')), 10000)
-      );
+        .order('created_at', { ascending: false })
+        .range(0, 9); // Pagination
       
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      if (error) {
-        console.error('Supabase fetch error:', error);
+      if (!data || data.length === 0) {
+        console.log('No conversations found');
+        setConversations([]); // Set empty array to trigger the "No conversations yet" UI
         setLoading(false);
         return;
       }
       
-      console.log('Fetched conversations:', data?.length || 0);
-      setConversations(data || []);
+      console.log('Fetched conversations:', data.length);
+      setConversations(data);
     } catch (error) {
       console.error('Error in fetchConversations:', error);
       setError('Failed to load conversations. Please try again later.');
@@ -476,10 +469,7 @@ export const ConversationsScreen = () => {
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => {
-                  setShowAnalysisModal(false);
-                  navigation.navigate('PostLoginScreen');
-                }}
+                onPress={() => setShowAnalysisModal(false)}
               >
                 <X size={24} color="#4A3B78" />
               </TouchableOpacity>
@@ -495,18 +485,12 @@ export const ConversationsScreen = () => {
               </Text>
             </ScrollView>
 
-            <View style={tw`flex-row justify-between p-4 border-t border-gray-200`}>
+            <View style={tw`p-4 border-t border-gray-200`}>
               <TouchableOpacity
-                style={tw`flex-1 bg-jung-purple-light py-3 px-6 rounded-lg mr-2`}
-                onPress={handleCopyAnalysis}
+                style={tw`bg-jung-purple py-3 rounded-lg`}
+                onPress={() => setShowAnalysisModal(false)}
               >
-                <Text style={tw`text-jung-purple text-center font-semibold`}>Copy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 bg-jung-purple py-3 px-6 rounded-lg`}
-                onPress={handleShareAnalysis}
-              >
-                <Text style={tw`text-white text-center font-semibold`}>Export</Text>
+                <Text style={tw`text-white text-center font-semibold`}>Close</Text>
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -543,68 +527,129 @@ export const ConversationsScreen = () => {
     checkPremium();
   }, []);
 
-  // Add this function to generate a creative title
-  const generateCreativeTitle = () => {
-    const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
-    
-    // Different title formats based on avatar
-    const titleFormats = {
-      'jung': [
-        'Exploring the Shadow with Jung',
-        'Archetypes & Individuation',
-        'Journey to the Self',
-        'Collective Unconscious Dialogue',
-        'Jungian Reflection'
-      ],
-      'freud': [
-        'Dream Analysis with Freud',
-        'Exploring the Unconscious',
-        'Id, Ego & Superego',
-        'Psychoanalytic Dialogue',
-        'Freudian Introspection'
-      ],
-      'adler': [
-        'Finding Purpose with Adler',
-        'Social Interest Reflection',
-        'Overcoming Inferiority',
-        'Adlerian Life Goals',
-        'Striving for Superiority'
-      ],
-      'horney': [
-        'Neurotic Needs Exploration',
-        'Self-Realization with Horney',
-        'Moving Toward, Against, Away',
-        'Cultural Influences Dialogue',
-        "Horney's Feminine Psychology"
-      ],
-      'morpheus': [
-        'Red Pill Conversation',
-        'Reality Deconstruction',
-        'Awakening with Morpheus',
-        'Beyond the Matrix',
-        'Truth Seeker\'s Dialogue'
-      ],
-      'oracle': [
-        'Prophecy & Potential',
-        'Fate vs. Choice',
-        'Oracle\'s Wisdom',
-        'Seeing Beyond Time',
-        'Crossroads Guidance'
-      ]
-    };
-    
-    // Get titles for the selected avatar or use default
-    const titles = titleFormats[selectedAvatar as keyof typeof titleFormats] || [
-      `Reflection with ${avatarName}`,
-      `${avatarName}'s Guidance`,
-      `My Journey with ${avatarName}`,
-      `Self-Discovery with ${avatarName}`,
-      `Inner Dialogue: ${avatarName}`
-    ];
-    
-    // Pick a random title from the list
-    const randomIndex = Math.floor(Math.random() * titles.length);
-    return titles[randomIndex];
+  // Update the generateCreativeTitle function to be avatar-specific and use LLM
+  const generateCreativeTitle = async () => {
+    try {
+      setLoading(true);
+      
+      // Get the selected avatar's name
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      
+      // Create a prompt for the LLM to generate a creative title
+      const prompt = `Generate a creative, engaging title for a conversation with ${avatarName}, a psychological guide. 
+The title should reflect ${avatarName}'s unique psychological approach and personality.
+
+For context:
+- Carl Jung focuses on archetypes, the collective unconscious, and individuation
+- Sigmund Freud focuses on psychoanalysis, the unconscious mind, and dream interpretation
+- Alfred Adler focuses on social interest, inferiority feelings, and striving for superiority
+- Karen Horney focuses on cultural influences, neurotic needs, and self-realization
+- Carl Rogers focuses on person-centered therapy, unconditional positive regard, and authenticity
+- Viktor Frankl focuses on finding meaning in life, even in suffering
+- Abraham Maslow focuses on self-actualization and the hierarchy of needs
+- The Oracle focuses on mystical guidance and seeing deeper patterns
+- Morpheus focuses on questioning reality and breaking free from limiting beliefs
+
+Generate a single, concise title (3-6 words) that would appeal to someone seeking psychological insight from ${avatarName}.
+The title should be creative but not overly abstract, and should hint at the transformative nature of the conversation.
+Return only the title text with no additional explanation or formatting.`;
+
+      // Call the AI API to generate a title
+      const aiResponse = await generateAIResponse(prompt);
+      
+      // Clean up the response (remove quotes, extra spaces, etc.)
+      const cleanTitle = aiResponse.replace(/^["']|["']$/g, '').trim();
+      
+      // Fallback titles in case the AI fails
+      const fallbackTitles = {
+        'jung': [
+          'Exploring the Shadow',
+          'Archetypes & Individuation',
+          'Journey to the Self',
+          'Collective Unconscious Dialogue',
+          'Jungian Reflection'
+        ],
+        'freud': [
+          'Dream Analysis Session',
+          'Exploring the Unconscious',
+          'Id, Ego & Superego',
+          'Psychoanalytic Dialogue',
+          'Freudian Introspection'
+        ],
+        'adler': [
+          'Finding Purpose',
+          'Social Interest Reflection',
+          'Overcoming Inferiority',
+          'Adlerian Life Goals',
+          'Striving for Superiority'
+        ],
+        'rogers': [
+          'Authentic Self Dialogue',
+          'Unconditional Acceptance',
+          'Person-Centered Journey',
+          'Empathic Understanding',
+          'Genuine Connection'
+        ],
+        'frankl': [
+          'Finding Life\'s Meaning',
+          'Transcending Suffering',
+          'Logotherapy Session',
+          'Purpose in Adversity',
+          'Existential Freedom'
+        ],
+        'maslow': [
+          'Path to Self-Actualization',
+          'Hierarchy of Needs',
+          'Peak Experience Journey',
+          'Human Potential Dialogue',
+          'Growth Motivation'
+        ],
+        'horney': [
+          'Neurotic Needs Exploration',
+          'Self-Realization Path',
+          'Moving Toward Growth',
+          'Cultural Influences Dialogue',
+          'Real Self Discovery'
+        ],
+        'oracle': [
+          'Prophecy & Potential',
+          'Fate vs. Choice',
+          'Oracle\'s Wisdom',
+          'Seeing Beyond Time',
+          'Crossroads Guidance'
+        ],
+        'morpheus': [
+          'Red Pill Conversation',
+          'Reality Deconstruction',
+          'Awakening Dialogue',
+          'Beyond the Matrix',
+          'Truth Seeker\'s Journey'
+        ]
+      };
+      
+      // If AI response is empty or too long, use a fallback
+      if (!cleanTitle || cleanTitle.length > 50) {
+        const titles = fallbackTitles[selectedAvatar as keyof typeof fallbackTitles] || [
+          `Reflection with ${avatarName}`,
+          `${avatarName}'s Guidance`,
+          `Journey with ${avatarName}`,
+          `Self-Discovery Session`,
+          `Inner Dialogue`
+        ];
+        
+        return titles[Math.floor(Math.random() * titles.length)];
+      }
+      
+      return cleanTitle;
+    } catch (error) {
+      console.error('Error generating title:', error);
+      
+      // Fallback to a simple title if AI fails
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      return `Conversation with ${avatarName}`;
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -689,6 +734,7 @@ export const ConversationsScreen = () => {
     }
   };
 
+  // Then update the renderNewChatModal function to include the Generate Title button
   const renderNewChatModal = () => {
     return (
       <Modal
@@ -702,12 +748,7 @@ export const ConversationsScreen = () => {
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => {
-                  setLoading(false);
-                  setAnalyzing(null);
-                  setShowNewChatModal(false);
-                  navigation.navigate('PostLoginScreen');
-                }}
+                onPress={() => setShowNewChatModal(false)}
               >
                 <X size={24} color="#4A3B78" />
               </TouchableOpacity>
@@ -718,37 +759,44 @@ export const ConversationsScreen = () => {
             </View>
             
             <ScrollView style={tw`flex-1 p-4`}>
-              <Text style={tw`text-lg font-semibold mb-2`}>Choose an Avatar</Text>
+              <Text style={tw`text-lg font-semibold mb-4`}>Choose your guide:</Text>
+              
               <AvatarSelector 
                 selectedAvatar={selectedAvatar}
                 onSelectAvatar={setSelectedAvatar}
+                hasPremiumAccess={true}
               />
               
-              <Text style={tw`text-lg font-semibold mt-6 mb-2`}>Conversation Title</Text>
+              <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>
+              
               <TextInput
-                style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+                style={tw`border border-gray-300 rounded-lg p-3 mb-2`}
+                placeholder="Enter a title (optional)"
                 value={newConversationTitle}
                 onChangeText={setNewConversationTitle}
-                placeholder="Enter a title for your conversation"
               />
               
+              {/* Update the Generate Title button to handle async function */}
               <TouchableOpacity
-                style={tw`bg-jung-purple-light py-2 px-4 rounded-lg self-start mt-2`}
-                onPress={() => {
-                  const title = generateCreativeTitle();
-                  setNewConversationTitle(title);
+                style={tw`bg-jung-purple-light py-2 px-4 rounded-lg self-start mb-4`}
+                onPress={async () => {
+                  const generatingTitle = await generateCreativeTitle();
+                  setNewConversationTitle(generatingTitle);
                 }}
               >
                 <Text style={tw`text-jung-purple`}>Generate Title</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={tw`bg-jung-purple mt-8 py-3 rounded-lg`}
+                style={tw`bg-jung-purple py-3 rounded-lg mt-2`}
                 onPress={handleCreateNewConversation}
+                disabled={loading}
               >
-                <Text style={tw`text-white text-center font-semibold text-lg`}>
-                  Start Conversation
-                </Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={tw`text-white text-center font-semibold`}>Start Conversation</Text>
+                )}
               </TouchableOpacity>
             </ScrollView>
           </SafeAreaView>
@@ -776,7 +824,7 @@ export const ConversationsScreen = () => {
       }
       
       // Use a title or generate one
-      const title = newConversationTitle || generateCreativeTitle();
+      const title = newConversationTitle || await generateCreativeTitle();
       
       // Generate a UUID for the conversation
       const conversationId = generateUUID();
@@ -786,14 +834,15 @@ export const ConversationsScreen = () => {
       console.log('Title:', title);
       console.log('Avatar:', selectedAvatar);
       
-      // Create the conversation
+      // Create the conversation with the selected avatar
       const { data, error } = await supabase
         .from('conversations')
         .insert({
           id: conversationId,
           user_id: user.id,
           title: title,
-          avatar_id: selectedAvatar
+          avatar_id: selectedAvatar,
+          updated_at: new Date().toISOString()
         });
       
       if (error) {
@@ -802,11 +851,28 @@ export const ConversationsScreen = () => {
         return;
       }
       
-      console.log('Conversation created successfully');
+      // Verify the conversation was created with the correct avatar
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('id', conversationId)
+        .single();
+        
+      if (verifyError) {
+        console.error('Error verifying conversation:', verifyError);
+      } else {
+        console.log('Conversation created successfully with avatar:', verifyData.avatar_id);
+      }
+      
       setShowNewChatModal(false);
       
-      // Navigate to the chat screen
-      navigation.navigate('Chat', { conversationId });
+      // Navigate to the chat screen with the avatar ID
+      navigation.navigate('Chat', { 
+        conversationId,
+        avatarId: selectedAvatar
+      });
+
+      trackEvent('Conversation Started', { avatarId: selectedAvatar });
     } catch (error) {
       console.error('Error in handleCreateNewConversation:', error);
       Alert.alert('Error', 'An unexpected error occurred');
@@ -820,29 +886,9 @@ export const ConversationsScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        <View style={tw`flex-row items-center justify-between mb-6 p-4`}>
-          <TouchableOpacity 
-            style={tw`p-2`}
-            onPress={() => {
-              setLoading(false);
-              setAnalyzing(null);
-              setShowNewChatModal(false);
-              navigation.navigate('PostLoginScreen');
-            }}
-          >
-            <X size={24} color="#4A3B78" />
-          </TouchableOpacity>
-          
-          <Text style={tw`text-2xl font-bold text-jung-deep`}>
-            Conversations
-          </Text>
-          
-          <TouchableOpacity 
-            style={tw`p-2`}
-            onPress={() => setMenuVisible(true)}
-          >
-            <List size={24} color="#4A3B78" />
-          </TouchableOpacity>
+        <View style={tw`flex-row justify-between items-center p-4`}>
+          <Text style={tw`text-xl font-bold`}>Conversations</Text>
+          <HamburgerMenu />
         </View>
         
         {loading ? (
@@ -972,49 +1018,6 @@ export const ConversationsScreen = () => {
           />
         )}
         {renderAnalysisModal()}
-        <Modal
-          visible={menuVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setMenuVisible(false)}
-        >
-          <TouchableOpacity 
-            style={tw`flex-1 bg-black bg-opacity-50`} 
-            activeOpacity={1}
-            onPress={() => setMenuVisible(false)}
-          >
-            <View style={tw`absolute top-0 right-0 bg-white w-48 rounded-bl-lg shadow-lg`}>
-              <TouchableOpacity 
-                style={tw`flex-row items-center p-4 border-b border-gray-200`}
-                onPress={() => {
-                  setMenuVisible(false);
-                  Alert.alert(
-                    "Logout",
-                    "Are you sure you want to logout?",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { 
-                        text: "Logout", 
-                        onPress: async () => {
-                          try {
-                            await supabase.auth.signOut();
-                            navigation.navigate('LandingScreen');
-                          } catch (error) {
-                            console.error('Error signing out:', error);
-                            Alert.alert('Error', 'Failed to sign out');
-                          }
-                        }
-                      }
-                    ]
-                  );
-                }}
-              >
-                <SignOut size={20} color="#4A3B78" />
-                <Text style={tw`ml-3 text-jung-purple`}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
         <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white border-t border-gray-200`}>
           <TouchableOpacity 
             style={tw`p-3 bg-jung-purple-light rounded-full`}

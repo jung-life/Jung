@@ -1,44 +1,55 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
-import { ChatCircleDots, Brain, Sparkle } from 'phosphor-react-native';
+import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { GradientBackground } from '../components/GradientBackground';
+import { SymbolicBackground } from '../components/SymbolicBackground';
+import { ChatCircleDots, Brain, BookOpen, User } from 'phosphor-react-native';
+import { HamburgerMenu } from '../components/HamburgerMenu';
 
 const PostLoginScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<RootStackNavigationProp>();
 
   return (
-    <View style={tw`flex-1 justify-center items-center bg-jung-bg p-6`}>
-      <Text style={tw`text-2xl font-bold text-jung-deep mb-8`}>Choose Your Path</Text>
-      
-      {/* Conversations Button */}
-      <TouchableOpacity
-        style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
-        onPress={() => navigation.navigate('ConversationsScreen')}
-      >
-        <ChatCircleDots size={28} color="#4A3B78" weight="fill" />
-        <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>
-          Start a Conversation
-        </Text>
-        <Sparkle size={20} color="#4A3B78" weight="fill" style={tw`ml-auto`} />
-      </TouchableOpacity>
+    <GradientBackground>
+      <SafeAreaView style={tw`flex-1`}>
+        <SymbolicBackground opacity={0.03} />
+        
+        {/* Add header with hamburger menu */}
+        <View style={tw`flex-row justify-between items-center p-4`}>
+          <Text style={tw`text-xl font-bold text-jung-deep`}>Jung AI</Text>
+          <HamburgerMenu />
+        </View>
+        
+        <ScrollView style={tw`flex-1 px-4`}>
+          <View style={tw`mt-4 mb-8`}>
+            <Text style={tw`text-2xl font-bold text-jung-deep mb-1`}>Welcome</Text>
+            <Text style={tw`text-base text-gray-600`}>
+              Explore yourself with Jung
+            </Text>
+          </View>
+          
+          <TouchableOpacity
+            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            onPress={() => navigation.navigate('ConversationsScreen', { refresh: true })}
+          >
+            <ChatCircleDots size={28} color="#4A3B78" weight="fill" />
+            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Conversations</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            onPress={() => navigation.navigate('DailyMotivationScreen')}
+          >
+            <Brain size={28} color="#4A3B78" weight="fill" />
+            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Daily Motivation</Text>
+          </TouchableOpacity>
+          
 
-      {/* Motivation Button */}
-      <TouchableOpacity
-        style={tw`bg-jung-anima-light rounded-xl p-6 w-full flex-row items-center shadow-sm`}
-        onPress={() => navigation.navigate('DailyMotivationScreen')}
-      >
-        <Brain size={28} color="#E6C3C3" weight="fill" />
-        <Text style={tw`ml-4 text-jung-anima text-lg font-semibold`}>
-          Daily Motivation
-        </Text>
-        <Sparkle size={20} color="#E6C3C3" weight="fill" style={tw`ml-auto`} />
-      </TouchableOpacity>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 

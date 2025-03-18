@@ -22,6 +22,9 @@ import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { Message } from '../components/Message';
+import { TherapistAvatar } from '../components/TherapistAvatar';
+import { generatePromptForAvatar } from '../lib/avatarPrompts';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -44,8 +47,8 @@ type Conversation = {
 
 export const ChatScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const route = useRoute<ChatScreenRouteProp>();
-  const { conversationId, avatarId, title } = route.params;
+  const route = useRoute<RouteProp<RootStackParamList, 'Chat'>>();
+  const { conversationId, avatarId = 'jung', title } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -188,19 +191,33 @@ export const ChatScreen = () => {
         console.error('Error saving user message:', error);
       }
       
+      // Format conversation history
+      const history = messages
+        .slice(0, -1) // Exclude the message we just added
+        .map(msg => `${msg.role === 'user' ? 'User' : avatarId}: ${msg.content}`)
+        .join('\n\n');
+      
+      // Generate the prompt based on the selected avatar
+      const prompt = generatePromptForAvatar(
+        avatarId || 'jung',
+        history,
+        currentInput
+      );
+      
+      console.log('Using prompt for avatar:', avatarId);
+      
       // Generate AI response
       try {
-        const aiResponse = await generateAIResponse(
-          currentInput,
-          messages,
-          conversation?.avatar_id || 'jung'
-        );
+        const aiResponse = await generateAIResponse(prompt);
+        
+        // Extract the response content from the tags if needed
+        const responseContent = extractResponseContent(aiResponse);
         
         // Create a new message object for the AI's response
         const aiMessage: Partial<Message> = {
           id: uuidv4(),
           conversation_id: conversationId,
-          content: aiResponse,
+          content: responseContent,
           role: 'assistant',
           created_at: new Date().toISOString()
         };
@@ -231,6 +248,12 @@ export const ChatScreen = () => {
     } finally {
       setSending(false);
     }
+  };
+  
+  // Helper function to extract response content from tags
+  const extractResponseContent = (response: string): string => {
+    const match = response.match(/<response>(.*?)<\/response>/s);
+    return match ? match[1].trim() : response;
   };
   
   const renderMessage = ({ item }: { item: Message }) => {

@@ -1,6 +1,16 @@
 import { anonymizeText, encryptData } from './security';
 
-export const processAIRequest = async (userInput: string, userId: string) => {
+const rateLimit = (fn, delay) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall < delay) return;
+    lastCall = now;
+    return fn(...args);
+  };
+};
+
+export const processAIRequest = rateLimit(async (userInput: string, userId: string) => {
   try {
     // 1. Anonymize the user input
     const anonymizedInput = anonymizeText(userInput);
@@ -42,4 +52,4 @@ export const processAIRequest = async (userInput: string, userId: string) => {
     console.error('Error in AI processing:', error);
     throw new Error('Failed to process your request');
   }
-}; 
+}, 1000); // 1 second delay 

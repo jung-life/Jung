@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, 
+  StyleSheet,
   View, 
-  Text, 
+  Text,
   TouchableOpacity, 
   TextInput, 
   Alert,
@@ -41,7 +41,7 @@ export const RegisterScreen = () => {
   const [hasConsented, setHasConsented] = useState(false);
 
   const handleBackToLanding = () => {
-    navigation.navigate('Landing');
+    navigation.navigate('LandingScreen');
   };
 
   const saveUserProfile = async (userId: string, userData: { email: string, fullName?: string }) => {
@@ -289,7 +289,7 @@ export const RegisterScreen = () => {
                 
                 <TouchableOpacity 
                   style={tw`mt-4`}
-                  onPress={() => navigation.navigate('Landing')}
+                  onPress={() => navigation.navigate('LandingScreen')}
                 >
                   <Text style={tw`text-jung-purple text-center`}>
                     Already have an account? Sign in

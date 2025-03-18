@@ -14,6 +14,9 @@ import { LoginScreen } from '../screens/LoginScreen';
 import PostLoginScreen from '../screens/PostLoginScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import DailyMotivationScreen from '../screens/DailyMotivationScreen';
+import { HamburgerMenu } from '../components/HamburgerMenu';
+import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
+import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 
 const AppNavigator = () => {
   const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,9 +35,39 @@ const AppNavigator = () => {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen name="Account" component={AccountScreen} />
+        <Stack.Screen 
+          name="AccountScreen" 
+          component={AccountScreen}
+          options={{
+            headerShown: true,
+            title: 'Account Settings',
+            headerRight: () => <HamburgerMenu showLogout={false} />,
+          }}
+        />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} />
+        <Stack.Screen 
+          name="ConversationsScreen" 
+          component={ConversationsScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="PrivacyPolicyScreen" 
+          component={PrivacyPolicyScreen}
+          options={{
+            headerShown: true,
+            title: 'Privacy Policy',
+          }}
+        />
+        <Stack.Screen 
+          name="TermsOfServiceScreen" 
+          component={TermsOfServiceScreen}
+          options={{
+            headerShown: true,
+            title: 'Terms of Service',
+          }}
+        />
         <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
