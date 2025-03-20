@@ -260,12 +260,12 @@ export const RegisterScreen = () => {
                   <Text style={tw`text-sm text-gray-700 flex-1`}>
                     I consent to the <Text 
                       style={tw`text-blue-500 underline`}
-                      onPress={() => navigation.navigate('PrivacyPolicy')}
+                      onPress={() => navigation.navigate('PrivacyPolicyScreen')}
                     >
                       Privacy Policy
                     </Text> and <Text 
                       style={tw`text-blue-500 underline`}
-                      onPress={() => navigation.navigate('TermsOfService')}
+                      onPress={() => navigation.navigate('TermsOfServiceScreen')}
                     >
                       Terms of Service
                     </Text>, including the processing of my personal data.
