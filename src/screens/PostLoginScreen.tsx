@@ -17,10 +17,7 @@ const PostLoginScreen = () => {
         <SymbolicBackground opacity={0.03} />
         
         {/* Add header with hamburger menu */}
-        <View style={tw`flex-row justify-between items-center p-4`}>
-          <Text style={tw`text-xl font-bold text-jung-deep`}>Jung AI</Text>
-          <HamburgerMenu />
-        </View>
+   
         
         <ScrollView style={tw`flex-1 px-4`}>
           <View style={tw`mt-4 mb-8`}>
