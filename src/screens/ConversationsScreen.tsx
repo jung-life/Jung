@@ -106,26 +106,26 @@ export const ConversationsScreen = () => {
         return;
       }
       
-      // Use userData.user.id instead of user from useAuthStore
       console.log('User found:', userData.user.id);
       
-      // Fetch conversations with timeout
-      const { data } = await supabase
+      // Fetch conversations
+      const { data, error } = await supabase
         .from('conversations')
         .select('*')
         .eq('user_id', userData.user.id)
-        .order('created_at', { ascending: false })
-        .range(0, 9); // Pagination
+        .order('created_at', { ascending: false });
       
-      if (!data || data.length === 0) {
-        console.log('No conversations found');
-        setConversations([]); // Set empty array to trigger the "No conversations yet" UI
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        setError('Failed to load conversations. Please try again later.');
         setLoading(false);
         return;
       }
       
-      console.log('Fetched conversations:', data.length);
-      setConversations(data);
+      // Always set conversations, even if empty
+      console.log('Fetched conversations:', data?.length || 0);
+      setConversations(data || []);
+      
     } catch (error) {
       console.error('Error in fetchConversations:', error);
       setError('Failed to load conversations. Please try again later.');
@@ -851,19 +851,6 @@ Return only the title text with no additional explanation or formatting.`;
         return;
       }
       
-      // Verify the conversation was created with the correct avatar
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .single();
-        
-      if (verifyError) {
-        console.error('Error verifying conversation:', verifyError);
-      } else {
-        console.log('Conversation created successfully with avatar:', verifyData.avatar_id);
-      }
-      
       setShowNewChatModal(false);
       
       // Navigate to the chat screen with the avatar ID
@@ -888,7 +875,6 @@ Return only the title text with no additional explanation or formatting.`;
         
         <View style={tw`flex-row justify-between items-center p-4`}>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
-          <HamburgerMenu />
         </View>
         
         {loading ? (

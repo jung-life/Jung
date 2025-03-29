@@ -14,42 +14,84 @@ import { LoginScreen } from '../screens/LoginScreen';
 import PostLoginScreen from '../screens/PostLoginScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import DailyMotivationScreen from '../screens/DailyMotivationScreen';
+import { EmotionalAssessmentScreen } from '../screens/EmotionalAssessmentScreen';
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
+import { navigationRef } from './navigationService';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Default header options with hamburger menu
+const defaultPostLoginOptions = {
+  headerRight: () => <HamburgerMenu />,
+  headerStyle: {
+    backgroundColor: '#ffffff',
+  },
+  headerTintColor: '#4A3B78',
+  headerTitleStyle: {
+    fontWeight: 'bold' as const,
+  },
+};
 
 const AppNavigator = () => {
-  const Stack = createNativeStackNavigator<RootStackParamList>();
   const { session, isNewUser } = useAuth();
   const user = session?.user;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator 
         initialRouteName="LandingScreen"
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+        }}
       >
         <Stack.Screen name="LandingScreen" component={LandingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Disclaimer" component={DisclaimerScreen} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen 
+          name="PostLoginScreen" 
+          component={PostLoginScreen}
+          options={{
+            headerShown: true,
+            title: 'Home',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen}
+          options={{
+            headerShown: true,
+            title: 'Home',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        <Stack.Screen 
+          name="ConversationsScreen" 
+          component={ConversationsScreen}
+          options={{
+            headerShown: true,
+            title: 'Conversations',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        <Stack.Screen 
+          name="Chat" 
+          component={ChatScreen}
+          options={{
+            headerShown: true,
+            title: 'Chat',
+            ...defaultPostLoginOptions,
+          }}
+        />
         <Stack.Screen 
           name="AccountScreen" 
           component={AccountScreen}
           options={{
             headerShown: true,
             title: 'Account Settings',
-            headerRight: () => <HamburgerMenu showLogout={false} />,
-          }}
-        />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen 
-          name="ConversationsScreen" 
-          component={ConversationsScreen}
-          options={{
-            headerShown: false,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -58,6 +100,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Privacy Policy',
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -66,9 +109,36 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Terms of Service',
+            ...defaultPostLoginOptions,
           }}
         />
-        <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} />
+        <Stack.Screen 
+          name="DisclaimerScreen" 
+          component={DisclaimerScreen}
+          options={{
+            headerShown: true,
+            title: 'Disclaimer',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        <Stack.Screen 
+          name="DailyMotivationScreen" 
+          component={DailyMotivationScreen}
+          options={{
+            headerShown: true,
+            title: 'Daily Motivation',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        <Stack.Screen 
+          name="EmotionalAssessmentScreen" 
+          component={EmotionalAssessmentScreen}
+          options={{
+            headerShown: true,
+            title: 'Emotional Assessment',
+            ...defaultPostLoginOptions,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
@@ -62,9 +62,14 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user ?? null);
         
         // Check if this is a sign-in or sign-up
-        if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+        if (event === 'SIGNED_IN' || event === 'SIGNED_UP' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           console.log("AuthContext: User signed in/up, checking disclaimer");
           await checkUserDisclaimerStatus(session?.user);
+          
+          // Store auth data to ensure it's available across the app
+          if (session) {
+            await storeAuthData(session);
+          }
         } else if (event === 'SIGNED_OUT') {
           setIsNewUser(false);
         }
@@ -100,6 +105,11 @@ export const AuthProvider = ({ children }) => {
         // Store the user in state
         setUser(data.user);
         
+        // Store auth data to ensure it's available across the app
+        if (data.session) {
+          await storeAuthData(data.session);
+        }
+        
         return { success: true, isNewUser: !hasSeenDisclaimer };
       }
       
@@ -123,7 +133,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setSession(null);
     } catch (error) {
-      console.error('Error signing out:', error.message);
+      console.error('Error signing out:', error);
       Alert.alert('Error', 'Failed to sign out. Please try again.');
     } finally {
       setLoading(false);

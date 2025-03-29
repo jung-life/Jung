@@ -17,7 +17,8 @@ export type RootStackParamList = {
   TermsOfServiceScreen: undefined;
   DisclaimerScreen: undefined;
   DailyMotivationScreen: undefined;
+  EmotionalAssessmentScreen: undefined;
 };
 
 // Add these types for navigation
-export type RootStackNavigationProp = NativeStackNavigationProp<RootStackParamList>; 
+export type RootStackNavigationProp = NativeStackNavigationProp<RootStackParamList>;
