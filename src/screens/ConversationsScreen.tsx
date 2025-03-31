@@ -36,7 +36,7 @@ import { generateUUID } from '../lib/uuid-polyfill';
 import i18n from '../lib/i18n';
 import { trackEvent } from '../lib/analytics';
 import useAuthStore from '../store/useAuthStore';
-import { HamburgerMenu } from '../components/HamburgerMenu';
+import { encryptData, decryptData } from '../lib/encryptionUtils';
 
 type Conversation = {
   id: string;
@@ -122,9 +122,26 @@ export const ConversationsScreen = () => {
         return;
       }
       
+      // Decrypt conversation titles before displaying
+      const decryptedConversations = data?.map(conversation => {
+        try {
+          // Check if the title is encrypted (has a pattern like "U2FsdGVkX1...")
+          if (conversation.title && conversation.title.startsWith('U2FsdGVkX1')) {
+            return {
+              ...conversation,
+              title: decryptData(conversation.title)
+            };
+          }
+          return conversation;
+        } catch (decryptError) {
+          console.error('Error decrypting conversation title:', decryptError);
+          return conversation;
+        }
+      }) || [];
+      
       // Always set conversations, even if empty
-      console.log('Fetched conversations:', data?.length || 0);
-      setConversations(data || []);
+      console.log('Fetched conversations:', decryptedConversations.length || 0);
+      setConversations(decryptedConversations);
       
     } catch (error) {
       console.error('Error in fetchConversations:', error);
@@ -324,12 +341,15 @@ export const ConversationsScreen = () => {
       
       const analysisContent = await generateAIResponse(prompt);
       
-      // Save analysis to database
+      // Encrypt the analysis content before saving
+      const encryptedAnalysisContent = encryptData(analysisContent);
+      
+      // Save encrypted analysis to database
       const { data: analysisData, error: analysisError } = await supabase
         .from('analyses')
         .insert({
           conversation_id: conversationId,
-          content: analysisContent,
+          content: encryptedAnalysisContent,
         })
         .select()
         .single();
@@ -341,14 +361,20 @@ export const ConversationsScreen = () => {
         return;
       }
       
-      // Update cache
+      // Decrypt for display and cache
+      const decryptedAnalysis = {
+        ...analysisData,
+        content: analysisContent // Use the original content for display
+      };
+      
+      // Update cache with decrypted content
       setAnalysesCache(prev => ({
         ...prev,
-        [conversationId]: [analysisData, ...(prev[conversationId] || [])]
+        [conversationId]: [decryptedAnalysis, ...(prev[conversationId] || [])]
       }));
       
-      // Show analysis
-      setCurrentAnalysis(analysisData);
+      // Show analysis with decrypted content
+      setCurrentAnalysis(decryptedAnalysis);
       setCurrentConversationTitle(title);
       setShowAnalysisModal(true);
     } catch (error) {
@@ -457,6 +483,18 @@ export const ConversationsScreen = () => {
   const renderAnalysisModal = () => {
     if (!currentAnalysis) return null;
     
+    // Ensure the content is decrypted before displaying
+    let displayContent = currentAnalysis.content;
+    try {
+      // Check if the content might be encrypted (has a pattern like "U2FsdGVkX1...")
+      if (displayContent && typeof displayContent === 'string' && displayContent.startsWith('U2FsdGVkX1')) {
+        displayContent = decryptData(displayContent);
+      }
+    } catch (error) {
+      console.error('Error decrypting analysis content:', error);
+      // Use the original content if decryption fails
+    }
+    
     return (
       <Modal
         visible={showAnalysisModal}
@@ -481,7 +519,7 @@ export const ConversationsScreen = () => {
             
             <ScrollView style={tw`flex-1 p-4`}>
               <Text style={tw`text-base leading-6 text-gray-800`}>
-                {currentAnalysis.content}
+                {displayContent}
               </Text>
             </ScrollView>
 
@@ -826,21 +864,24 @@ Return only the title text with no additional explanation or formatting.`;
       // Use a title or generate one
       const title = newConversationTitle || await generateCreativeTitle();
       
+      // Encrypt the conversation title
+      const encryptedTitle = encryptData(title);
+      
       // Generate a UUID for the conversation
       const conversationId = generateUUID();
       
       console.log('Creating conversation with ID:', conversationId);
       console.log('User ID:', user.id);
-      console.log('Title:', title);
+      console.log('Title:', title, '(encrypted)');
       console.log('Avatar:', selectedAvatar);
       
-      // Create the conversation with the selected avatar
+      // Create the conversation with the selected avatar and encrypted title
       const { data, error } = await supabase
         .from('conversations')
         .insert({
           id: conversationId,
           user_id: user.id,
-          title: title,
+          title: encryptedTitle,
           avatar_id: selectedAvatar,
           updated_at: new Date().toISOString()
         });

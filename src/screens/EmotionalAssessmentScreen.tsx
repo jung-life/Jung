@@ -1,18 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Image, 
+  ScrollView, 
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
 import { supabase } from '../lib/supabase';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
+import { Typography } from '../components/Typography';
 import tw from '../lib/tailwind';
 import { v4 as uuidv4 } from 'uuid';
-import { encryptData } from '../lib/security';
+import { encryptData } from '../lib/encryptionUtils';
 import { generateAIResponse } from '../lib/api';
+import { ArrowLeft, Heart, ChartBar, Brain, Lightbulb, Scales, Plant, ArrowRight, CaretRight, CaretLeft } from 'phosphor-react-native';
+import { additionalScenarios, emotionalInsights, emotionalChallenges } from '../data/emotionalScenarios';
 
-// Scenarios for emotional assessment
-const scenarios = [
+// Basic scenarios for emotional assessment
+const baseScenarios = [
   {
     id: 'scenario_1',
     question: "You're at a social gathering when you notice no one has spoken to you in over 10 minutes. How do you feel?",
@@ -65,6 +76,9 @@ const scenarios = [
   }
 ];
 
+// Combine base scenarios with additional ones
+const allScenarios = [...baseScenarios, ...additionalScenarios];
+
 export const EmotionalAssessmentScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
@@ -72,15 +86,62 @@ export const EmotionalAssessmentScreen = () => {
   const [loading, setLoading] = useState(false);
   const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [emotionalProfile, setEmotionalProfile] = useState<any>(null);
+  const [scenarioSet, setScenarioSet] = useState<"base" | "all">("base");
+  const [selectedScenarios, setSelectedScenarios] = useState(baseScenarios);
+  const [showInsights, setShowInsights] = useState(false);
+  const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Use effect to update the scenarios based on the selected set
+  useEffect(() => {
+    if (scenarioSet === "base") {
+      setSelectedScenarios(baseScenarios);
+    } else {
+      // For comprehensive assessment, select 10 random scenarios from the full set
+      const randomScenarios = [...allScenarios]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+      setSelectedScenarios(randomScenarios);
+    }
+    // Reset index and responses when scenario set changes
+    setCurrentScenarioIndex(0);
+    setResponses([]);
+  }, [scenarioSet]);
 
   const handleResponse = (emotion: string) => {
-    const scenarioId = scenarios[currentScenarioIndex].id;
+    const scenarioId = selectedScenarios[currentScenarioIndex].id;
     setResponses([...responses, { scenarioId, emotion }]);
     
-    if (currentScenarioIndex < scenarios.length - 1) {
+    if (currentScenarioIndex < selectedScenarios.length - 1) {
       setCurrentScenarioIndex(currentScenarioIndex + 1);
+      // Scroll to top for next scenario
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: true });
+      }
     } else {
       completeAssessment();
+    }
+  };
+
+  const handleScenarioSetChange = (set: "base" | "all") => {
+    if (responses.length > 0) {
+      Alert.alert(
+        "Change Assessment Type?",
+        "This will reset your current progress. Are you sure?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Change", 
+            onPress: () => {
+              setScenarioSet(set);
+              setCurrentScenarioIndex(0);
+              setResponses([]);
+            }
+          }
+        ]
+      );
+    } else {
+      setScenarioSet(set);
     }
   };
 
@@ -89,7 +150,7 @@ export const EmotionalAssessmentScreen = () => {
       setLoading(true);
       
       // Format responses for analysis
-      const formattedResponses = scenarios.map((scenario, index) => {
+      const formattedResponses = selectedScenarios.map((scenario: any, index: number) => {
         const response = responses[index] || { emotion: 'unknown' };
         return `Scenario: ${scenario.question}\nResponse: ${response.emotion}`;
       }).join('\n\n');
@@ -149,7 +210,7 @@ export const EmotionalAssessmentScreen = () => {
       }
       
       // Encrypt data before storing
-      const encryptedData = await encryptData(JSON.stringify(profileData));
+      const encryptedData = encryptData(JSON.stringify(profileData));
       
       // Save to database
       const { error } = await supabase
@@ -174,38 +235,102 @@ export const EmotionalAssessmentScreen = () => {
       return renderResults();
     }
     
-    const scenario = scenarios[currentScenarioIndex];
+    if (showInsights) {
+      return renderInsights();
+    }
+    
+    const scenario = selectedScenarios[currentScenarioIndex];
     
     return (
       <View style={tw`p-6`}>
-        <Text style={tw`text-2xl font-bold text-jung-purple mb-6`}>
-          Scenario {currentScenarioIndex + 1} of {scenarios.length}
-        </Text>
+        <View style={tw`flex-row items-center mb-6`}>
+          <Heart size={24} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+          <Text style={tw`text-xl font-bold text-gray-700`}>
+            Scenario {currentScenarioIndex + 1} of {selectedScenarios.length}
+          </Text>
+        </View>
         
-        <View style={tw`bg-white rounded-xl p-6 shadow-md mb-6`}>
-          <Text style={tw`text-lg font-medium text-gray-800 mb-4`}>
+        <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-6 border border-emotional/30`}>
+          <Text style={tw`text-lg font-medium text-gray-700 mb-6 leading-relaxed`}>
             {scenario.question}
           </Text>
           
-          <View style={tw`space-y-3`}>
+          <View style={tw`space-y-4`}>
             {scenario.options.map((option, index) => (
               <TouchableOpacity
                 key={index}
-                style={tw`border border-gray-200 rounded-lg p-4 active:bg-gray-100`}
+                style={tw`border border-emotional/30 rounded-lg p-4 active:bg-soothing-lavender/10 bg-white/90`}
                 onPress={() => handleResponse(option.emotion)}
               >
-                <Text style={tw`text-gray-700`}>{option.text}</Text>
+                <Text style={tw`text-gray-700 leading-relaxed`}>{option.text}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
         
-        <View style={tw`flex-row justify-between`}>
-          <Text style={tw`text-sm text-gray-500`}>
-            {currentScenarioIndex + 1} of {scenarios.length}
+        <View style={tw`flex-row justify-center bg-soothing-lavender/20 rounded-full px-4 py-2 self-center`}>
+          <Text style={tw`text-sm text-emotional font-medium`}>
+            {currentScenarioIndex + 1} of {selectedScenarios.length} scenarios
           </Text>
         </View>
       </View>
+    );
+  };
+
+  const renderInsights = () => {
+    const insight = emotionalInsights[currentInsightIndex];
+    
+    return (
+      <ScrollView style={tw`p-6`}>
+        <View style={tw`flex-row items-center mb-6`}>
+          <Lightbulb size={24} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+          <Text style={tw`text-xl font-bold text-gray-700`}>
+            Emotional Insights
+          </Text>
+        </View>
+        
+        <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-6 border border-emotional/30`}>
+          <Text style={tw`text-lg font-bold text-emotional mb-3`}>
+            {insight.title}
+          </Text>
+          
+          <Text style={tw`text-gray-700 leading-relaxed mb-4`}>
+            {insight.content}
+          </Text>
+          
+          <View style={tw`flex-row justify-between mt-4`}>
+            <TouchableOpacity
+              style={tw`p-2 rounded-full bg-emotional/10`}
+              onPress={() => setCurrentInsightIndex(prev => Math.max(0, prev - 1))}
+              disabled={currentInsightIndex === 0}
+            >
+              <CaretLeft size={20} color={currentInsightIndex === 0 ? "#ccc" : "#CEB5CD"} />
+            </TouchableOpacity>
+            
+            <Text style={tw`text-gray-500`}>
+              {currentInsightIndex + 1} of {emotionalInsights.length}
+            </Text>
+            
+            <TouchableOpacity
+              style={tw`p-2 rounded-full bg-emotional/10`}
+              onPress={() => setCurrentInsightIndex(prev => Math.min(emotionalInsights.length - 1, prev + 1))}
+              disabled={currentInsightIndex === emotionalInsights.length - 1}
+            >
+              <CaretRight size={20} color={currentInsightIndex === emotionalInsights.length - 1 ? "#ccc" : "#CEB5CD"} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        <TouchableOpacity
+          style={tw`bg-emotional/90 rounded-xl py-4 mb-4 flex-row justify-center items-center shadow-sm`}
+          onPress={() => setShowInsights(false)}
+        >
+          <ArrowLeft size={20} color="#fff" weight="fill" style={tw`mr-2`} />
+          <Text style={tw`text-white text-center font-medium`}>
+            Back to Profile
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     );
   };
 
@@ -214,35 +339,47 @@ export const EmotionalAssessmentScreen = () => {
     
     return (
       <ScrollView style={tw`p-6`}>
-        <Text style={tw`text-2xl font-bold text-jung-purple mb-6`}>
-          Your Emotional Profile
-        </Text>
+        <View style={tw`flex-row items-center mb-6`}>
+          <Heart size={24} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+          <Text style={tw`text-xl font-bold text-gray-700`}>
+            Your Emotional Profile
+          </Text>
+        </View>
         
-        <View style={tw`bg-white rounded-xl p-6 shadow-md mb-6`}>
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-sm text-gray-500 mb-1`}>Primary Emotion</Text>
-            <Text style={tw`text-xl font-semibold text-jung-purple`}>
+        <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-6 border border-emotional/30`}>
+          <View style={tw`mb-5 border-b border-gray-100 pb-4`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <Heart size={18} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+              <Text style={tw`text-sm text-gray-600 font-medium`}>Primary Emotion</Text>
+            </View>
+            <Text style={tw`text-xl font-semibold text-emotional`}>
               {emotionalProfile.primary_emotion}
             </Text>
           </View>
           
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-sm text-gray-500 mb-1`}>Secondary Emotions</Text>
+          <View style={tw`mb-5 border-b border-gray-100 pb-4`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <Brain size={18} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+              <Text style={tw`text-sm text-gray-600 font-medium`}>Secondary Emotions</Text>
+            </View>
             <View style={tw`flex-row flex-wrap`}>
               {emotionalProfile.secondary_emotions.map((emotion: string, index: number) => (
-                <View key={index} style={tw`bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2`}>
-                  <Text style={tw`text-gray-700`}>{emotion}</Text>
+                <View key={index} style={tw`bg-emotional/10 border border-emotional/20 rounded-full px-3 py-1 mr-2 mb-2`}>
+                  <Text style={tw`text-emotional`}>{emotion}</Text>
                 </View>
               ))}
             </View>
           </View>
           
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-sm text-gray-500 mb-1`}>Emotional Intensity</Text>
-            <View style={tw`bg-gray-200 h-2 rounded-full overflow-hidden`}>
+          <View style={tw`mb-5 border-b border-gray-100 pb-4`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <ChartBar size={18} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+              <Text style={tw`text-sm text-gray-600 font-medium`}>Emotional Intensity</Text>
+            </View>
+            <View style={tw`bg-gray-200 h-3 rounded-full overflow-hidden`}>
               <View 
                 style={[
-                  tw`bg-jung-purple h-full`, 
+                  tw`bg-emotional h-full`, 
                   { width: `${emotionalProfile.intensity * 10}%` }
                 ]} 
               />
@@ -252,49 +389,113 @@ export const EmotionalAssessmentScreen = () => {
             </Text>
           </View>
           
-          <View style={tw`mb-4`}>
-            <Text style={tw`text-sm text-gray-500 mb-1`}>Potential Triggers</Text>
+          <View style={tw`mb-5 border-b border-gray-100 pb-4`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <Scales size={18} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+              <Text style={tw`text-sm text-gray-600 font-medium`}>Potential Triggers</Text>
+            </View>
             <View>
               {emotionalProfile.triggers.map((trigger: string, index: number) => (
-                <Text key={index} style={tw`text-gray-700 mb-1`}>• {trigger}</Text>
+                <Text key={index} style={tw`text-gray-700 mb-1 leading-relaxed`}>• {trigger}</Text>
               ))}
             </View>
           </View>
           
           <View>
-            <Text style={tw`text-sm text-gray-500 mb-1`}>Emotional Needs</Text>
+            <View style={tw`flex-row items-center mb-2`}>
+              <Lightbulb size={18} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+              <Text style={tw`text-sm text-gray-600 font-medium`}>Emotional Needs</Text>
+            </View>
             <View>
               {emotionalProfile.needs.map((need: string, index: number) => (
-                <Text key={index} style={tw`text-gray-700 mb-1`}>• {need}</Text>
+                <Text key={index} style={tw`text-gray-700 mb-1 leading-relaxed`}>• {need}</Text>
               ))}
             </View>
           </View>
         </View>
         
-        <TouchableOpacity
-          style={tw`bg-jung-purple rounded-lg py-4 mb-4`}
-          onPress={() => navigation.navigate('DailyMotivationScreen')}
-        >
-          <Text style={tw`text-white text-center font-semibold`}>
-            See Your Daily Motivation
+        <View style={tw`flex-row mb-4`}>
+          <TouchableOpacity
+            style={tw`bg-emotional/90 rounded-xl py-4 mb-4 flex-row justify-center items-center shadow-sm flex-1 mr-2`}
+            onPress={() => navigation.navigate('DailyMotivationScreen')}
+          >
+            <Plant size={20} color="#fff" weight="fill" style={tw`mr-2`} />
+            <Text style={tw`text-white text-center font-medium`}>
+              See Daily Motivation
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={tw`bg-white border border-emotional rounded-xl py-4 mb-4 flex-row justify-center items-center shadow-sm flex-1 ml-2`}
+            onPress={() => setShowInsights(true)}
+          >
+            <Lightbulb size={20} color="#CEB5CD" weight="fill" style={tw`mr-2`} />
+            <Text style={tw`text-emotional text-center font-medium`}>
+              Emotional Insights
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={tw`bg-emotional/10 rounded-xl p-4 border border-emotional/20 mb-6`}>
+          <Text style={tw`text-gray-700 font-medium mb-2`}>
+            Try this emotional awareness challenge:
           </Text>
-        </TouchableOpacity>
+          <Text style={tw`text-gray-600 mb-2`}>
+            {emotionalChallenges[Math.floor(Math.random() * emotionalChallenges.length)].description}
+          </Text>
+        </View>
       </ScrollView>
     );
   };
 
   return (
-    <GradientBackground>
+    <GradientBackground variant="emotional">
       <SafeAreaView style={tw`flex-1`}>
-        <SymbolicBackground opacity={0.03} />
+        <SymbolicBackground opacity={0.07} variant="emotional" />
+        
+        <View style={tw`p-4 border-b border-emotional/30 flex-row items-center`}>
+          <TouchableOpacity 
+            style={tw`p-2`}
+            onPress={() => navigation.goBack()}
+          >
+            <ArrowLeft size={20} color="#CEB5CD" />
+          </TouchableOpacity>
+          <Text style={tw`text-xl font-bold text-center text-gray-700 flex-1 mr-8`}>
+            Emotional Assessment
+          </Text>
+        </View>
+        
+        {!assessmentComplete && !showInsights && !loading && (
+          <View style={tw`flex-row justify-center border-b border-emotional/20 py-2 bg-white/80`}>
+            <TouchableOpacity
+              style={tw`px-4 py-2 rounded-full ${scenarioSet === "base" ? "bg-emotional/20" : ""}`}
+              onPress={() => handleScenarioSetChange("base")}
+            >
+              <Text style={tw`${scenarioSet === "base" ? "text-emotional font-medium" : "text-gray-600"}`}>
+                Quick Assessment
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={tw`px-4 py-2 rounded-full ${scenarioSet === "all" ? "bg-emotional/20" : ""}`}
+              onPress={() => handleScenarioSetChange("all")}
+            >
+              <Text style={tw`${scenarioSet === "all" ? "text-emotional font-medium" : "text-gray-600"}`}>
+                Comprehensive
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         
         {loading ? (
           <View style={tw`flex-1 justify-center items-center`}>
-            <ActivityIndicator size="large" color="#4A3B78" />
-            <Text style={tw`mt-4 text-lg text-jung-purple`}>Analyzing your emotional profile...</Text>
+            <ActivityIndicator size="large" color="#CEB5CD" />
+            <Text style={tw`mt-4 text-lg text-emotional`}>Analyzing your emotional profile...</Text>
           </View>
         ) : (
-          renderScenario()
+          <ScrollView ref={scrollViewRef}>
+            {renderScenario()}
+          </ScrollView>
         )}
       </SafeAreaView>
     </GradientBackground>

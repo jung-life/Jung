@@ -25,12 +25,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { Message } from '../components/Message';
 import { generatePromptForAvatar } from '../lib/avatarPrompts';
 import { SymbolicBackground } from '../components/SymbolicBackground';
+import { encryptData, decryptData } from '../lib/encryptionUtils';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 type Message = {
   id: string;
-  conversation_id: string;
+  conversation_id?: string; // Making this optional to accommodate local messages
   content: string;
   role: 'user' | 'assistant';
   is_from_user?: boolean;
@@ -121,12 +122,26 @@ export const ChatScreen = () => {
       }
       
       if (data) {
-        const formattedMessages = data.map(msg => ({
-          id: msg.id,
-          content: msg.content,
-          role: msg.is_from_user ? 'user' : 'assistant',
-          created_at: msg.created_at
-        }));
+        const formattedMessages = data.map(msg => {
+          let messageContent = msg.content;
+          
+          // Decrypt message content if it appears to be encrypted
+          if (messageContent && messageContent.startsWith('U2FsdGVkX1')) {
+            try {
+              messageContent = decryptData(messageContent);
+            } catch (decryptError) {
+              console.error('Error decrypting message:', decryptError);
+              // If decryption fails, use the original content
+            }
+          }
+          
+          return {
+            id: msg.id,
+            content: messageContent,
+            role: msg.is_from_user ? 'user' as const : 'assistant' as const,
+            created_at: msg.created_at
+          };
+        });
         
         setMessages(formattedMessages);
         
@@ -156,7 +171,25 @@ export const ChatScreen = () => {
         filter: `conversation_id=eq.${conversationId}`
       }, (payload) => {
         console.log('New message received:', payload);
-        setMessages(prev => [...prev, payload.new as Message]);
+        
+        // Need to handle the incoming message by properly mapping it to our Message type
+        const newMsg = payload.new;
+        const messageContent = newMsg.content;
+        
+        // Try to decrypt the message if it appears to be encrypted
+        const decryptedContent = messageContent && messageContent.startsWith('U2FsdGVkX1') 
+          ? decryptData(messageContent) 
+          : messageContent;
+          
+        const formattedMessage: Message = {
+          id: newMsg.id,
+          conversation_id: newMsg.conversation_id,
+          content: decryptedContent,
+          role: newMsg.is_from_user ? 'user' as const : 'assistant' as const,
+          created_at: newMsg.created_at
+        };
+        
+        setMessages(prev => [...prev, formattedMessage]);
       })
       .subscribe();
       
@@ -206,8 +239,9 @@ export const ChatScreen = () => {
           greeting = "Hello, I'm here to assist you with your journey of self-discovery. How can I help you today?";
       }
       
-      const aiMessage = {
+      const aiMessage: Message = {
         id: uuidv4(),
+        conversation_id: conversationId,
         content: greeting,
         role: 'assistant',
         created_at: new Date().toISOString()
@@ -215,13 +249,16 @@ export const ChatScreen = () => {
       
       setMessages([aiMessage]);
       
+      // Encrypt message before saving to database
+      const encryptedContent = encryptData(greeting);
+      
       // Save to database
       await supabase
         .from('messages')
         .insert({
           id: aiMessage.id,
           conversation_id: conversationId,
-          content: aiMessage.content,
+          content: encryptedContent,
           is_from_user: false,
           created_at: aiMessage.created_at
         });
@@ -238,8 +275,9 @@ export const ChatScreen = () => {
     
     try {
       // Add user message to the chat
-      const userMessage = {
+      const userMessage: Message = {
         id: uuidv4(),
+        conversation_id: conversationId,
         content: inputText,
         role: 'user',
         created_at: new Date().toISOString()
@@ -250,13 +288,16 @@ export const ChatScreen = () => {
       setInputText('');
       setIsTyping(true);
       
+      // Encrypt user message before saving to database
+      const encryptedContent = encryptData(userMessage.content);
+      
       // Save user message to database
       await supabase
         .from('messages')
         .insert({
           id: userMessage.id,
           conversation_id: conversationId,
-          content: userMessage.content,
+          content: encryptedContent,
           is_from_user: true,
           created_at: userMessage.created_at
         });
@@ -284,8 +325,9 @@ export const ChatScreen = () => {
       const responseContent = extractResponseContent(aiResponse);
       
       // Add AI response to chat
-      const aiMessage = {
+      const aiMessage: Message = {
         id: uuidv4(),
+        conversation_id: conversationId,
         content: responseContent,
         role: 'assistant',
         created_at: new Date().toISOString()
@@ -293,13 +335,16 @@ export const ChatScreen = () => {
       
       setMessages([...updatedMessages, aiMessage]);
       
+      // Encrypt AI message before saving to database
+      const encryptedAIContent = encryptData(aiMessage.content);
+      
       // Save AI message to database
       await supabase
         .from('messages')
         .insert({
           id: aiMessage.id,
           conversation_id: conversationId,
-          content: aiMessage.content,
+          content: encryptedAIContent,
           is_from_user: false,
           created_at: aiMessage.created_at
         });
@@ -363,16 +408,25 @@ export const ChatScreen = () => {
     );
   };
   
-  // Replace the TherapistAvatar component with an inline component
-  const AvatarComponent = ({ avatarId, isSpeaking }) => {
+  // Improved AvatarComponent to properly display avatar images
+  const AvatarComponent = ({ avatarId, isSpeaking }: { avatarId: string, isSpeaking: boolean }) => {
+    const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
+    
     return (
       <View style={tw`items-center`}>
-        <View style={tw`w-24 h-24 rounded-full bg-${isSpeaking ? 'jung-purple' : 'gray-300'} items-center justify-center`}>
-          <Text style={tw`text-white text-lg font-bold`}>{avatarId}</Text>
+        <View style={tw`${isSpeaking ? 'border-2 border-jung-purple' : ''} rounded-full p-1`}>
+          <SimpleAvatar 
+            avatarId={avatarId} 
+            size={80} 
+            style={tw`shadow-md`}
+          />
         </View>
         {isSpeaking && (
-          <Text style={tw`mt-2 text-jung-purple`}>Thinking...</Text>
+          <Text style={tw`mt-2 text-jung-purple animate-pulse`}>Thinking...</Text>
         )}
+        <Text style={tw`mt-1 text-gray-700 font-medium`}>
+          {avatar.name || avatarId}
+        </Text>
       </View>
     );
   };

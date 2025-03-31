@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  ScrollView, 
+  ActivityIndicator,
+  Image 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
@@ -11,7 +18,7 @@ import tw from '../lib/tailwind';
 import { decryptData } from '../lib/security';
 import { generateAIResponse } from '../lib/api';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowRight, ArrowLeft, Sparkle } from 'phosphor-react-native';
+import { ArrowRight, ArrowLeft, Sparkle, Leaf, Plant, SmileyWink } from 'phosphor-react-native';
 import { quotes } from '../data/quotes';
 
 export default function DailyMotivationScreen() {
@@ -113,8 +120,8 @@ export default function DailyMotivationScreen() {
     if (loading) {
       return (
         <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color="#4A3B78" />
-          <Text style={tw`mt-4 text-lg text-jung-purple`}>Finding your daily inspiration...</Text>
+          <ActivityIndicator size="large" color="#97C1A9" />
+          <Text style={tw`mt-4 text-lg text-motivation`}>Finding your daily inspiration...</Text>
         </View>
       );
     }
@@ -123,27 +130,27 @@ export default function DailyMotivationScreen() {
       <ScrollView style={tw`flex-1 p-6`}>
         {personalizedQuote ? (
           <View style={tw`mb-10`}>
-            <View style={tw`flex-row mb-2`}>
-              <Sparkle size={20} color="#4A3B78" />
-              <Text style={tw`text-sm text-jung-purple ml-1 font-medium`}>Personalized For You</Text>
+            <View style={tw`flex-row mb-2 items-center`}>
+              <SmileyWink size={22} color="#97C1A9" weight="fill" />
+                <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
             </View>
             
-            <View style={tw`bg-white rounded-xl p-6 shadow-md mb-4`}>
-              <Text style={tw`text-lg text-gray-800 italic`}>
+            <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30`}>
+              <Text style={tw`text-lg text-gray-700 italic leading-relaxed`}>
                 "{personalizedQuote}"
               </Text>
             </View>
             
             {emotionalProfile && (
-              <View style={tw`bg-gray-50 rounded-lg p-4 border border-gray-200`}>
-                <Text style={tw`text-sm text-gray-500 mb-2`}>Based on your emotional profile:</Text>
+              <View style={tw`bg-soothing-green/10 rounded-lg p-4 border border-soothing-green/20`}>
+                <Text style={tw`text-sm text-gray-600 mb-2 font-medium`}>Based on your emotional profile:</Text>
                 <View style={tw`flex-row flex-wrap`}>
-                  <View style={tw`bg-jung-purple-light rounded-full px-3 py-1 mr-2 mb-2`}>
-                    <Text style={tw`text-jung-purple text-xs`}>{emotionalProfile.primary_emotion}</Text>
+                  <View style={tw`bg-motivation/20 rounded-full px-3 py-1 mr-2 mb-2 border border-motivation/30`}>
+                    <Text style={tw`text-gray-700 text-xs font-medium`}>{emotionalProfile.primary_emotion}</Text>
                   </View>
                   {emotionalProfile.secondary_emotions.slice(0, 2).map((emotion: string, index: number) => (
-                    <View key={index} style={tw`bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2`}>
-                      <Text style={tw`text-gray-700 text-xs`}>{emotion}</Text>
+                    <View key={index} style={tw`bg-soothing-green/10 rounded-full px-3 py-1 mr-2 mb-2 border border-soothing-green/20`}>
+                      <Text style={tw`text-gray-600 text-xs`}>{emotion}</Text>
                     </View>
                   ))}
                 </View>
@@ -153,50 +160,57 @@ export default function DailyMotivationScreen() {
         ) : null}
         
         <View>
-          <Text style={tw`text-sm text-gray-500 mb-2`}>Daily Wisdom</Text>
-          <View style={tw`bg-white rounded-xl p-6 shadow-md`}>
-            <Text style={tw`text-lg text-gray-800 italic mb-4`}>
+          <View style={tw`flex-row mb-2 items-center`}>
+            <Leaf size={20} color="#97C1A9" weight="fill" />
+            <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
+          </View>
+          
+          <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
+            <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
               "{currentQuote}"
             </Text>
             {currentAuthor && (
-              <Text style={tw`text-right text-gray-600`}>— {currentAuthor}</Text>
+              <Text style={tw`text-right text-gray-500`}>— {currentAuthor}</Text>
             )}
           </View>
         </View>
         
         <TouchableOpacity
-          style={tw`mt-6 bg-jung-purple-light rounded-lg py-3 items-center`}
+          style={tw`mt-8 bg-motivation/20 rounded-xl py-4 items-center border border-motivation/30 shadow-sm`}
           onPress={selectRandomQuote}
         >
-          <Text style={tw`text-jung-purple font-medium`}>
-            Show Another Quote
-          </Text>
+          <View style={tw`flex-row items-center`}>
+            <Plant size={20} color="#97C1A9" weight="fill" style={tw`mr-2`} />
+            <Text style={tw`text-gray-700 font-medium`}>
+              Refresh Your Inspiration
+            </Text>
+          </View>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={tw`mt-4 flex-row justify-center items-center py-2`}
+          style={tw`mt-6 flex-row justify-center items-center py-4`}
           onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
         >
-          <Text style={tw`text-gray-600 mr-2`}>Update Your Emotional Profile</Text>
-          <ArrowRight size={16} color="#718096" />
+          <Text style={tw`text-gray-600 mr-2 font-medium`}>Update Your Emotional Profile</Text>
+          <ArrowRight size={16} color="#97C1A9" />
         </TouchableOpacity>
       </ScrollView>
     );
   };
 
   return (
-    <GradientBackground>
+    <GradientBackground variant="motivation">
       <SafeAreaView style={tw`flex-1`}>
-        <SymbolicBackground opacity={0.03} />
+        <SymbolicBackground opacity={0.07} variant="motivation" />
         
-        <View style={tw`p-4 border-b border-gray-200 flex-row items-center`}>
+        <View style={tw`p-4 border-b border-soothing-green/30 flex-row items-center`}>
           <TouchableOpacity 
             style={tw`p-2`}
             onPress={() => navigation.goBack()}
           >
             <ArrowLeft size={20} color="#4A3B78" />
           </TouchableOpacity>
-          <Text style={tw`text-xl font-bold text-center text-jung-purple flex-1 mr-8`}>
+          <Text style={tw`text-xl font-bold text-center text-gray-700 flex-1 mr-8`}>
             Daily Motivation
           </Text>
         </View>

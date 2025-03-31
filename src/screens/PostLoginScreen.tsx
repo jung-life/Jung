@@ -5,7 +5,7 @@ import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
-import { ChatCircleDots, Brain, BookOpen, User } from 'phosphor-react-native';
+import { ChatCircleDots, Brain, BookOpen, Heart, User } from 'phosphor-react-native';
 import { HamburgerMenu } from '../components/HamburgerMenu';
 
 const PostLoginScreen = () => {
@@ -16,8 +16,11 @@ const PostLoginScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        {/* Add header with hamburger menu */}
-   
+        {/* Header with hamburger menu */}
+        <View style={tw`flex-row justify-between items-center p-4`}>
+          <Text style={tw`text-xl font-bold text-jung-deep`}>Jung</Text>
+          <HamburgerMenu />
+        </View>
         
         <ScrollView style={tw`flex-1 px-4`}>
           <View style={tw`mt-4 mb-8`}>
@@ -43,6 +46,14 @@ const PostLoginScreen = () => {
             <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Daily Motivation</Text>
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
+          >
+            <Heart size={28} color="#4A3B78" weight="fill" />
+            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Emotional Assessment</Text>
+          </TouchableOpacity>
+          
 
         </ScrollView>
       </SafeAreaView>
@@ -50,4 +61,4 @@ const PostLoginScreen = () => {
   );
 };
 
-export default PostLoginScreen; 
+export default PostLoginScreen;

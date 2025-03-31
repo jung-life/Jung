@@ -24,7 +24,7 @@ module.exports = {
         'jung-stone': '#A9A9A9',
         
         // Background - soft, inviting
-        'jung-bg': '#F9F7F4',
+        'jung-bg': '#F0F7FF', // Lighter blue tint for calming effect
         'jung-text': '#333333',
         
         // Primary purple
@@ -32,7 +32,19 @@ module.exports = {
         
         // Light purple
         'jung-purple-light': '#9D94BC',
+        
+        // Soothing ambient colors for anxiety and depression
+        'soothing-blue': '#A8DADC',       // Light blue - calming
+        'soothing-teal': '#8ECEDA',       // Teal - peaceful
+        'soothing-green': '#A7C4A0',      // Sage green - restful
+        'soothing-lavender': '#CFC7DC',   // Lavender - relaxing
+        'soothing-peach': '#F8D9C9',      // Soft peach - warm
+        
+        // Feature specific colors
+        'conversation': '#6A8EAE',        // Muted blue - communication
+        'motivation': '#97C1A9',          // Soft green - growth
+        'emotional': '#CEB5CD',           // Soft purple - emotional insight
       },
     },
   },
-}; 
+};

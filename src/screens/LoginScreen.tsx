@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, 
   View, 
   Text, 
   TouchableOpacity, 
@@ -8,17 +7,18 @@ import {
   TextInput, 
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import tw from '../lib/tailwind';
 import { ArrowLeft, Lock, Envelope } from 'phosphor-react-native';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { Typography } from '../components/Typography';
+import { SocialButton } from '../components/SocialButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import Constants from 'expo-constants';
@@ -28,14 +28,6 @@ import * as AuthSession from 'expo-auth-session';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-// Define the color scheme
-const colors = {
-  light: '#A8DADC',
-  medium: '#457B9D',
-  dark: '#1D3557',
-  darkest: '#2C3E50'
-};
 
 // Initialize WebBrowser
 WebBrowser.maybeCompleteAuthSession();
@@ -47,6 +39,7 @@ export const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<'default' | 'conversation' | 'motivation' | 'emotional'>('default');
   
   // Use the Supabase context
   const { login } = useSupabase();
@@ -100,7 +93,7 @@ export const LoginScreen = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: AuthSession.makeRedirectUri({ useProxy: true }),
+          redirectTo: AuthSession.makeRedirectUri({}),
           skipBrowserRedirect: false,
         }
       });
@@ -115,7 +108,7 @@ export const LoginScreen = () => {
         console.log('Opening auth URL:', data.url);
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          AuthSession.makeRedirectUri({ useProxy: true })
+          AuthSession.makeRedirectUri({})
         );
 
         console.log('WebBrowser result:', result);
@@ -130,9 +123,9 @@ export const LoginScreen = () => {
               refresh_token: params.get('refresh_token') || '',
             };
 
-            const { error } = await supabase.auth.setSession(session);
+            const { error: sessionError } = await supabase.auth.setSession(session);
             
-            if (error) throw error;
+            if (sessionError) throw sessionError;
 
             navigation.navigate('Home');
           }
@@ -140,7 +133,11 @@ export const LoginScreen = () => {
       }
     } catch (error) {
       console.error('Google login error:', error);
-      Alert.alert('Error', error.message);
+      if (error instanceof Error) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -157,9 +154,9 @@ export const LoginScreen = () => {
   };
 
   return (
-    <GradientBackground>
+    <GradientBackground variant={selectedFeature}>
       <SafeAreaView style={tw`flex-1`}>
-        <SymbolicBackground opacity={0.05} />
+        <SymbolicBackground opacity={0.05} variant={selectedFeature} />
         
         {/* Back Button */}
         <TouchableOpacity 
@@ -168,7 +165,7 @@ export const LoginScreen = () => {
             navigation.goBack();
           }}
         >
-          <ArrowLeft size={24} color={colors.dark} weight="bold" />
+          <ArrowLeft size={24} color="#4A3B78" weight="bold" />
         </TouchableOpacity>
         
         <KeyboardAvoidingView
@@ -176,24 +173,54 @@ export const LoginScreen = () => {
           style={tw`flex-1 justify-center`}
         >
           <View style={tw`flex-1 p-6 justify-center`}>
-            <View style={[tw`bg-white/95 rounded-xl p-6 shadow-lg`, { borderColor: colors.light, borderWidth: 1 }]}>
-              <Typography variant="subtitle" style={[tw`mb-6 text-center`, { color: colors.dark }]}>
+            <View style={tw`bg-white/90 rounded-xl p-6 shadow-lg border border-soothing-blue`}>
+              <Typography variant="subtitle" style={tw`mb-6 text-center text-jung-purple`}>
                 Welcome Back
               </Typography>
+              
+              {/* Feature Selection Buttons */}
+              <View style={tw`flex-row justify-center mb-6`}>
+                <TouchableOpacity 
+                  style={tw`mx-2 items-center ${selectedFeature === 'conversation' ? 'opacity-100' : 'opacity-60'}`}
+                  onPress={() => setSelectedFeature('conversation')}
+                >
+                  <View style={tw`w-12 h-12 rounded-full bg-conversation mb-1 items-center justify-center`}>
+                    <Envelope size={22} color="#fff" weight="fill" />
+                  </View>
+                  <Text style={tw`text-xs text-gray-600`}>Chat</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={tw`mx-2 items-center ${selectedFeature === 'motivation' ? 'opacity-100' : 'opacity-60'}`}
+                  onPress={() => setSelectedFeature('motivation')}
+                >
+                  <View style={tw`w-12 h-12 rounded-full bg-motivation mb-1 items-center justify-center`}>
+                    <ArrowLeft size={22} color="#fff" weight="fill" style={{transform: [{rotate: '45deg'}]}} />
+                  </View>
+                  <Text style={tw`text-xs text-gray-600`}>Motivation</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={tw`mx-2 items-center ${selectedFeature === 'emotional' ? 'opacity-100' : 'opacity-60'}`}
+                  onPress={() => setSelectedFeature('emotional')}
+                >
+                  <View style={tw`w-12 h-12 rounded-full bg-emotional mb-1 items-center justify-center`}>
+                    <Lock size={22} color="#fff" weight="fill" />
+                  </View>
+                  <Text style={tw`text-xs text-gray-600`}>Emotional</Text>
+                </TouchableOpacity>
+              </View>
               
               {showEmailLogin ? (
                 <>
                   {/* Email/Password Login Fields */}
                   <View style={tw`mb-4`}>
                     <View style={tw`flex-row items-center mb-2`}>
-                      <Envelope size={20} color={colors.medium} weight="duotone" />
-                      <Text style={[tw`ml-2`, { color: colors.medium }]}>Email</Text>
+                      <Envelope size={20} color="#6A8EAE" weight="duotone" />
+                      <Text style={tw`ml-2 text-gray-600`}>Email</Text>
                     </View>
                     <TextInput
-                      style={[tw`border rounded-lg p-3`, { 
-                        backgroundColor: '#F0F8FF', 
-                        borderColor: colors.light 
-                      }]}
+                      style={tw`border rounded-lg p-3 bg-soothing-blue/10 border-soothing-blue`}
                       placeholder="Enter your email"
                       value={email}
                       onChangeText={setEmail}
@@ -205,14 +232,11 @@ export const LoginScreen = () => {
                   
                   <View style={tw`mb-4`}>
                     <View style={tw`flex-row items-center mb-2`}>
-                      <Lock size={20} color={colors.medium} weight="duotone" />
-                      <Text style={[tw`ml-2`, { color: colors.medium }]}>Password</Text>
+                      <Lock size={20} color="#6A8EAE" weight="duotone" />
+                      <Text style={tw`ml-2 text-gray-600`}>Password</Text>
                     </View>
                     <TextInput
-                      style={[tw`border rounded-lg p-3`, { 
-                        backgroundColor: '#F0F8FF', 
-                        borderColor: colors.light 
-                      }]}
+                      style={tw`border rounded-lg p-3 bg-soothing-blue/10 border-soothing-blue`}
                       placeholder="Enter your password"
                       value={password}
                       onChangeText={setPassword}
@@ -223,9 +247,7 @@ export const LoginScreen = () => {
                   
                   {/* Login Button */}
                   <TouchableOpacity
-                    style={[tw`rounded-lg py-4 flex-row items-center justify-center mb-4 shadow-md`, { 
-                      backgroundColor: colors.dark 
-                    }]}
+                    style={tw`rounded-lg py-4 flex-row items-center justify-center mb-4 shadow-md bg-jung-purple`}
                     onPress={handleLogin}
                     disabled={loading}
                   >
@@ -240,7 +262,7 @@ export const LoginScreen = () => {
                     style={tw`mt-2 mb-4`}
                     onPress={() => setShowEmailLogin(false)}
                   >
-                    <Text style={[tw`text-center`, { color: colors.medium }]}>
+                    <Text style={tw`text-center text-soothing-blue`}>
                       ← Back to login options
                     </Text>
                   </TouchableOpacity>
@@ -248,40 +270,27 @@ export const LoginScreen = () => {
               ) : (
                 <>
                   {/* Email Login Button */}
-                  <TouchableOpacity
-                    style={[tw`rounded-lg py-4 flex-row items-center justify-center mb-4 shadow-md`, { 
-                      backgroundColor: colors.dark 
-                    }]}
+                  <SocialButton
+                    provider="email"
                     onPress={() => setShowEmailLogin(true)}
-                  >
-                    <Envelope size={24} color="white" weight="fill" style={tw`mr-2`} />
-                    <Text style={tw`text-white font-bold text-lg`}>Login with Email</Text>
-                  </TouchableOpacity>
+                    variant={selectedFeature}
+                  />
                   
                   {/* Google Login Button */}
-                  <TouchableOpacity
-                    style={[tw`bg-white border rounded-lg py-4 flex-row items-center justify-center mb-4 shadow-sm`, {
-                      borderColor: colors.light
-                    }]}
+                  <SocialButton
+                    provider="google"
                     onPress={handleGoogleLogin}
+                    loading={loading}
                     disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator size="small" color="#DB4437" style={tw`mr-2`} />
-                    ) : (
-                      <AntDesign name="google" size={24} color="#DB4437" style={tw`mr-2`} />
-                    )}
-                    <Text style={[tw`font-bold text-lg`, { color: colors.darkest }]}>Continue with Google</Text>
-                  </TouchableOpacity>
+                    variant={selectedFeature}
+                  />
 
                   {/* Apple Login Button */}
-                  <TouchableOpacity
-                    style={tw`bg-black rounded-lg py-4 flex-row items-center justify-center mb-4 shadow-md`}
+                  <SocialButton
+                    provider="apple"
                     onPress={handleAppleLogin}
-                  >
-                    <FontAwesome name="apple" size={24} color="white" style={tw`mr-2`} />
-                    <Text style={tw`text-white font-bold text-lg`}>Continue with Apple</Text>
-                  </TouchableOpacity>
+                    variant={selectedFeature}
+                  />
                 </>
               )}
               
@@ -290,7 +299,7 @@ export const LoginScreen = () => {
                 style={tw`mt-4`}
                 onPress={() => navigation.navigate('Register')}
               >
-                <Text style={[tw`text-center font-medium`, { color: colors.medium }]}>
+                <Text style={tw`text-center font-medium text-soothing-blue`}>
                   Don't have an account? Sign up
                 </Text>
               </TouchableOpacity>

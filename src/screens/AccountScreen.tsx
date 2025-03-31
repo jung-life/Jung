@@ -113,9 +113,13 @@ export const AccountScreen = () => {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
+      console.log('Starting profile fetch');
       
       const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      if (userError) {
+        console.error('User fetch error:', userError);
+        throw userError;
+      }
       
       if (!userData?.user?.id) {
         console.log('No user ID found');
@@ -123,20 +127,20 @@ export const AccountScreen = () => {
         return;
       }
       
-      // Check the profiles table structure first
       console.log('Fetching profile for user ID:', userData.user.id);
       
-      // Use maybeSingle() instead of single() to handle no rows gracefully
+      // Try user_id first, which is the correct foreign key in most setups
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userData.user.id) // Try user_id instead of id
+        .eq('user_id', userData.user.id)
         .maybeSingle();
       
       if (error) {
         console.error('Error fetching profile with user_id:', error);
         
-        // Try with id field instead
+        // Try with id field as fallback
+        console.log('Trying with id field instead...');
         const { data: dataById, error: errorById } = await supabase
           .from('profiles')
           .select('*')
@@ -145,10 +149,14 @@ export const AccountScreen = () => {
           
         if (errorById) {
           console.error('Error fetching profile with id:', errorById);
-          throw errorById;
+          // Instead of throwing, let's proceed to create a new profile
+          console.log('No profile found, creating a new one...');
+          await createUserProfile(userData.user.id);
+          return;
         }
         
         if (dataById) {
+          console.log('Profile found using id field');
           setProfile(dataById);
           // Set form state with the profile data
           setFormState({
@@ -167,6 +175,7 @@ export const AccountScreen = () => {
         }
         
         // If we get here, we need to create a profile
+        console.log('No profile found with either method, creating a new one');
         await createUserProfile(userData.user.id);
         return;
       }
@@ -211,38 +220,93 @@ export const AccountScreen = () => {
     try {
       console.log('Creating new profile for user ID:', userId);
       
-      // First, check if the profiles table has user_id or id as the foreign key
-      const { data: tableInfo, error: tableError } = await supabase
-        .rpc('get_table_info', { table_name: 'profiles' });
-        
-      if (tableError) {
-        console.error('Error getting table info:', tableError);
+      // Get the user's email
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not found when creating profile');
       }
       
-      console.log('Profiles table structure:', tableInfo);
+      // Create a default profile
+      const newProfile = {
+        id: userId, // This will be the primary key
+        user_id: userId, // This is the foreign key to auth.users
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        avatar_url: null,
+        theme_preference: 'system',
+        notification_preferences: {
+          daily_reminders: false,
+          new_features: true,
+          insights: true
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      // Try inserting with both id and user_id to be safe
+      // Insert the profile
       const { data, error } = await supabase
         .from('profiles')
-        .insert({
-          id: userId,
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .insert(newProfile)
         .select()
         .single();
         
       if (error) {
         console.error('Error creating profile:', error);
-        throw error;
+        
+        // Show error but don't throw, so we can still use the app
+        Alert.alert(
+          'Profile Creation Issue',
+          'There was an issue creating your profile. Some features may not work properly.',
+          [{ text: 'OK' }]
+        );
+        
+        // Set the local profile state anyway so the app is usable
+        // Need to ensure email is never undefined for type compatibility
+        const safeProfile = {
+          ...newProfile,
+          email: newProfile.email || ''
+        };
+        setProfile(safeProfile);
+        setFormState({
+          full_name: newProfile.full_name,
+          email: newProfile.email || '',
+          username: newProfile.full_name,
+          avatar_url: null,
+          theme_preference: 'system',
+          notification_preferences: {
+            daily_reminders: false,
+            new_features: true,
+            insights: true
+          }
+        });
+        return;
       }
       
       console.log('Profile created successfully:', data);
       setProfile(data);
+      
+      // Update form state with the newly created profile
+      setFormState({
+        full_name: data.full_name || '',
+        email: data.email || '',
+        username: data.username || data.email?.split('@')[0] || '',
+        avatar_url: data.avatar_url,
+        theme_preference: data.theme_preference || 'system',
+        notification_preferences: {
+          daily_reminders: data.notification_preferences?.daily_reminders || false,
+          new_features: data.notification_preferences?.new_features || true,
+          insights: data.notification_preferences?.insights || true
+        }
+      });
     } catch (error) {
       console.error('Error in createUserProfile:', error);
-      throw error;
+      // Show error but don't throw
+      Alert.alert(
+        'Profile Error',
+        'An error occurred while setting up your profile. Please try again later.',
+        [{ text: 'OK' }]
+      );
     }
   };
   
@@ -581,10 +645,14 @@ export const AccountScreen = () => {
   
   const handleSignOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
-      navigation.navigate('LandingScreen'); // Navigate to an existing screen
+      navigation.navigate('LandingScreen');
     } catch (error) {
       console.error('Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
   
