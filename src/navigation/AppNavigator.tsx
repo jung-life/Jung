@@ -22,8 +22,9 @@ import { navigationRef } from './navigationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Default header options
+// Default header options with hamburger menu
 const defaultPostLoginOptions = {
+  headerRight: () => <HamburgerMenu />,
   headerStyle: {
     backgroundColor: '#ffffff',
   },
@@ -31,12 +32,6 @@ const defaultPostLoginOptions = {
   headerTitleStyle: {
     fontWeight: 'bold' as const,
   },
-};
-
-// Header options with hamburger menu
-const headerWithHamburgerMenu = {
-  ...defaultPostLoginOptions,
-  headerRight: () => <HamburgerMenu />,
 };
 
 const AppNavigator = () => {
@@ -60,7 +55,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Home',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -69,10 +64,9 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Home',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
-        {/* No hamburger menu on Conversations Screen to avoid duplication */}
         <Stack.Screen 
           name="ConversationsScreen" 
           component={ConversationsScreen}
@@ -88,7 +82,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Chat',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -97,7 +91,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Account Settings',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -106,7 +100,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Privacy Policy',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -115,7 +109,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Terms of Service',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -124,7 +118,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Disclaimer',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -133,7 +127,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Daily Motivation',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
         <Stack.Screen 
@@ -142,7 +136,7 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Emotional Assessment',
-            ...headerWithHamburgerMenu,
+            ...defaultPostLoginOptions,
           }}
         />
       </Stack.Navigator>

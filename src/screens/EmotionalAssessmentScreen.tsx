@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
+import React, { useState, useEffect, useRef } from 'react';
+import { 
   View, 
   Text, 
   TouchableOpacity, 
@@ -87,34 +87,26 @@ export const EmotionalAssessmentScreen = () => {
   const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [emotionalProfile, setEmotionalProfile] = useState<any>(null);
   const [scenarioSet, setScenarioSet] = useState<"base" | "all">("base");
-  // const [selectedScenarios, setSelectedScenarios] = useState(baseScenarios); // Remove this useState
+  const [selectedScenarios, setSelectedScenarios] = useState(baseScenarios);
   const [showInsights, setShowInsights] = useState(false);
   const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Memoize the selected scenarios
-  const selectedScenarios = useMemo(() => {
-    console.log(`Recalculating scenarios for set: ${scenarioSet}`); // Add log for debugging
+  // Use effect to update the scenarios based on the selected set
+  useEffect(() => {
     if (scenarioSet === "base") {
-      return baseScenarios;
+      setSelectedScenarios(baseScenarios);
     } else {
       // For comprehensive assessment, select 10 random scenarios from the full set
       const randomScenarios = [...allScenarios]
         .sort(() => Math.random() - 0.5)
         .slice(0, 10);
-      return randomScenarios;
+      setSelectedScenarios(randomScenarios);
     }
-  }, [scenarioSet]); // Dependency array ensures recalculation only when scenarioSet changes
-
-  // Reset index and responses when selectedScenarios changes (derived from scenarioSet)
-  useEffect(() => {
+    // Reset index and responses when scenario set changes
     setCurrentScenarioIndex(0);
     setResponses([]);
-    // Scroll to top when scenarios change
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ x: 0, y: 0, animated: false }); // Use non-animated scroll here
-    }
-  }, [selectedScenarios]); // Now depends on the memoized value
+  }, [scenarioSet]);
 
   const handleResponse = (emotion: string) => {
     const scenarioId = selectedScenarios[currentScenarioIndex].id;
@@ -259,7 +251,7 @@ export const EmotionalAssessmentScreen = () => {
         </View>
         
         <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-6 border border-emotional/30`}>
-          <Text style={tw`text-lg font-medium text-gray-700 mb-6`}>
+          <Text style={tw`text-lg font-medium text-gray-700 mb-6 leading-relaxed`}>
             {scenario.question}
           </Text>
           
