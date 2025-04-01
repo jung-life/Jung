@@ -3,7 +3,6 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-native",
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["jest"] // Add jest types here
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   }
 }
