@@ -15,7 +15,7 @@ import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { Typography } from '../components/Typography';
 import tw from '../lib/tailwind';
-import { decryptData } from '../lib/security';
+import { decryptData } from '../lib/encryptionUtils';
 import { generateAIResponse } from '../lib/api';
 import { useFocusEffect } from '@react-navigation/native';
 import { ArrowRight, ArrowLeft, Sparkle, Leaf, Plant, SmileyWink } from 'phosphor-react-native';
@@ -53,12 +53,31 @@ export default function DailyMotivationScreen() {
           
           // If we have emotional data, decrypt and use it
           if (emotionalStates && emotionalStates.length > 0) {
-            const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
-            const profile = JSON.parse(decryptedData);
-            setEmotionalProfile(profile);
-            
-            // Generate personalized quote
-            await generatePersonalizedQuote(profile);
+            try {
+              const decryptedData = decryptData(emotionalStates[0].encrypted_data);
+              
+              // Check if decryption was successful
+              if (decryptedData) {
+                const profile = JSON.parse(decryptedData);
+                
+                // Validate profile structure
+                if (profile && profile.primary_emotion && profile.secondary_emotions) {
+                  setEmotionalProfile(profile);
+                  
+                  // Generate personalized quote
+                  await generatePersonalizedQuote(profile);
+                } else {
+                  console.error('Invalid emotional profile structure:', profile);
+                  selectRandomQuote();
+                }
+              } else {
+                console.error('Failed to decrypt emotional data');
+                selectRandomQuote();
+              }
+            } catch (parseError) {
+              console.error('Error parsing emotional data:', parseError);
+              selectRandomQuote();
+            }
           } else {
             // No emotional data, use random quote
             selectRandomQuote();
@@ -136,7 +155,7 @@ export default function DailyMotivationScreen() {
             </View>
             
             <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30`}>
-              <Text style={tw`text-lg text-gray-700 italic leading-relaxed`}>
+              <Text style={tw`text-lg text-gray-700 italic`}>
                 "{personalizedQuote}"
               </Text>
             </View>
@@ -166,7 +185,7 @@ export default function DailyMotivationScreen() {
           </View>
           
           <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
-            <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
+            <Text style={tw`text-lg text-gray-700 italic mb-4`}>
               "{currentQuote}"
             </Text>
             {currentAuthor && (

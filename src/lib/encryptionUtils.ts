@@ -24,10 +24,25 @@ export const encryptData = (data: string): string => {
  */
 export const decryptData = (encryptedData: string): string => {
   try {
+    // Validate input
+    if (!encryptedData || typeof encryptedData !== 'string') {
+      console.error('Invalid encrypted data format', encryptedData);
+      return ''; // Return empty string instead of throwing
+    }
+    
+    // Try to decrypt
     const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    
+    // Validate output - if decryption failed, this will be empty
+    if (!decrypted) {
+      console.error('Decryption produced empty result');
+      return ''; // Return empty string
+    }
+    
+    return decrypted;
   } catch (error) {
     console.error('Error decrypting data:', error);
-    throw new Error('Failed to decrypt data');
+    return ''; // Return empty string instead of throwing
   }
 };

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import { fetchConversationsList, ensureAuth } from '../lib/supabase-fix';
 import { Swipeable } from 'react-native-gesture-handler';
 import { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 import tw from '../lib/tailwind';
@@ -84,9 +85,11 @@ export const ConversationsScreen = () => {
       console.log('Fetching conversations...');
       setLoading(true);
       
-      // Check if Supabase is initialized
-      if (!supabase) {
-        console.error('Supabase client not initialized');
+      // Check if auth is valid and refresh if needed
+      const isAuthenticated = await ensureAuth();
+      if (!isAuthenticated) {
+        console.error('Not authenticated');
+        setError('Please login again to access your conversations.');
         setLoading(false);
         return;
       }
@@ -94,26 +97,17 @@ export const ConversationsScreen = () => {
       // Get current user with error handling
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
+      if (userError || !userData?.user) {
         console.error('Error getting user:', userError);
-        setLoading(false);
-        return;
-      }
-      
-      if (!userData?.user) {
-        console.log('No authenticated user found');
+        setError('Authentication error. Please try logging in again.');
         setLoading(false);
         return;
       }
       
       console.log('User found:', userData.user.id);
       
-      // Fetch conversations
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .order('created_at', { ascending: false });
+      // Use enhanced fetch function for better error handling and auto-retry
+      const { data, error } = await fetchConversationsList(userData.user.id);
       
       if (error) {
         console.error('Error fetching conversations:', error);
