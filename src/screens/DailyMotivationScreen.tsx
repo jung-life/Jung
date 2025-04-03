@@ -51,16 +51,25 @@ export default function DailyMotivationScreen() {
             
           if (error) throw error;
           
-          // If we have emotional data, decrypt and use it
+          // If we have emotional data, try to decrypt and use it
           if (emotionalStates && emotionalStates.length > 0) {
-            const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
-            const profile = JSON.parse(decryptedData);
-            setEmotionalProfile(profile);
-            
-            // Generate personalized quote
-            await generatePersonalizedQuote(profile);
+            try {
+              const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
+              const profile = JSON.parse(decryptedData);
+              setEmotionalProfile(profile);
+              // Generate personalized quote only if decryption is successful
+              await generatePersonalizedQuote(profile);
+            } catch (decryptError) {
+              console.error('Error decrypting emotional data:', decryptError);
+              // Clear potentially bad data and fall back to random quote
+              setEmotionalProfile(null);
+              setPersonalizedQuote('');
+              selectRandomQuote();
+            }
           } else {
             // No emotional data, use random quote
+            setEmotionalProfile(null); // Ensure profile is null if no data
+            setPersonalizedQuote(''); // Ensure personalized quote is empty
             selectRandomQuote();
           }
         } catch (error) {
@@ -126,21 +135,22 @@ export default function DailyMotivationScreen() {
       );
     }
     
+    // Corrected renderContent structure
     return (
       <ScrollView style={tw`flex-1 p-6`}>
+        
+        {/* Personalized Section */}
         {personalizedQuote ? (
           <View style={tw`mb-10`}>
             <View style={tw`flex-row mb-2 items-center`}>
               <SmileyWink size={22} color="#97C1A9" weight="fill" />
-                <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
+              <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
             </View>
-            
             <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30`}>
               <Text style={tw`text-lg text-gray-700 italic leading-relaxed`}>
                 "{personalizedQuote}"
               </Text>
             </View>
-            
             {emotionalProfile && (
               <View style={tw`bg-soothing-green/10 rounded-lg p-4 border border-soothing-green/20`}>
                 <Text style={tw`text-sm text-gray-600 mb-2 font-medium`}>Based on your emotional profile:</Text>
@@ -157,31 +167,36 @@ export default function DailyMotivationScreen() {
               </View>
             )}
           </View>
+        ) : null} 
+        {/* End Personalized Section */}
+
+        {/* Daily Wisdom Section */}
+        {currentQuote ? (
+          <View style={tw`mb-8`}> {/* Added mb-8 for spacing */}
+            <View style={tw`flex-row mb-2 items-center`}>
+              <Leaf size={20} color="#97C1A9" weight="fill" />
+              <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
+            </View>
+            <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
+              <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
+                "{currentQuote}"
+              </Text>
+              {currentAuthor && (
+                <Text style={tw`text-right text-gray-500`}>— {currentAuthor}</Text>
+              )}
+            </View>
+          </View>
         ) : null}
-        
-        <View>
-          <View style={tw`flex-row mb-2 items-center`}>
-            <Leaf size={20} color="#97C1A9" weight="fill" />
-            <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
-          </View>
-          
-          <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
-            <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
-              "{currentQuote}"
-            </Text>
-            {currentAuthor && (
-              <Text style={tw`text-right text-gray-500`}>— {currentAuthor}</Text>
-            )}
-          </View>
-        </View>
-        
+        {/* End Daily Wisdom Section */}
+
+        {/* Buttons Section */}
         <TouchableOpacity
-          style={tw`mt-8 bg-motivation/20 rounded-xl py-4 items-center border border-motivation/30 shadow-sm`}
+          style={tw`bg-jung-purple rounded-xl py-4 items-center shadow-sm`} // Removed mt-8 as spacing is handled by Daily Wisdom section margin
           onPress={selectRandomQuote}
         >
           <View style={tw`flex-row items-center`}>
-            <Plant size={20} color="#97C1A9" weight="fill" style={tw`mr-2`} />
-            <Text style={tw`text-gray-700 font-medium`}>
+            <Plant size={20} color="white" weight="fill" style={tw`mr-2`} />
+            <Text style={tw`text-white font-medium`}>
               Refresh Your Inspiration
             </Text>
           </View>
@@ -194,11 +209,13 @@ export default function DailyMotivationScreen() {
           <Text style={tw`text-gray-600 mr-2 font-medium`}>Update Your Emotional Profile</Text>
           <ArrowRight size={16} color="#97C1A9" />
         </TouchableOpacity>
-      </ScrollView>
+        {/* End Buttons Section */}
+
+      </ScrollView> // Closing ScrollView tag was missing/misplaced before
     );
   };
 
-  return (
+  return ( // This return was correct
     <GradientBackground variant="motivation">
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.07} variant="motivation" />

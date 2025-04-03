@@ -30,28 +30,31 @@ const PostLoginScreen = () => {
             </Text>
           </View>
           
+          {/* Conversations Button */}
           <TouchableOpacity
-            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            style={tw`bg-conversation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use conversation color
             onPress={() => navigation.navigate('ConversationsScreen', { refresh: true })}
           >
-            <ChatCircleDots size={28} color="#4A3B78" weight="fill" />
-            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Conversations</Text>
+            <ChatCircleDots size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversations</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
+          {/* Daily Motivation Button */}
           <TouchableOpacity 
-            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            style={tw`bg-motivation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use motivation color
             onPress={() => navigation.navigate('DailyMotivationScreen')}
           >
-            <Brain size={28} color="#4A3B78" weight="fill" />
-            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Daily Motivation</Text>
+            <Brain size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Daily Motivation</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
+          {/* Emotional Assessment Button */}
           <TouchableOpacity 
-            style={tw`bg-jung-purple-light rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            style={tw`bg-emotional rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use emotional color
             onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
           >
-            <Heart size={28} color="#4A3B78" weight="fill" />
-            <Text style={tw`ml-4 text-jung-purple text-lg font-semibold`}>Emotional Assessment</Text>
+            <Heart size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
 

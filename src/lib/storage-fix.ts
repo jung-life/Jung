@@ -1,198 +1,293 @@
+/**
+ * Storage fix for AsyncStorage issues in simulators
+ * 
+ * This file provides a fix for AsyncStorage errors that can occur in simulators,
+ * particularly with error messages like:
+ * "Failed to create storage directory.Error Domain=NSCocoaErrorDomain Code=512"
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 
-// Memory cache for immediate access
-const memoryCache: Record<string, string> = {};
+// In-memory fallback as a last resort
+const memoryStorage: Record<string, string> = {};
 
-// Sanitize keys to be safe for storage
-const sanitizeKey = (key: string): string => {
-  return key.replace(/[\/\\:*?"<>|@]/g, '_');
-};
+// Flag to track if file-based persistence is viable
+let filePersistenceEnabled = true; 
+// Flag to track if we've tried to load from persistent storage
+let hasAttemptedLoad = false;
 
-// Check if we're running in a problematic environment (iOS simulator)
-const isProblematicEnvironment = (): boolean => {
-  return Platform.OS === 'ios' && Platform.constants.uiMode === 'simulator';
-};
-
-// Create a custom storage directory path that avoids the problematic ExponentExperienceData folder
-const getCustomStoragePath = (key: string): string => {
-  // Use the app's document directory instead of ExponentExperienceData
-  return `${FileSystem.documentDirectory}app_storage/${sanitizeKey(key)}.json`;
-};
-
-// Ensure our custom storage directory exists
-const ensureCustomStorageDir = async (): Promise<boolean> => {
-  if (!FileSystem.documentDirectory) return false;
-  
-  try {
-    const dirPath = `${FileSystem.documentDirectory}app_storage`;
-    const dirInfo = await FileSystem.getInfoAsync(dirPath);
-    
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true });
-      console.log('Created custom storage directory:', dirPath);
-    }
-    return true;
-  } catch (error) {
-    console.error('Error creating custom storage directory:', error);
-    return false;
-  }
-};
-
-// Initialize our storage system
-const initStorage = async (): Promise<void> => {
-  if (isProblematicEnvironment()) {
-    console.log('Running in problematic environment (iOS simulator), using custom storage path');
-    await ensureCustomStorageDir();
-  }
-  
-  // Restore memory cache
-  try {
-    const cacheJson = await AsyncStorage.getItem('_memory_cache_backup');
-    if (cacheJson) {
-      const restoredCache = JSON.parse(cacheJson);
-      Object.assign(memoryCache, restoredCache);
-      console.log('Memory cache restored with', Object.keys(restoredCache).length, 'items');
-    }
-  } catch (error) {
-    console.error('Error restoring memory cache:', error);
-  }
-};
-
-// Robust storage implementation that works around Expo's file system issues
+/**
+ * Robust AsyncStorage wrapper that handles simulator-specific storage issues
+ */
 export const RobustStorage = {
+  /**
+   * Get an item from storage with error handling
+   */
   getItem: async (key: string): Promise<string | null> => {
     try {
-      // Check memory cache first (fastest)
-      if (memoryCache[key]) {
-        return memoryCache[key];
-      }
-      
-      // Try SecureStore for sensitive data
-      try {
-        const secureValue = await SecureStore.getItemAsync(sanitizeKey(key));
-        if (secureValue !== null) {
-          memoryCache[key] = secureValue;
-          return secureValue;
-        }
-      } catch (secureError) {
-        console.log(`SecureStore read error for ${key}:`, secureError);
-      }
-      
-      // Try AsyncStorage
-      try {
-        const asyncValue = await AsyncStorage.getItem(key);
-        if (asyncValue !== null) {
-          memoryCache[key] = asyncValue;
-          return asyncValue;
-        }
-      } catch (asyncError) {
-        console.log(`AsyncStorage read error for ${key}:`, asyncError);
-      }
-      
-      // If we're in a problematic environment, try our custom file storage
-      if (isProblematicEnvironment()) {
-        try {
-          const filePath = getCustomStoragePath(key);
-          const fileInfo = await FileSystem.getInfoAsync(filePath);
-          
-          if (fileInfo.exists) {
-            const fileContent = await FileSystem.readAsStringAsync(filePath);
-            if (fileContent) {
-              memoryCache[key] = fileContent;
-              return fileContent;
-            }
-          }
-        } catch (fileError) {
-          console.log(`File read error for ${key}:`, fileError);
-        }
-      }
-      
-      return null;
+      return await AsyncStorage.getItem(key);
     } catch (error) {
-      console.error(`Storage getItem error (${key}):`, error);
+      console.warn(`Storage getItem error for key ${key}:`, error);
+      
+      // Try fallback storage for simulator environments
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        try {
+          const value = await getFallbackItem(key);
+          if (value !== null) {
+            return value;
+          }
+        } catch (fallbackError) {
+          console.error(`Fallback storage getItem error for key ${key}:`, fallbackError);
+        }
+        
+        // If FileSystem fails, try in-memory storage as last resort
+        console.log(`Trying in-memory storage for key ${key}`);
+        return memoryStorage[key] || null;
+      }
+      
       return null;
     }
   },
   
+  /**
+   * Set an item in storage with error handling
+   */
   setItem: async (key: string, value: string): Promise<void> => {
-    // Update memory cache immediately
-    memoryCache[key] = value;
-    
-    // Try to store in SecureStore if it's small enough
-    if (value.length < 2000) {
-      try {
-        await SecureStore.setItemAsync(sanitizeKey(key), value);
-      } catch (secureError) {
-        console.log(`SecureStore write error for ${key}:`, secureError);
-      }
-    }
-    
-    // Try to store in AsyncStorage
     try {
       await AsyncStorage.setItem(key, value);
-    } catch (asyncError) {
-      console.log(`AsyncStorage write error for ${key}:`, asyncError);
-    }
-    
-    // If we're in a problematic environment, also store in our custom file storage
-    if (isProblematicEnvironment()) {
-      try {
-        const dirExists = await ensureCustomStorageDir();
-        if (dirExists) {
-          const filePath = getCustomStoragePath(key);
-          await FileSystem.writeAsStringAsync(filePath, value);
+    } catch (error) {
+      console.warn(`Storage setItem error for key ${key}:`, error);
+      
+      // Try fallback storage for simulator environments
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        try {
+          await setFallbackItem(key, value);
+        } catch (fallbackError) {
+          console.error(`Fallback storage setItem error for key ${key}:`, fallbackError);
+          
+          // If FileSystem fails, use in-memory storage as last resort
+          console.log(`Using in-memory storage for key ${key}`);
+          memoryStorage[key] = value;
         }
-      } catch (fileError) {
-        console.log(`File write error for ${key}:`, fileError);
       }
     }
   },
   
+  /**
+   * Remove an item from storage with error handling
+   */
   removeItem: async (key: string): Promise<void> => {
-    // Remove from memory cache
-    delete memoryCache[key];
-    
-    // Try to remove from SecureStore
-    try {
-      await SecureStore.deleteItemAsync(sanitizeKey(key));
-    } catch (secureError) {
-      console.log(`SecureStore delete error for ${key}:`, secureError);
-    }
-    
-    // Try to remove from AsyncStorage
     try {
       await AsyncStorage.removeItem(key);
-    } catch (asyncError) {
-      console.log(`AsyncStorage delete error for ${key}:`, asyncError);
-    }
-    
-    // If we're in a problematic environment, also remove from our custom file storage
-    if (isProblematicEnvironment()) {
-      try {
-        const filePath = getCustomStoragePath(key);
-        const fileInfo = await FileSystem.getInfoAsync(filePath);
-        if (fileInfo.exists) {
-          await FileSystem.deleteAsync(filePath);
+    } catch (error) {
+      console.warn(`Storage removeItem error for key ${key}:`, error);
+      
+      // Try fallback storage for simulator environments
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        try {
+          await removeFallbackItem(key);
+        } catch (fallbackError) {
+          console.error(`Fallback storage removeItem error for key ${key}:`, fallbackError);
         }
-      } catch (fileError) {
-        console.log(`File delete error for ${key}:`, fileError);
+        
+        // Also remove from in-memory storage
+        delete memoryStorage[key];
+      }
+    }
+  },
+  
+  /**
+   * Clear all items from storage with error handling
+   */
+  clear: async (): Promise<void> => {
+    try {
+      await AsyncStorage.clear();
+    } catch (error) {
+      console.warn('Storage clear error:', error);
+      
+      // Try fallback storage for simulator environments
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        try {
+          await clearFallbackStorage();
+        } catch (fallbackError) {
+          console.error('Fallback storage clear error:', fallbackError);
+        }
+        
+        // Clear in-memory storage
+        for (const key in memoryStorage) {
+          delete memoryStorage[key];
+        }
       }
     }
   }
 };
 
-// Function to persist memory cache
-export const persistMemoryCache = async (): Promise<void> => {
-  try {
-    const cacheJson = JSON.stringify(memoryCache);
-    await AsyncStorage.setItem('_memory_cache_backup', cacheJson);
-  } catch (error) {
-    console.error('Error persisting memory cache:', error);
+// --- Enhanced Fallback Storage Logic ---
+
+// Master storage object that will be persisted when possible
+const masterStorage: Record<string, string> = {};
+
+/**
+ * Get a reliable base directory for file persistence.
+ * Returns null if no reliable directory is found.
+ */
+const getReliableStorageDirectory = (): string | null => {
+  const cacheDir = FileSystem.cacheDirectory;
+  const docDir = FileSystem.documentDirectory;
+
+  if (cacheDir && typeof cacheDir === 'string' && cacheDir.length > 0) {
+    return cacheDir;
+  } else if (docDir && typeof docDir === 'string' && docDir.length > 0) {
+    console.warn('Cache directory unavailable or invalid, using document directory for fallback storage.');
+    return docDir;
+  } else {
+    console.error('Neither cache nor document directory is available/valid for fallback storage. File persistence disabled.');
+    filePersistenceEnabled = false; // Disable file persistence if no valid dir
+    return null;
   }
 };
 
-// Initialize storage on import
-initStorage(); 
+/**
+ * Get the full path for the storage backup file.
+ * Returns null if file persistence is disabled.
+ */
+const getStorageFilePath = (): string | null => {
+  if (!filePersistenceEnabled) return null;
+  
+  const baseDir = getReliableStorageDirectory();
+  if (!baseDir) {
+    filePersistenceEnabled = false; // Disable if directory becomes invalid later
+    return null;
+  }
+  
+  // Use a simple, safe filename
+  return `${baseDir}jung_storage_backup.json`;
+};
+
+/**
+ * Get an item from fallback storage (memory first, then try loading persistence)
+ */
+const getFallbackItem = async (key: string): Promise<string | null> => {
+  // Ensure we've tried to load from persistent storage at least once
+  if (!hasAttemptedLoad) {
+    await loadStorageFromPersistence();
+  }
+  
+  return masterStorage[key] || null;
+};
+
+/**
+ * Set an item in fallback storage (memory first, then try persisting)
+ */
+const setFallbackItem = async (key: string, value: string): Promise<void> => {
+  // Ensure we've tried to load from persistent storage at least once
+  if (!hasAttemptedLoad) {
+    await loadStorageFromPersistence();
+  }
+  
+  masterStorage[key] = value;
+  
+  // Try to persist the updated storage (best effort)
+  await persistStorage();
+};
+
+/**
+ * Remove an item from fallback storage (memory first, then try persisting)
+ */
+const removeFallbackItem = async (key: string): Promise<void> => {
+  // Ensure we've tried to load from persistent storage at least once
+  if (!hasAttemptedLoad) {
+    await loadStorageFromPersistence();
+  }
+  
+  delete masterStorage[key];
+  
+  // Try to persist the updated storage (best effort)
+  await persistStorage();
+};
+
+/**
+ * Clear all items from fallback storage (memory first, then try persisting)
+ */
+const clearFallbackStorage = async (): Promise<void> => {
+  // Clear the master storage object
+  for (const key in masterStorage) {
+    delete masterStorage[key];
+  }
+  
+  // Try to persist the empty storage (best effort)
+  await persistStorage();
+};
+
+/**
+ * Try to load storage from persistence (best-effort)
+ */
+const loadStorageFromPersistence = async (): Promise<void> => {
+  if (hasAttemptedLoad) return; // Only attempt once
+  hasAttemptedLoad = true;
+  
+  const storageFile = getStorageFilePath();
+  if (!storageFile) {
+    console.warn('File persistence disabled, cannot load from file.');
+    return; // Exit if file persistence is disabled
+  }
+
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(storageFile);
+    
+    if (fileInfo.exists && !fileInfo.isDirectory) {
+      const content = await FileSystem.readAsStringAsync(storageFile);
+      const parsed = JSON.parse(content);
+      
+      // Merge with master storage (load persisted data into memory)
+      Object.assign(masterStorage, parsed);
+      console.log('Successfully loaded storage from persistence file:', storageFile);
+    } else if (fileInfo.exists && fileInfo.isDirectory) {
+       console.error('Storage persistence path exists but is a directory:', storageFile);
+       filePersistenceEnabled = false; // Disable persistence if path is wrong type
+    }
+  } catch (error) {
+    console.warn('Failed to load storage from persistence file:', storageFile, error);
+    // Don't disable persistence here, maybe it was a temporary read error
+  }
+};
+
+/**
+ * Try to persist the storage (best-effort)
+ */
+const persistStorage = async (): Promise<void> => {
+  const storageFile = getStorageFilePath();
+   if (!storageFile) {
+    // console.warn('File persistence disabled, cannot save to file.'); // Optional: reduce log noise
+    return; // Exit if file persistence is disabled
+  }
+
+  try {
+     // Ensure directory exists before writing
+     const baseDir = storageFile.substring(0, storageFile.lastIndexOf('/'));
+     const dirInfo = await FileSystem.getInfoAsync(baseDir);
+     if (!dirInfo.exists) {
+       await FileSystem.makeDirectoryAsync(baseDir, { intermediates: true });
+       console.log('Created persistence directory:', baseDir);
+     } else if (!dirInfo.isDirectory) {
+        console.error('Persistence base path exists but is not a directory:', baseDir);
+        filePersistenceEnabled = false; // Disable if path is wrong type
+        return;
+     }
+
+    await FileSystem.writeAsStringAsync(
+      storageFile,
+      JSON.stringify(masterStorage)
+    );
+    // console.log('Successfully persisted storage to file:', storageFile); // Optional: reduce log noise
+  } catch (error) {
+    console.warn('Failed to persist storage to file:', storageFile, error);
+    // Check for specific errors that indicate persistence is impossible
+    if (error instanceof Error && (error.message.includes('permission') || error.message.includes('directory'))) {
+        console.error('Disabling file persistence due to critical error.');
+        filePersistenceEnabled = false;
+    }
+  }
+};

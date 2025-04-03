@@ -14,7 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase';
+// Use the enhanced Supabase client
+import { supabaseEnhanced as supabase } from '../lib/supabase-enhanced'; 
 import tw from '../lib/tailwind';
 import { ArrowLeft, UserPlus, Check, Lock, Envelope, User } from 'phosphor-react-native';
 import { GradientBackground } from '../components/GradientBackground';
@@ -401,4 +402,4 @@ const styles = StyleSheet.create({
     color: '#15803d',
     fontSize: 14,
   },
-}); 
+});
