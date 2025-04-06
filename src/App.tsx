@@ -14,7 +14,7 @@ import PostLoginScreen from './screens/PostLoginScreen';
 import { AuthProvider } from './contexts/AuthContext';
 import { SupabaseProvider, useSupabase } from './contexts/SupabaseContext';
 import * as Linking from 'expo-linking';
-import { AuthUrlHandler } from './components/AuthUrlHandler';
+// Removed AuthUrlHandler import as it's conflicting and unnecessary
 import { navigationRef } from './navigation/navigationService';
 import * as NavigationService from './navigation/navigationService';
 import AppNavigator from './navigation/AppNavigator';
@@ -40,7 +40,8 @@ try {
   console.error('Failed to import or initialize Mixpanel:', error);
   // Create a dummy implementation to prevent crashes
   mixpanelInstance = {
-    track: (eventName, props) => console.log('Mixpanel track (mock):', eventName, props),
+    // Add explicit types to parameters
+    track: (eventName: string, props?: Record<string, any>) => console.log('Mixpanel track (mock):', eventName, props),
     init: () => console.log('Mixpanel init (mock)'),
   };
 }
@@ -71,7 +72,7 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <SupabaseProvider>
-            <AuthUrlHandler />
+            {/* Removed AuthUrlHandler component */}
             <AppNavigator />
             <StatusBar style="auto" />
           </SupabaseProvider>
@@ -85,4 +86,4 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-}); 
+});

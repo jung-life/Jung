@@ -53,10 +53,12 @@ const PostLoginScreen = () => {
             style={tw`bg-emotional rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use emotional color
             onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
           >
-            <Heart size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            {/* Wrap icon in a View */}
+            <View> 
+              <Heart size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
-          
 
         </ScrollView>
       </SafeAreaView>

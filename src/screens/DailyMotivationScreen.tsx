@@ -18,7 +18,8 @@ import tw from '../lib/tailwind';
 import { decryptData } from '../lib/security';
 import { generateAIResponse } from '../lib/api';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowRight, ArrowLeft, Sparkle, Leaf, Plant, SmileyWink } from 'phosphor-react-native';
+// Add House icon import
+import { ArrowRight, ArrowLeft, Sparkle, Leaf, Plant, SmileyWink, House } from 'phosphor-react-native'; 
 import { quotes } from '../data/quotes';
 
 export default function DailyMotivationScreen() {
@@ -233,6 +234,17 @@ export default function DailyMotivationScreen() {
         </View>
         
         {renderContent()}
+
+        {/* Add Home Button */}
+        <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white/80 border-t border-gray-200`}>
+          <TouchableOpacity 
+            style={tw`p-3 bg-jung-purple-light rounded-full`}
+            onPress={() => navigation.navigate('PostLoginScreen')}
+          >
+            <House size={28} color="#4A3B78" weight="fill" />
+          </TouchableOpacity>
+        </View>
+        
       </SafeAreaView>
     </GradientBackground>
   );

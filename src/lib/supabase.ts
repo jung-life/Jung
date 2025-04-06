@@ -1,96 +1,62 @@
-import 'react-native-url-polyfill/auto'
-import { createClient } from '@supabase/supabase-js'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { saveSession, getSession, clearAuthData } from './secureStorage'
+import 'react-native-url-polyfill/auto';
+import { createClient } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
+// Keep AsyncStorage import for potential fallback or other uses if needed
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+// Remove imports related to the previous custom secureStorage implementation
+// import { saveSession, getSession, clearAuthData } from './secureStorage'; 
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  throw new Error('Missing Supabase environment variables');
 }
 
-// Custom storage adapter that uses SecureStore
-const SecureStorageAdapter = {
-  getItem: async (key: string): Promise<string | null> => {
-    // For Supabase auth, we'll use our secure session storage
-    if (key.includes('auth-token')) {
-      const session = await getSession()
-      if (session) {
-        return JSON.stringify(session)
-      }
-      return null
-    }
-    // For other items, fall back to AsyncStorage
-    return await AsyncStorage.getItem(key)
+// Create an adapter for expo-secure-store
+const ExpoSecureStoreAdapter = {
+  getItem: (key: string) => {
+    return SecureStore.getItemAsync(key);
   },
-  
-  setItem: async (key: string, value: string): Promise<void> => {
-    // For Supabase auth, use our secure session storage
-    if (key.includes('auth-token')) {
-      try {
-        const session = JSON.parse(value)
-        await saveSession(session)
-      } catch (e) {
-        console.error('Error parsing session for secure storage:', e)
-        await AsyncStorage.setItem(key, value)
-      }
-      return
-    }
-    // For other items, use AsyncStorage
-    await AsyncStorage.setItem(key, value)
+  setItem: (key: string, value: string) => {
+    SecureStore.setItemAsync(key, value);
   },
-  
-  removeItem: async (key: string): Promise<void> => {
-    // For Supabase auth, clear all auth data
-    if (key.includes('auth-token')) {
-      await clearAuthData()
-      return
-    }
-    // For other items, use AsyncStorage
-    await AsyncStorage.removeItem(key)
-  }
-}
+  removeItem: (key: string) => {
+    SecureStore.deleteItemAsync(key);
+  },
+};
 
-// Create the Supabase client with secure storage
+// Create the Supabase client using the ExpoSecureStoreAdapter
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: SecureStorageAdapter,
+    storage: ExpoSecureStoreAdapter, // Use the new adapter
     autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+    persistSession: true, 
+    detectSessionInUrl: true,
   },
-})
+});
 
-// Set up auth state change listener to securely store session
-supabase.auth.onAuthStateChange((event, session) => {
-  if (session) {
-    saveSession(session)
-    console.log('Auth state changed:', event)
-  } else if (event === 'SIGNED_OUT') {
-    clearAuthData()
-    console.log('User signed out')
-  }
-})
+// Remove the redundant onAuthStateChange listener here.
+// The listener in LoginScreenEnhanced.tsx will handle navigation.
 
 // Function to refresh the token manually if needed
+// Note: This function might need adjustment if saveSession relied on the old custom storage
 export const refreshSession = async () => {
   try {
-    const { data, error } = await supabase.auth.refreshSession()
+    // Supabase client handles refresh and persistence via the storage adapter automatically
+    const { data, error } = await supabase.auth.refreshSession(); 
     if (error) {
-      console.error('Error refreshing session:', error.message)
-      return null
+      console.error('Error refreshing session:', error.message);
+      return null;
     }
-    if (data.session) {
-      await saveSession(data.session)
-      return data.session
-    }
-    return null
+    // No need to manually save session when using the adapter
+    // await saveSession(data.session) 
+    return data.session;
   } catch (e) {
-    console.error('Unexpected error refreshing session:', e)
-    return null
+    console.error('Unexpected error refreshing session:', e);
+    return null;
   }
-}
+};
 
 // Add this function to check if a session exists and log details
 export const checkSession = async () => {
@@ -98,29 +64,29 @@ export const checkSession = async () => {
     const { data, error } = await supabase.auth.getSession()
     
     if (error) {
-      console.error('Error getting session:', error.message)
-      return null
+      console.error('Error getting session:', error.message);
+      return null;
     }
     
     if (data.session) {
-      console.log('Session found:', data.session.user.id)
+      console.log('Session found:', data.session.user.id);
       // Check token expiry
-      if (data.session.expires_at) {  // Add null check here
-        const expiresAt = new Date(data.session.expires_at * 1000)
-        const now = new Date()
-        console.log('Token expires at:', expiresAt.toLocaleString())
-        console.log('Token is', expiresAt > now ? 'valid' : 'expired')
+      if (data.session.expires_at) { // Add null check here
+        const expiresAt = new Date(data.session.expires_at * 1000);
+        const now = new Date();
+        console.log('Token expires at:', expiresAt.toLocaleString());
+        console.log('Token is', expiresAt > now ? 'valid' : 'expired');
       } else {
-        console.log('No expiration time found in session')
+        console.log('No expiration time found in session');
       }
     } else {
-      console.log('No session found')
+      console.log('No session found');
     }
     
-    return data.session
+    return data.session;
   } catch (e) {
-    console.error('Unexpected error checking session:', e)
-    return null
+    console.error('Unexpected error checking session:', e);
+    return null;
   }
 }
 

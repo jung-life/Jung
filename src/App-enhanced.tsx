@@ -13,6 +13,7 @@ import { LoadingScreen } from './screens/LoadingScreen';
 import PostLoginScreen from './screens/PostLoginScreen';
 import DailyMotivationScreen from './screens/DailyMotivationScreen'; // Import the screen as default
 import { ConversationsScreen } from './screens/ConversationsScreen-enhanced'; // Corrected import name
+import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen'; // Use named import
 import { AuthProvider } from './contexts/AuthContext';
 import { SupabaseProvider } from './contexts/SupabaseContext';
 import * as Linking from 'expo-linking';
@@ -150,7 +151,9 @@ export default function EnhancedApp() {
                 <Stack.Screen name="AccountScreen" component={AccountScreen} />
                 <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} />
                 {/* Add the Conversations screen */}
-                <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} /> 
+                <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} />
+                {/* Add the Emotional Assessment screen */}
+                <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} />
               </Stack.Navigator>
             </NavigationContainer>
             <StatusBar style="auto" />

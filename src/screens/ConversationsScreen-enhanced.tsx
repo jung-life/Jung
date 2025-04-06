@@ -849,18 +849,29 @@ Return only the title text with no additional explanation or formatting.`;
       
       // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      // Add detailed logging
+      console.log('[handleCreateNewConversation] Auth Check Result:');
+      console.log('User Object:', JSON.stringify(user, null, 2));
+      console.log('Auth Error:', JSON.stringify(authError, null, 2));
       
       if (authError) {
-        console.error('Auth error:', authError);
-        Alert.alert('Authentication Error', 'Please log in again');
+        console.error('Auth error during conversation creation:', authError);
+        Alert.alert('Authentication Error', 'Could not verify user. Please log in again.');
+        setLoading(false); // Stop loading
         return;
       }
       
       if (!user) {
-        Alert.alert('Error', 'You must be logged in to create a conversation');
+        console.error('No user object found during conversation creation.');
+        Alert.alert('Error', 'User not found. Please log in again.');
+        setLoading(false); // Stop loading
         return;
       }
       
+      // Log the specific user ID being used
+      console.log(`[handleCreateNewConversation] Attempting insert with User ID: ${user.id}`);
+
       // Use a title or generate one
       const title = newConversationTitle || await generateCreativeTitle();
       
@@ -870,28 +881,30 @@ Return only the title text with no additional explanation or formatting.`;
       // Generate a UUID for the conversation
       const conversationId = generateUUID();
       
-      console.log('Creating conversation with ID:', conversationId);
-      console.log('User ID:', user.id);
-      console.log('Title:', title, '(encrypted)');
-      console.log('Avatar:', selectedAvatar);
+      console.log('[handleCreateNewConversation] Creating conversation with ID:', conversationId);
+      // console.log('User ID:', user.id); // Already logged above
+      console.log('[handleCreateNewConversation] Title:', title, '(encrypted)');
+      console.log('[handleCreateNewConversation] Avatar:', selectedAvatar);
       
       // Create the conversation with the selected avatar and encrypted title
-      const { data, error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('conversations')
         .insert({
-          id: conversationId,
-          user_id: user.id,
-          title: encryptedTitle,
-          avatar_id: selectedAvatar,
-          updated_at: new Date().toISOString()
+          id: conversationId, 
+          user_id: user.id, 
+          title: encryptedTitle, 
+          avatar_id: selectedAvatar, 
+          updated_at: new Date().toISOString() 
         });
       
-      if (error) {
-        console.error('Error creating conversation:', error);
-        Alert.alert('Error', 'Failed to create conversation: ' + error.message);
+      if (insertError) {
+        console.error('Error inserting conversation:', insertError);
+        Alert.alert('Error', 'Failed to create conversation: ' + insertError.message);
+        setLoading(false); // Stop loading
         return;
       }
       
+      console.log('[handleCreateNewConversation] Insert successful.');
       setShowNewChatModal(false);
       
       // Navigate to the chat screen with the avatar ID

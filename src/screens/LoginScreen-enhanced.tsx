@@ -24,13 +24,14 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import tw from '../lib/tailwind';
 
-// Import the enhanced Supabase client and functions
+// Import the standard Supabase client and functions
 import { 
-  supabaseEnhanced, 
-  signInWithEmailEnhanced, 
-  checkSessionEnhanced,
-  initializeSupabaseEnhanced
-} from '../lib/supabase-enhanced';
+  supabase, // Use the standard client
+  // Assuming standard functions exist or map appropriately
+  // We might need to check supabase.ts for equivalent functions
+  // For now, let's assume direct mapping or handle later
+} from '../lib/supabase'; 
+// We'll need equivalent functions for signInWithEmail, checkSession if they differ
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -52,62 +53,50 @@ export const LoginScreenEnhanced = () => {
   const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
                         Constants.expoConfig?.extra?.googleClientId ||
                         '';
-  
-  // Initialize Supabase and check for existing session
+
+  // Effect to check the initial session state ONLY for the loading indicator
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        setInitializing(true);
-        
-        // Initialize the enhanced Supabase client
-        const initResult = await initializeSupabaseEnhanced();
-        console.log('Supabase initialization result:', initResult.success ? 'Success' : 'Failed');
-        
-        if (!initResult.success) {
-          console.error('Failed to initialize Supabase:', initResult.error);
-          setErrorMessage('Failed to initialize authentication. Please try again later.');
-          return;
-        }
-        
-        // Check for existing session
-        const { session } = await checkSessionEnhanced();
-        
-        if (session) {
-          console.log('Existing session found, navigating to PostLoginScreen');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'PostLoginScreen' }]
-          });
-        }
-      } catch (error) {
-        console.error('Error during initialization:', error);
-        setErrorMessage('An unexpected error occurred during initialization.');
-      } finally {
+    let isMounted = true; // Prevent state update on unmounted component
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      // If there's no session initially, we can stop initializing
+      // If there IS a session, the listener below will handle navigation and stop initializing
+      if (!session && isMounted) {
         setInitializing(false);
       }
-    };
+    }).catch(error => {
+       console.error("Error getting initial session:", error);
+       if (isMounted) setInitializing(false); // Stop initializing even on error
+    });
     
-    initializeAuth();
-  }, [navigation]);
-  
-  // Listen for auth state changes
+    return () => { isMounted = false; };
+  }, []); // Run only once on mount
+
+  // Effect to listen for auth state changes and handle navigation
   useEffect(() => {
-    const { data: authListener } = supabaseEnhanced.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event);
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change (standard client):', event, !!session);
       
+      // Navigate on SIGNED_IN
       if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in, navigating to PostLoginScreen');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'PostLoginScreen' }]
-        });
+        console.log('User signed in, navigating...');
+        navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
       }
+      
+      // Stop initializing indicator once auth state is determined (signed in or not)
+      // This handles the case where the user was already signed in
+      setInitializing(false); 
+      
+      // Handle SIGNED_OUT if needed (e.g., navigate back to login)
+      // if (event === 'SIGNED_OUT') {
+      //   navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); // Or appropriate screen
+      // }
     });
 
     return () => {
+      console.log("Unsubscribing auth listener");
       authListener.subscription.unsubscribe();
     };
-  }, [navigation]);
+  }, [navigation]); // Dependency on navigation only
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -119,23 +108,24 @@ export const LoginScreenEnhanced = () => {
     setErrorMessage('');
     
     try {
-      console.log('Attempting email login...');
-      const result = await signInWithEmailEnhanced(email, password);
+      console.log('Attempting email login with standard client...');
+      // Use standard Supabase email/password sign-in
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       
-      if (!result.success) {
-        console.error('Login failed:', result.error);
-        setErrorMessage(result.error || 'Login failed. Please check your credentials and try again.');
-        Alert.alert('Login Error', result.error || 'Login failed. Please check your credentials and try again.');
-        return;
+      if (error) {
+        console.error('Login failed:', error.message);
+        setErrorMessage(error.message || 'Login failed. Please check your credentials and try again.');
+        Alert.alert('Login Error', error.message || 'Login failed. Please check your credentials and try again.');
+        return; 
       }
       
-      console.log('Login successful');
-      // Navigation will be handled by the auth state change listener
+      console.log('Email login initiated successfully.');
+      // Navigation will be handled by the onAuthStateChange listener upon successful sign-in
     } catch (error) {
-      console.error('Unexpected login error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred';
+      console.error('Unexpected email login error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred during email login';
       setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Login Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -145,67 +135,56 @@ export const LoginScreenEnhanced = () => {
     try {
       setLoading(true);
       setErrorMessage('');
-      console.log('Starting Google login flow...');
+      console.log('Starting Google login flow with standard client...');
       
-      const { data, error } = await supabaseEnhanced.auth.signInWithOAuth({
+      // Use the standard Supabase client
+      const { data, error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
         options: {
-          redirectTo: AuthSession.makeRedirectUri({}),
-          skipBrowserRedirect: false,
+          redirectTo: AuthSession.makeRedirectUri({}), 
+          // Ensure skipBrowserRedirect is false or omitted for Expo Go/Dev Client
         }
       });
 
       if (error) {
-        console.error('Supabase OAuth error:', error);
+        console.error('Supabase OAuth error (standard client):', error);
         setErrorMessage(error.message);
         Alert.alert('Login Error', error.message);
+        setLoading(false); // Ensure loading stops on error
         return;
       }
 
       if (data?.url) {
-        console.log('Opening auth URL:', data.url);
+        console.log('Opening auth URL (standard client):', data.url);
+        // Open the URL, Supabase client (with detectSessionInUrl: true) 
+        // and the onAuthStateChange listener will handle the redirect automatically.
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          AuthSession.makeRedirectUri({})
+          AuthSession.makeRedirectUri({}) // The redirect URI used here is just for the browser session
         );
 
-        console.log('WebBrowser result:', result);
+        console.log('WebBrowser result (standard client):', result);
 
-        if (result.type === 'success') {
-          const url = result.url;
-          const params = new URLSearchParams(url.split('#')[1]);
-          
-          if (params.has('access_token')) {
-            const session = {
-              access_token: params.get('access_token')!,
-              refresh_token: params.get('refresh_token') || '',
-            };
-
-            const { error: sessionError } = await supabaseEnhanced.auth.setSession(session);
-            
-            if (sessionError) {
-              console.error('Error setting session:', sessionError);
-              setErrorMessage(sessionError.message);
-              throw sessionError;
-            }
-
-            // Navigation will be handled by the auth state change listener
-          } else {
-            console.error('No access token found in OAuth response');
-            setErrorMessage('Authentication failed: No access token received');
-          }
-        } else if (result.type === 'cancel') {
-          console.log('OAuth flow cancelled by user');
-        } else {
-          console.error('OAuth flow failed:', result);
-          setErrorMessage('Authentication failed. Please try again.');
+        // No need for manual handling here. 
+        // If result.type is 'success', the app will receive the deep link,
+        // Supabase detects it, exchanges the code, and onAuthStateChange fires.
+        if (result.type !== 'success') {
+           console.log('OAuth flow browser session ended:', result.type);
+           if (result.type !== 'cancel' && result.type !== 'dismiss') {
+             // Handle potential browser errors if needed
+             setErrorMessage('Authentication browser session failed.');
+           }
         }
+        // If successful, the onAuthStateChange listener handles navigation.
+      } else {
+         console.error('No URL returned from signInWithOAuth');
+         setErrorMessage('Failed to initiate Google login.');
       }
     } catch (error) {
-      console.error('Google login error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred';
+      console.error('Google login error (standard client):', error);
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred during Google login';
       setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Login Error', errorMsg);
     } finally {
       setLoading(false);
     }
