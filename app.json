@@ -4,11 +4,11 @@
     "slug": "jung",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/JungAppLogoAlpha.webp",
+    "icon": "./assets/JungAppLogoAlpha.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/JungAppLogoAlpha.webp",
+      "image": "./assets/JungAppLogoAlpha.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -30,7 +30,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/JungAppLogoAlpha.webp",
+        "foregroundImage": "./assets/JungAppLogoAlpha.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourcompany.jungai",
