@@ -49,6 +49,7 @@ module.exports = {
         'conversation': '#6A8EAE',        // Muted blue - communication
         'motivation': '#97C1A9',          // Soft green - growth
         'emotional': '#CEB5CD',           // Soft purple - emotional insight
+        'resources': '#D2B48C',           // Earth tone - grounding resources
       },
     },
   },

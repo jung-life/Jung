@@ -19,7 +19,12 @@ import { navigationRef } from './navigation/navigationService';
 import * as NavigationService from './navigation/navigationService';
 import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native'; // Add View, ActivityIndicator
+import { useFonts } from 'expo-font'; // Import useFonts
+// Keep these imports for type checking, but loading is handled by useFonts
+import AntDesign from '@expo/vector-icons/AntDesign'; 
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+
 
 // Instead, use a conditional import with error handling
 let mixpanelInstance;
@@ -67,6 +72,29 @@ const linking = {
 };
 
 export default function App() {
+  // Load fonts explicitly
+  const [fontsLoaded, fontError] = useFonts({
+    // Use the actual font names required by @expo/vector-icons
+    'AntDesign': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/AntDesign.ttf'),
+    'FontAwesome': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf'),
+  });
+
+  // Show loading indicator while fonts load or if there's an error
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // Log font loading errors
+  if (fontError) {
+    console.error("Error loading fonts:", fontError);
+    // Optionally render an error message
+  }
+  
+  // Render the app only when fonts are loaded
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>

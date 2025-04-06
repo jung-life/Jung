@@ -35,7 +35,10 @@ const PostLoginScreen = () => {
             style={tw`bg-conversation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use conversation color
             onPress={() => navigation.navigate('ConversationsScreen', { refresh: true })}
           >
-            <ChatCircleDots size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            {/* Wrap icon in a View */}
+            <View>
+              <ChatCircleDots size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversations</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
@@ -44,7 +47,10 @@ const PostLoginScreen = () => {
             style={tw`bg-motivation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use motivation color
             onPress={() => navigation.navigate('DailyMotivationScreen')}
           >
-            <Brain size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            {/* Wrap icon in a View */}
+            <View>
+              <Brain size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Daily Motivation</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
@@ -58,6 +64,18 @@ const PostLoginScreen = () => {
               <Heart size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
             </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
+          </TouchableOpacity>
+
+          {/* Self-Help Resources Button */}
+          <TouchableOpacity 
+            style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
+            onPress={() => navigation.navigate('SelfHelpResourcesScreen')}
+            >
+            {/* Wrap icon in a View */}
+            <View>
+              <BookOpen size={28} color="#2D2B55" weight="fill" />{/* Use jung-deep for icon */}
+            </View>
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
 
         </ScrollView>

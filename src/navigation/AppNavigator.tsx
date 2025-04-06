@@ -15,6 +15,7 @@ import PostLoginScreen from '../screens/PostLoginScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import DailyMotivationScreen from '../screens/DailyMotivationScreen';
 import { EmotionalAssessmentScreen } from '../screens/EmotionalAssessmentScreen';
+import SelfHelpResourcesScreen from '../screens/SelfHelpResourcesScreen'; // Import the new screen
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
@@ -136,6 +137,16 @@ const AppNavigator = () => {
           options={{
             headerShown: true,
             title: 'Emotional Assessment',
+            ...defaultPostLoginOptions,
+          }}
+        />
+        {/* Add the SelfHelpResourcesScreen */}
+        <Stack.Screen 
+          name="SelfHelpResourcesScreen" 
+          component={SelfHelpResourcesScreen}
+          options={{
+            headerShown: true,
+            title: 'Self-Help Resources',
             ...defaultPostLoginOptions,
           }}
         />
