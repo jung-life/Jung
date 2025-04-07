@@ -15,7 +15,7 @@ import PostLoginScreen from '../screens/PostLoginScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import DailyMotivationScreen from '../screens/DailyMotivationScreen';
 import { EmotionalAssessmentScreen } from '../screens/EmotionalAssessmentScreen';
-import SelfHelpResourcesScreen from '../screens/SelfHelpResourcesScreen'; // Import the new screen
+import SelfHelpResourcesScreen from '../screens/SelfHelpResourcesScreen'; // Ensure correct import
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
@@ -25,7 +25,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Default header options with hamburger menu
 const defaultPostLoginOptions = {
-  headerRight: () => <HamburgerMenu />,
+  headerRight: () => <HamburgerMenu />, 
   headerStyle: {
     backgroundColor: '#ffffff',
   },

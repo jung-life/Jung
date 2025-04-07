@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, ActivityIndicator, Image } from 'react-native';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
+// Import icons from phosphor-react-native instead
+import { Envelope, GoogleLogo, AppleLogo } from 'phosphor-react-native'; 
 import tw from '../lib/tailwind';
 
 type Provider = 'google' | 'apple' | 'email';
@@ -47,21 +48,24 @@ export const SocialButton = ({
       case 'google':
         return (
           <>
-            <AntDesign name="google" size={22} color="#DB4437" style={tw`mr-3`} />
+            {/* Use Phosphor GoogleLogo */}
+            <GoogleLogo size={22} color="#DB4437" weight="bold" style={tw`mr-3`} /> 
             <Text style={tw`font-medium text-base ${colors.text}`}>Login with Google</Text>
           </>
         );
       case 'apple':
         return (
           <>
-            <FontAwesome name="apple" size={22} color="#000" style={tw`mr-3`} />
+            {/* Use Phosphor AppleLogo */}
+            <AppleLogo size={22} color="#000" weight="fill" style={tw`mr-3`} /> 
             <Text style={tw`font-medium text-base ${colors.text}`}>Login with Apple</Text>
           </>
         );
       case 'email':
         return (
           <>
-            <AntDesign name="mail" size={22} color="#6A8EAE" style={tw`mr-3`} />
+            {/* Use Phosphor Envelope */}
+            <Envelope size={22} color="#6A8EAE" weight="bold" style={tw`mr-3`} /> 
             <Text style={tw`font-medium text-base ${colors.text}`}>Login with Email</Text>
           </>
         );

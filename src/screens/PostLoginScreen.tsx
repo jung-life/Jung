@@ -73,7 +73,7 @@ const PostLoginScreen = () => {
             >
             {/* Wrap icon in a View */}
             <View>
-              <BookOpen size={28} color="#2D2B55" weight="fill" />{/* Use jung-deep for icon */}
+              <BookOpen size={28} color="#2D2B55" weight="fill" />
             </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
