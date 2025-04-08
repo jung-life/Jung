@@ -102,7 +102,27 @@ export const ChatScreen = () => {
       if (convError) {
         console.error('Error fetching conversation:', convError);
       } else if (convData) {
-        setConversationTitle(convData.title);
+        // Decrypt the conversation title if needed
+        let decryptedTitle = convData.title;
+        try {
+          // Check if the title is encrypted (has a pattern like "U2FsdGVkX1...")
+          if (decryptedTitle && decryptedTitle.startsWith('U2FsdGVkX1')) {
+            decryptedTitle = decryptData(decryptedTitle);
+          } else if (decryptedTitle && decryptedTitle.length > 30 && /[^\w\s]/.test(decryptedTitle)) {
+            // If title looks like it might be encrypted but doesn't have the expected prefix
+            // or is a random string (long with special characters), use a fallback title
+            const avatarName = availableAvatars.find((a) => a.id === convData.avatar_id)?.name || 'Jung';
+            decryptedTitle = `Conversation with ${avatarName}`;
+          }
+        } catch (decryptError) {
+          console.error('Error decrypting conversation title:', decryptError);
+          // Use a fallback title if decryption fails
+          const avatarName = availableAvatars.find((a) => a.id === convData.avatar_id)?.name || 'Jung';
+          decryptedTitle = `Conversation with ${avatarName}`;
+        }
+        
+        setConversationTitle(decryptedTitle);
+        
         // If avatarId wasn't passed in route params, use the one from the database
         if (!route.params.avatarId && convData.avatar_id) {
           console.log('Using avatar_id from database:', convData.avatar_id);
@@ -197,6 +217,16 @@ export const ChatScreen = () => {
       subscription.unsubscribe();
     };
   }, [conversationId, fetchMessages]);
+
+  // Automatically scroll to the bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0 && flatListRef.current) {
+      // Add a small delay to ensure the list has rendered the new item
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100); 
+    }
+  }, [messages]);
   
   // Send an initial greeting from the AI
   const sendInitialGreeting = async () => {
@@ -204,10 +234,15 @@ export const ChatScreen = () => {
       setIsTyping(true);
       
       // Get the avatar's name for personalized greeting
-      const currentAvatarId = route.params.avatarId || 'jung';
+      const currentAvatarId = conversation?.avatar_id || route.params.avatarId || 'jung';
+      console.log(`Sending initial greeting for avatar ID: ${currentAvatarId}`);
+      
       let greeting = '';
       
-      switch (currentAvatarId) {
+      // Normalize the avatar ID to handle case sensitivity and trim any whitespace
+      const normalizedAvatarId = currentAvatarId.toLowerCase().trim();
+      
+      switch (normalizedAvatarId) {
         case 'jung':
           greeting = "Hello, I'm Carl Jung. I'm here to help you explore your psyche through the lens of analytical psychology. What's on your mind today?";
           break;
@@ -236,6 +271,7 @@ export const ChatScreen = () => {
           greeting = "Welcome to the real world. I'm Morpheus. I'm here to help you question your assumptions and see reality more clearly. What limitations are you ready to break free from?";
           break;
         default:
+          console.warn(`Unknown avatar ID: ${currentAvatarId}, using default greeting`);
           greeting = "Hello, I'm here to assist you with your journey of self-discovery. How can I help you today?";
       }
       
@@ -386,6 +422,19 @@ export const ChatScreen = () => {
             shadow-sm
           `}
         >
+          <View style={tw`flex-row items-center mb-1`}>
+            {isUser ? (
+              <User size={16} color="#4A3B78" weight="fill" />
+            ) : (
+              <Brain size={16} color="#4A3B78" weight="fill" />
+            )}
+            <Text 
+              style={tw`text-xs ml-1 font-medium text-gray-700`}
+            >
+              {isUser ? 'You' : availableAvatars.find(a => a.id === (conversation?.avatar_id || 'jung'))?.name || 'Jung'}
+            </Text>
+          </View>
+          
           <Text 
             style={tw`
               ${isUser ? 'text-indigo-900' : 'text-gray-800'} 
@@ -477,32 +526,7 @@ export const ChatScreen = () => {
                       />
                     </View>
                   }
-                  renderItem={({ item }) => (
-                    <View 
-                      style={[
-                        tw`mb-4 max-w-[85%]`, 
-                        item.role === 'user' ? tw`self-end` : tw`self-start`
-                      ]}
-                    >
-                      <View 
-                        style={[
-                          tw`rounded-2xl p-3`,
-                          item.role === 'user' 
-                            ? tw`bg-jung-purple rounded-tr-none` 
-                            : tw`bg-gray-200 rounded-tl-none`
-                        ]}
-                      >
-                        <Text 
-                          style={[
-                            tw`text-base`,
-                            item.role === 'user' ? tw`text-white` : tw`text-gray-800`
-                          ]}
-                        >
-                          {item.content}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
+                  renderItem={renderMessage}
                 />
               </View>
               

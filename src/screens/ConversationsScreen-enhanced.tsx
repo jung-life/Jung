@@ -131,11 +131,24 @@ export const ConversationsScreen = () => {
               ...conversation,
               title: decryptData(conversation.title)
             };
+          } else if (conversation.title && conversation.title.length > 30 && /[^\w\s]/.test(conversation.title)) {
+            // If title looks like it might be encrypted but doesn't have the expected prefix
+            // or is a random string (long with special characters), use a fallback title
+            const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'Jung';
+            return {
+              ...conversation,
+              title: `Conversation with ${avatarName}`
+            };
           }
           return conversation;
         } catch (decryptError) {
           console.error('Error decrypting conversation title:', decryptError);
-          return conversation;
+          // Use a fallback title if decryption fails
+          const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'Jung';
+          return {
+            ...conversation,
+            title: `Conversation with ${avatarName}`
+          };
         }
       }) || [];
       
@@ -574,19 +587,81 @@ export const ConversationsScreen = () => {
       const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
       
       // Create a prompt for the LLM to generate a creative title
+      let philosophyContext = '';
+      
+      // Detailed philosophical context for each avatar
+      switch (selectedAvatar) {
+        case 'jung':
+          philosophyContext = `Carl Jung's key concepts include:
+- Archetypes (Shadow, Anima/Animus, Self, Persona)
+- The collective unconscious
+- Individuation process
+- Psychological types (introversion/extraversion)
+- Synchronicity
+- Dream analysis and symbolism
+- Integration of the shadow self`;
+          break;
+        case 'freud':
+          philosophyContext = `Sigmund Freud's key concepts include:
+- Psychoanalysis and free association
+- The unconscious mind
+- Id, Ego, and Superego
+- Dream interpretation
+- Defense mechanisms
+- Psychosexual development
+- Oedipus complex`;
+          break;
+        case 'adler':
+          philosophyContext = `Alfred Adler's key concepts include:
+- Individual psychology
+- Inferiority feelings and compensation
+- Social interest and community feeling
+- Striving for superiority
+- Life tasks (work, society, love)
+- Birth order and family dynamics
+- Fictional finalism (life goals)`;
+          break;
+        case 'horney':
+          philosophyContext = `Karen Horney's key concepts include:
+- Cultural and social influences on personality
+- Neurotic needs and trends
+- Self-realization
+- Basic anxiety
+- Moving toward, against, or away from people
+- Real self vs. ideal self
+- Feminine psychology`;
+          break;
+        case 'oracle':
+          philosophyContext = `The Oracle's key concepts include:
+- Mystical guidance and prophecy
+- Seeing beyond time and space
+- Fate versus choice
+- Hidden patterns and connections
+- Intuitive wisdom
+- Crossroads and decision points
+- Transcendent knowledge`;
+          break;
+        case 'morpheus':
+          philosophyContext = `Morpheus's key concepts include:
+- Questioning perceived reality
+- Breaking free from mental constraints
+- Awakening to deeper truth
+- The illusion of choice
+- Mind-body connection
+- Liberation from systems of control
+- Potential beyond limitations`;
+          break;
+        default:
+          philosophyContext = `${avatarName}'s approach to psychology focuses on understanding the human mind, behavior, and personal growth.`;
+      }
+      
       const prompt = `Generate a creative, engaging title for a conversation with ${avatarName}, a psychological guide. 
-The title should reflect ${avatarName}'s unique psychological approach and personality.
+The title MUST directly incorporate key philosophical concepts from ${avatarName}'s specific approach to psychology.
 
-For context:
-- Carl Jung focuses on archetypes, the collective unconscious, and individuation
-- Sigmund Freud focuses on psychoanalysis, the unconscious mind, and dream interpretation
-- Alfred Adler focuses on social interest, inferiority feelings, and striving for superiority
-- Karen Horney focuses on cultural influences, neurotic needs, and self-realization
-- Carl Rogers focuses on person-centered therapy, unconditional positive regard, and authenticity
-- Viktor Frankl focuses on finding meaning in life, even in suffering
-- Abraham Maslow focuses on self-actualization and the hierarchy of needs
-- The Oracle focuses on mystical guidance and seeing deeper patterns
-- Morpheus focuses on questioning reality and breaking free from limiting beliefs
+${philosophyContext}
+
+IMPORTANT: The title MUST contain at least one specific concept, term, or theme central to ${avatarName}'s philosophy.
+For example, a Jung title should mention archetypes, shadow, individuation, or the collective unconscious.
 
 Generate a single, concise title (3-6 words) that would appeal to someone seeking psychological insight from ${avatarName}.
 The title should be creative but not overly abstract, and should hint at the transformative nature of the conversation.
@@ -907,24 +982,14 @@ Return only the title text with no additional explanation or formatting.`;
       console.log('[handleCreateNewConversation] Insert successful.');
       setShowNewChatModal(false);
       
-      // Simplest approach: just navigate back to PostLoginScreen
-      // and refresh the conversations list
-      navigation.navigate('PostLoginScreen');
+      // Navigate directly to the newly created conversation
+      navigation.navigate('Chat', { 
+        conversationId: conversationId,
+        avatarId: selectedAvatar
+      });
       
-      // Show a success message with instructions
-      Alert.alert(
-        "Conversation Created",
-        "Your new conversation has been created successfully. You can access it from the Conversations screen.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Track the event
-              trackEvent('Conversation Started', { avatarId: selectedAvatar });
-            }
-          }
-        ]
-      );
+      // Track the event without showing a popup
+      trackEvent('Conversation Started', { avatarId: selectedAvatar });
     } catch (error) {
       console.error('Error in handleCreateNewConversation:', error);
       Alert.alert('Error', 'An unexpected error occurred');
