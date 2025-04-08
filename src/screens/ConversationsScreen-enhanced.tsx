@@ -907,13 +907,24 @@ Return only the title text with no additional explanation or formatting.`;
       console.log('[handleCreateNewConversation] Insert successful.');
       setShowNewChatModal(false);
       
-      // Navigate to the chat screen with the avatar ID
-      navigation.navigate('Chat', { 
-        conversationId,
-        avatarId: selectedAvatar
-      });
-
-      trackEvent('Conversation Started', { avatarId: selectedAvatar });
+      // Simplest approach: just navigate back to PostLoginScreen
+      // and refresh the conversations list
+      navigation.navigate('PostLoginScreen');
+      
+      // Show a success message with instructions
+      Alert.alert(
+        "Conversation Created",
+        "Your new conversation has been created successfully. You can access it from the Conversations screen.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              // Track the event
+              trackEvent('Conversation Started', { avatarId: selectedAvatar });
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Error in handleCreateNewConversation:', error);
       Alert.alert('Error', 'An unexpected error occurred');

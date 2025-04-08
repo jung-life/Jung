@@ -15,6 +15,7 @@ import DailyMotivationScreen from './screens/DailyMotivationScreen'; // Import t
 import { ConversationsScreen } from './screens/ConversationsScreen-enhanced'; // Corrected import name
 import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen'; // Use named import
 import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen'; // Import the missing screen
+import { ChatScreen } from './screens/ChatScreen'; // Import the Chat screen
 import { AuthProvider } from './contexts/AuthContext';
 import { SupabaseProvider } from './contexts/SupabaseContext';
 import * as Linking from 'expo-linking';
@@ -157,6 +158,8 @@ export default function EnhancedApp() {
                 <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} />
                 {/* Add the Self Help Resources screen */}
                 <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} />
+                {/* Add the Chat screen */}
+                <Stack.Screen name="Chat" component={ChatScreen} />
               </Stack.Navigator>
             </NavigationContainer>
             <StatusBar style="auto" />
