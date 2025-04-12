@@ -45,35 +45,6 @@ export const RegisterScreen = () => {
     navigation.navigate('LandingScreen');
   };
 
-  const saveUserProfile = async (userId: string, userData: { email: string, fullName?: string }) => {
-    try {
-      const profileData = {
-        user_id: userId,
-        email: userData.email,
-        full_name: userData.fullName || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabase
-        .from('profiles')
-        .insert(profileData);
-        
-      if (error) {
-        console.error('Error saving user profile:', error);
-        Alert.alert('Profile Creation Failed', 'An error occurred while saving your profile.');
-        return false;
-      }
-      
-      console.log('User profile saved successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Unexpected error saving user profile:', error);
-      Alert.alert('Profile Creation Failed', 'An unexpected error occurred.');
-      return false;
-    }
-  };
-
   // Email validation function
   const isValidEmail = (email: string) => {
     return /\S+@\S+\.\S+/.test(email);
@@ -123,19 +94,15 @@ export const RegisterScreen = () => {
         return;
       }
 
+      // The database trigger 'on_auth_user_created' now handles profile creation automatically.
+      // We no longer need to call saveUserProfile here.
+
       if (response.data.user) {
-        const profileSaved = await saveUserProfile(response.data.user.id, { 
-          email, 
-          fullName: fullName 
-        });
-        
-        if (!profileSaved) {
-          return;
-        }
-        
+        // Check if the user account requires confirmation
         if (response.data.user.confirmed_at) {
-          setSuccessMessage('Registration successful! You can now log in.');
-          // Log in the user after successful registration
+          // User is already confirmed (e.g., email confirmation disabled)
+          setSuccessMessage('Registration successful! Logging you in...');
+          // Attempt to log in the user immediately
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email: email,
             password: password,
@@ -146,14 +113,21 @@ export const RegisterScreen = () => {
             setLoading(false);
             return;
           }
-
+          
+          setLoading(false); // Stop loading before navigation timeout
           // Navigate to the PostLoginScreen
           setTimeout(() => navigation.navigate('PostLoginScreen'), 2000);
         } else {
+          // User requires email confirmation
           setSuccessMessage(
             'Registration successful! Please check your email to confirm your account.'
           );
+          setLoading(false); // Stop loading after setting success message
         }
+      } else {
+         // Handle case where response.data.user is null (should ideally be caught by response.error)
+         Alert.alert('Registration Failed', 'Could not retrieve user data after sign up.');
+         setLoading(false); // Stop loading if user data is unexpectedly null
       }
     } catch (error: any) {
       console.error('Unexpected error during registration:', error);

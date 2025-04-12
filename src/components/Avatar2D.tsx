@@ -6,15 +6,26 @@ import tw from '../lib/tailwind';
 // Define avatar images with the correct path
 const AVATAR_IMAGES = {
   jung: require('../assets/avtars/jung.png'),
-  freud: require('../assets/avtars/freud.png'),
-  adler: require('../assets/avtars/adler.png'),
-  horney: require('../assets/avtars/horney.png'),
-  morpheus: require('../assets/avtars/morpheus.png'),
-  oracle: require('../assets/avtars/oracle.png'),
-  user: require('../assets/avtars/user.png'),
+  freud: require('../assets/avtars/frued.png'), // Fixed typo in filename to match actual file
+  adler: require('../assets/avtars/adler.webp'),
+  horney: require('../assets/avtars/horney.jpeg'),
+  morpheus: require('../assets/avtars/morpheus.jpg'),
+  oracle: require('../assets/avtars/oracle.webp'),
+  user: require('../assets/avtars/user.webp'),
   // Use jung as default if others aren't available
   default: require('../assets/avtars/jung.png'),
-};
+} as const;
+
+// Define the type for avatar IDs
+type AvatarId = keyof typeof AVATAR_IMAGES;
+
+// Define the props interface with proper typing
+interface Avatar2DProps {
+  avatarId?: AvatarId;
+  size?: number;
+  animate?: boolean;
+  style?: any;
+}
 
 // Main Avatar2D component
 export const Avatar2D = ({ 
@@ -22,7 +33,7 @@ export const Avatar2D = ({
   size = 150, 
   animate = true,
   style = {}
-}) => {
+}: Avatar2DProps) => {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   
@@ -135,4 +146,4 @@ export const preloadAvatarImages = () => {
       console.error(`Error preloading avatar image ${key}:`, error);
     }
   });
-}; 
+};

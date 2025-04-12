@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from '../lib/supabase';
 import { Alert } from 'react-native';
 import * as NavigationService from '../navigation/navigationService';
+import { supabaseEnhanced, storeAuthDataEnhanced } from '../lib/supabase-enhanced';
 
 export function AuthUrlHandler() {
   useEffect(() => {
@@ -43,18 +44,58 @@ export function AuthUrlHandler() {
             refresh_token: params.get('refresh_token') || '',
           };
           
-          const { data, error } = await supabase.auth.setSession(session);
-          
-          if (error) {
-            console.error('Error setting session:', error);
-            Alert.alert('Session Error', error.message);
-            return;
+          try {
+            // Set session in both regular and enhanced Supabase clients
+            const { data, error } = await supabase.auth.setSession(session);
+            
+            if (error) {
+              console.error('Error setting session in regular client:', error);
+              Alert.alert('Session Error', error.message);
+              return;
+            }
+            
+            console.log('Session set successfully in regular client:', data);
+            
+            // Also set session in enhanced client
+            try {
+              const enhancedResult = await supabaseEnhanced.auth.setSession(session);
+              console.log('Session set in enhanced client:', enhancedResult.error ? 'Failed' : 'Success');
+            } catch (enhancedError) {
+              console.error('Error setting session in enhanced client:', enhancedError);
+              // Continue anyway since the regular client succeeded
+            }
+            
+            // Store session data manually as a backup
+            if (data.session) {
+              try {
+                await storeAuthDataEnhanced(data.session);
+                console.log('Session data manually stored');
+              } catch (storageError) {
+                console.error('Error storing session data:', storageError);
+                // Continue anyway
+              }
+            }
+            
+            // Add a small delay to ensure the session is fully processed
+            setTimeout(() => {
+              console.log('Navigating to PostLoginScreen...');
+              NavigationService.reset('PostLoginScreen');
+              
+              // Double-check the session after navigation
+              setTimeout(async () => {
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (!sessionData.session) {
+                  console.error('Session not found after navigation, trying to recover...');
+                  // Try to recover by setting the session again
+                  await supabase.auth.setSession(session);
+                  console.log('Session recovery attempt completed');
+                }
+              }, 1000);
+            }, 500);
+          } catch (sessionError) {
+            console.error('Exception setting session:', sessionError);
+            Alert.alert('Session Error', 'Failed to set session');
           }
-          
-          console.log('Session set successfully:', data);
-          
-          // Force navigation to PostLoginScreen
-          NavigationService.reset('PostLoginScreen');
         }
       } catch (error) {
         console.error('Error processing auth redirect:', error);
@@ -91,4 +132,4 @@ export function AuthUrlHandler() {
   }, []);
 
   return null; // This component doesn't render anything
-} 
+}

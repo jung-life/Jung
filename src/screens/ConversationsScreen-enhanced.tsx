@@ -861,14 +861,27 @@ Return only the title text with no additional explanation or formatting.`;
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => setShowNewChatModal(false)}
+                onPress={() => {
+                  console.log('Cancel button pressed');
+                  setShowNewChatModal(false);
+                }}
+                activeOpacity={0.7}
               >
-                <X size={24} color="#4A3B78" />
+                <X size={24} color="#4A3B78" weight="bold" />
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
               </Text>
-              <View style={tw`w-10`} />
+              <TouchableOpacity 
+                style={tw`p-2`}
+                onPress={() => {
+                  console.log('Cancel button (right) pressed');
+                  setShowNewChatModal(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={tw`text-jung-purple`}>Cancel</Text>
+              </TouchableOpacity>
             </View>
             
             <ScrollView style={tw`flex-1 p-4`}>

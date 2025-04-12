@@ -25,7 +25,7 @@ import * as NavigationService from './navigation/navigationService';
 import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text, Alert } from 'react-native';
-import { initializeSupabaseEnhanced } from './lib/supabase-enhanced';
+import { initializeSupabaseEnhanced, storeAuthDataEnhanced, checkSessionEnhanced, supabaseEnhanced } from './lib/supabase-enhanced';
 
 // Instead, use a conditional import with error handling
 let mixpanelInstance;
@@ -75,6 +75,33 @@ export default function EnhancedApp() {
   const [initializing, setInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
 
+  // Handle deep links for authentication
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('App received deep link:', url);
+      // The AuthUrlHandler component will handle the actual processing
+    };
+
+    // Listen for deep links while the app is open
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('App received URL event:', url);
+      handleDeepLink(url);
+    });
+
+    // Check if app was opened via a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        console.log('App opened with initial URL:', url);
+        handleDeepLink(url);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Initialize Supabase
   useEffect(() => {
     const initialize = async () => {
       try {

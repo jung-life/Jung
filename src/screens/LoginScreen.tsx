@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { supabase } from '../lib/supabase';
+import { supabase, storeAuthData, checkSession } from '../lib/supabase';
 import tw from '../lib/tailwind';
 import { ArrowLeft, Lock, Envelope } from 'phosphor-react-native';
 import { GradientBackground } from '../components/GradientBackground';
@@ -47,25 +47,10 @@ export const LoginScreen = () => {
   // Get Google Client ID from environment variables
   const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
                         Constants.expoConfig?.extra?.googleClientId ||
-                        '';
+                         '';
   
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event);
-      
-      if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in, navigating to PostLoginScreen');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'PostLoginScreen' }]
-        });
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigation]);
+  // Removed redundant onAuthStateChange listener. 
+  // Navigation is now handled by AppNavigator based on AuthContext state.
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -90,10 +75,13 @@ export const LoginScreen = () => {
       setLoading(true);
       console.log('Starting Google login flow...');
       
+      const redirectUri = AuthSession.makeRedirectUri({});
+      console.log('Using Redirect URI:', redirectUri); // Log the redirect URI
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: AuthSession.makeRedirectUri({}),
+          redirectTo: redirectUri,
           skipBrowserRedirect: false,
         }
       });
@@ -101,35 +89,49 @@ export const LoginScreen = () => {
       if (error) {
         console.error('Supabase OAuth error:', error);
         Alert.alert('Login Error', error.message);
+        setLoading(false);
         return;
       }
 
       if (data?.url) {
         console.log('Opening auth URL:', data.url);
+        
+        // Open the URL in the browser
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          AuthSession.makeRedirectUri({})
+          redirectUri
         );
 
-        console.log('WebBrowser result:', result);
+        console.log('WebBrowser result:', JSON.stringify(result));
 
         if (result.type === 'success') {
-          const url = result.url;
-          const params = new URLSearchParams(url.split('#')[1]);
+          console.log('OAuth flow successful, URL:', result.url);
           
-          if (params.has('access_token')) {
-            const session = {
-              access_token: params.get('access_token')!,
-              refresh_token: params.get('refresh_token') || '',
-            };
-
-            const { error: sessionError } = await supabase.auth.setSession(session);
+          // Extract token from URL if available
+          const url = result.url;
+          if (url.includes('#') || url.includes('?')) {
+            console.log('URL contains parameters, will be processed by App.tsx handler');
             
-            if (sessionError) throw sessionError;
-
-            navigation.navigate('Home');
+            // Force a small delay to ensure the App.tsx handler has time to process
+            setTimeout(() => {
+              if (!navigation.isFocused()) {
+                console.log('Login screen is no longer focused, navigation likely occurred');
+              } else {
+                console.log('Login screen is still focused, manually navigating...');
+                navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
+              }
+            }, 1000);
+          }
+        } else {
+          console.log('OAuth flow browser session ended:', result.type);
+          if (result.type !== 'cancel' && result.type !== 'dismiss') {
+            // Handle potential browser errors
+            Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
           }
         }
+      } else {
+        console.error('No URL returned from signInWithOAuth');
+        Alert.alert('Login Error', 'Failed to initiate Google login. Please try again.');
       }
     } catch (error) {
       console.error('Google login error:', error);

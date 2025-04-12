@@ -21,8 +21,8 @@ const Image = (Platform.OS === 'ios' && parseInt(Platform.Version, 10) < 14 && E
 
 // Define available avatars with their details - metadata only
 export const availableAvatars = [
-  { id: 'jung', name: 'Jung', filename: 'jung.webp', premium: false },
-  { id: 'freud', name: 'Freud', filename: 'freud.webp', premium: false },
+  { id: 'jung', name: 'Jung', filename: 'jung.png', premium: false },
+  { id: 'freud', name: 'Freud', filename: 'frued.png', premium: false }, // Note: Filename has a typo "frued" to match actual file
   { id: 'adler', name: 'Adler', filename: 'adler.webp', premium: false },
   { id: 'horney', name: 'Horney', filename: 'horney.webp', premium: true },
   { id: 'morpheus', name: 'Morpheus', filename: 'morpheus.webp', premium: true },
@@ -187,4 +187,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-}); 
+});

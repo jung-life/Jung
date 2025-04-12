@@ -79,7 +79,7 @@ export const supabaseEnhanced = createClient(supabaseUrl, supabaseAnonKey, {
     storage: EnhancedStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: true, // Enable automatic session detection from URL
     flowType: 'pkce', // Use PKCE flow for better security
   },
 });

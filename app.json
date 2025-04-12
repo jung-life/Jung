@@ -4,7 +4,7 @@
     "slug": "jung",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/JungAppLogoAlpha.png",
+    "icon": "./assets/JungAppLogo.webp",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {

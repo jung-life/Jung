@@ -1,5 +1,7 @@
 import { registerRootComponent } from 'expo';
-import EnhancedApp from './src/App-enhanced';
+import App from './src/App';
 
-// Register the enhanced app as the root component
-registerRootComponent(EnhancedApp);
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
+// It also ensures that whether you load the app in Expo Go or in a native build,
+// the environment is set up appropriately
+registerRootComponent(App);

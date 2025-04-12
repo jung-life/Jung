@@ -24,14 +24,13 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import tw from '../lib/tailwind';
 
-// Import the standard Supabase client and functions
+// Import both Supabase clients and functions
+import { supabase } from '../lib/supabase';
 import { 
-  supabase, // Use the standard client
-  // Assuming standard functions exist or map appropriately
-  // We might need to check supabase.ts for equivalent functions
-  // For now, let's assume direct mapping or handle later
-} from '../lib/supabase'; 
-// We'll need equivalent functions for signInWithEmail, checkSession if they differ
+  supabaseEnhanced, 
+  storeAuthDataEnhanced, 
+  checkSessionEnhanced 
+} from '../lib/supabase-enhanced';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -137,12 +136,16 @@ export const LoginScreenEnhanced = () => {
       setErrorMessage('');
       console.log('Starting Google login flow with standard client...');
       
+      // Get the redirect URI
+      const redirectUri = AuthSession.makeRedirectUri({});
+      console.log('Using redirect URI:', redirectUri);
+      
       // Use the standard Supabase client
       const { data, error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
         options: {
-          redirectTo: AuthSession.makeRedirectUri({}), 
-          // Ensure skipBrowserRedirect is false or omitted for Expo Go/Dev Client
+          redirectTo: redirectUri,
+          skipBrowserRedirect: false,
         }
       });
 
@@ -156,29 +159,112 @@ export const LoginScreenEnhanced = () => {
 
       if (data?.url) {
         console.log('Opening auth URL (standard client):', data.url);
-        // Open the URL, Supabase client (with detectSessionInUrl: true) 
-        // and the onAuthStateChange listener will handle the redirect automatically.
+        
+        // Open the URL in the browser
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          AuthSession.makeRedirectUri({}) // The redirect URI used here is just for the browser session
+          redirectUri
         );
 
-        console.log('WebBrowser result (standard client):', result);
+        console.log('WebBrowser result (standard client):', JSON.stringify(result));
 
-        // No need for manual handling here. 
-        // If result.type is 'success', the app will receive the deep link,
-        // Supabase detects it, exchanges the code, and onAuthStateChange fires.
-        if (result.type !== 'success') {
-           console.log('OAuth flow browser session ended:', result.type);
-           if (result.type !== 'cancel' && result.type !== 'dismiss') {
-             // Handle potential browser errors if needed
-             setErrorMessage('Authentication browser session failed.');
-           }
+        if (result.type === 'success') {
+          console.log('OAuth flow successful, URL:', result.url);
+          
+          // Extract token from URL if available
+          const url = result.url;
+          if (url.includes('#') || url.includes('?')) {
+            console.log('URL contains parameters, attempting to extract tokens');
+            
+            // Extract parameters from URL
+            let params: URLSearchParams | null = null;
+            
+            // Handle different URL formats
+            if (url.includes('#')) {
+              params = new URLSearchParams(url.split('#')[1]);
+            } else if (url.includes('?')) {
+              params = new URLSearchParams(url.split('?')[1]);
+            }
+            
+            if (params && params.has('access_token')) {
+              console.log('Found access token in URL, setting session manually...');
+              
+              const session = {
+                access_token: params.get('access_token')!,
+                refresh_token: params.get('refresh_token') || '',
+              };
+              
+              try {
+                // Set session in both regular and enhanced Supabase clients
+                const { data, error } = await supabase.auth.setSession(session);
+                
+                if (error) {
+                  console.error('Error setting session in regular client:', error);
+                } else {
+                  console.log('Session set successfully in regular client');
+                  
+                  // Also set session in enhanced client
+                  try {
+                    const enhancedResult = await supabaseEnhanced.auth.setSession(session);
+                    console.log('Session set in enhanced client:', enhancedResult.error ? 'Failed' : 'Success');
+                  } catch (enhancedError) {
+                    console.error('Error setting session in enhanced client:', enhancedError);
+                  }
+                  
+                  // Store session data manually as a backup
+                  if (data.session) {
+                    try {
+                      await storeAuthDataEnhanced(data.session);
+                      console.log('Session data manually stored');
+                    } catch (storageError) {
+                      console.error('Error storing session data:', storageError);
+                    }
+                  }
+                }
+              } catch (sessionError) {
+                console.error('Exception setting session:', sessionError);
+              }
+            }
+            
+            // Force a small delay to ensure the AuthUrlHandler has time to process
+            setTimeout(() => {
+              if (!navigation.isFocused()) {
+                console.log('Login screen is no longer focused, navigation likely occurred');
+              } else {
+                console.log('Login screen is still focused, manually navigating...');
+                navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
+                
+                // Double-check the session after navigation
+                setTimeout(async () => {
+                  const sessionCheck = await checkSessionEnhanced();
+                  if (!sessionCheck.session) {
+                    console.error('Session not found after navigation, trying to recover...');
+                    // Try to recover by checking for tokens again
+                    if (params && params.has('access_token')) {
+                      const session = {
+                        access_token: params.get('access_token')!,
+                        refresh_token: params.get('refresh_token') || '',
+                      };
+                      await supabase.auth.setSession(session);
+                      console.log('Session recovery attempt completed');
+                    }
+                  }
+                }, 1000);
+              }
+            }, 1000);
+          }
+        } else {
+          console.log('OAuth flow browser session ended:', result.type);
+          if (result.type !== 'cancel' && result.type !== 'dismiss') {
+            // Handle potential browser errors
+            setErrorMessage('Authentication browser session failed.');
+            Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
+          }
         }
-        // If successful, the onAuthStateChange listener handles navigation.
       } else {
-         console.error('No URL returned from signInWithOAuth');
-         setErrorMessage('Failed to initiate Google login.');
+        console.error('No URL returned from signInWithOAuth');
+        setErrorMessage('Failed to initiate Google login.');
+        Alert.alert('Login Error', 'Failed to initiate Google login. Please try again.');
       }
     } catch (error) {
       console.error('Google login error (standard client):', error);

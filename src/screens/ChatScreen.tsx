@@ -218,12 +218,17 @@ export const ChatScreen = () => {
     };
   }, [conversationId, fetchMessages]);
 
-  // Automatically scroll to the bottom when messages change
+  // Automatically scroll to the new message when messages change
   useEffect(() => {
     if (messages.length > 0 && flatListRef.current) {
+      const lastIndex = messages.length - 1;
       // Add a small delay to ensure the list has rendered the new item
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        flatListRef.current?.scrollToIndex({
+          index: lastIndex,
+          animated: true,
+          viewPosition: 0, // Align the top of the item with the top of the viewport
+        });
       }, 100); 
     }
   }, [messages]);
@@ -244,35 +249,35 @@ export const ChatScreen = () => {
       
       switch (normalizedAvatarId) {
         case 'jung':
-          greeting = "Hello, I'm Carl Jung. I'm here to help you explore your psyche through the lens of analytical psychology. What's on your mind today?";
+          greeting = "Hello, I'm an AI assistant with knowledge of Carl Jung's analytical psychology. I can help you explore your psyche through the lens of Jung's theories on dreams, archetypes, and the collective unconscious. What's on your mind today?";
           break;
         case 'freud':
-          greeting = "Good day, I'm Sigmund Freud. I'm interested in helping you explore your unconscious mind. What would you like to discuss?";
+          greeting = "Good day, I'm an AI assistant with expertise in Sigmund Freud's psychoanalytic theories. I can help you explore concepts like the unconscious mind, defense mechanisms, and childhood experiences. What would you like to discuss?";
           break;
         case 'adler':
-          greeting = "Hello, I'm Alfred Adler. I'm here to help you understand your social context and life goals. What brings you here today?";
+          greeting = "Hello, I'm an AI assistant specializing in Alfred Adler's individual psychology. I can help you understand your social context, feelings of inferiority, and life goals through an Adlerian perspective. What brings you here today?";
           break;
         case 'rogers':
-          greeting = "Hello there, I'm Carl Rogers. I'm here to provide a safe space for you to explore your feelings. What would you like to talk about?";
+          greeting = "Hello there, I'm an AI assistant informed by Carl Rogers' person-centered approach. I aim to provide a space of empathy and unconditional positive regard as you explore your feelings. What would you like to talk about?";
           break;
         case 'frankl':
-          greeting = "Greetings, I'm Viktor Frankl. I'm here to help you discover meaning in your life. What matters to you most right now?";
+          greeting = "Greetings, I'm an AI assistant with knowledge of Viktor Frankl's logotherapy. I can help you explore meaning in your life and ways to transform suffering into purpose. What matters to you most right now?";
           break;
         case 'maslow':
-          greeting = "Hello, I'm Abraham Maslow. I'm here to help you move toward self-actualization. What aspects of your potential would you like to explore?";
+          greeting = "Hello, I'm an AI assistant versed in Abraham Maslow's humanistic psychology. I can help you explore self-actualization and your hierarchy of needs. What aspects of your potential would you like to discuss?";
           break;
         case 'horney':
-          greeting = "Hello, I'm Karen Horney. I'm here to help you understand how cultural and social influences shape your experience. What would you like to discuss?";
+          greeting = "Hello, I'm an AI assistant with expertise in Karen Horney's neo-Freudian psychology. I can help you understand how cultural and social influences shape your experiences and self-concept. What would you like to discuss?";
           break;
         case 'oracle':
-          greeting = "Welcome, seeker. I am The Oracle. I see patterns and possibilities beyond the surface. What guidance do you seek?";
+          greeting = "Welcome, I'm the Sage Guide AI assistant. I use a wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding. I can help you see connections and possibilities you might have missed. What guidance do you seek today?";
           break;
         case 'morpheus':
-          greeting = "Welcome to the real world. I'm Morpheus. I'm here to help you question your assumptions and see reality more clearly. What limitations are you ready to break free from?";
+          greeting = "Welcome. I'm the Awakener AI assistant. My approach is to help you question assumptions, think critically about your beliefs, and discover new perspectives. What limitations or beliefs are you ready to examine?";
           break;
         default:
           console.warn(`Unknown avatar ID: ${currentAvatarId}, using default greeting`);
-          greeting = "Hello, I'm here to assist you with your journey of self-discovery. How can I help you today?";
+          greeting = "Hello, I'm an AI assistant here to support your journey of self-discovery and personal growth. How can I help you today?";
       }
       
       const aiMessage: Message = {
@@ -527,6 +532,14 @@ export const ChatScreen = () => {
                     </View>
                   }
                   renderItem={renderMessage}
+                  onScrollToIndexFailed={info => {
+                    console.warn('scrollToIndex failed:', info);
+                    // Fallback to scrolling to the end if index scroll fails
+                    const wait = new Promise(resolve => setTimeout(resolve, 50));
+                    wait.then(() => {
+                      flatListRef.current?.scrollToEnd({ animated: true });
+                    });
+                  }}
                 />
               </View>
               

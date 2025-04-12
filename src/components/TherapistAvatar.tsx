@@ -85,7 +85,7 @@ const TherapistAvatar = memo(({ isSpeaking, message, avatarId = 'jung' }: Therap
           console.log('No avatar data found, using default');
           setAvatarDetails({
             name: 'Therapist',
-            imageUrl: getAvatarUrl('jung.webp') // Default avatar
+            imageUrl: getAvatarUrl('jung.png') // Default avatar - using PNG instead of webp
           });
         }
       } catch (err) {
@@ -138,4 +138,4 @@ const TherapistAvatar = memo(({ isSpeaking, message, avatarId = 'jung' }: Therap
   );
 });
 
-export default TherapistAvatar; 
+export default TherapistAvatar;

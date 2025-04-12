@@ -16,9 +16,8 @@ import { RootStackNavigationProp, RootStackParamList } from '../navigation/types
 import { GradientBackground } from '../components/GradientBackground';
 import { Typography } from '../components/Typography';
 import tw from '../lib/tailwind';
-import { supabase } from '../lib/supabase';
+import { supabase, ensureUserPreferences, CURRENT_DISCLAIMER_VERSION } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { CURRENT_DISCLAIMER_VERSION } from '../lib/supabase';
 
 export const DisclaimerScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -49,55 +48,8 @@ export const DisclaimerScreen = () => {
       
       console.log('Updating preferences for user:', user.id, '(type:', typeof user.id, ')');
       
-      // First check if user_preferences table exists
-      try {
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('count(*)', { count: 'exact', head: true });
-          
-        console.log('user_preferences table check:', data, error);
-        
-        if (error && error.code === '42P01') {
-          console.log('user_preferences table does not exist, creating it');
-          // Table doesn't exist, create it
-          await supabase.rpc('execute_sql', {
-            sql_query: `
-              CREATE TABLE IF NOT EXISTS public.user_preferences (
-                id SERIAL PRIMARY KEY,
-                user_id UUID REFERENCES auth.users(id) NOT NULL,
-                has_seen_disclaimer BOOLEAN DEFAULT false,
-                disclaimer_version INTEGER DEFAULT 0,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-              );
-              
-              CREATE INDEX IF NOT EXISTS user_preferences_user_id_idx ON public.user_preferences(user_id);
-              
-              ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
-              
-              CREATE POLICY "Users can view their own preferences"
-                ON public.user_preferences
-                FOR SELECT
-                USING (auth.uid()::text = user_id::text);
-                
-              CREATE POLICY "Users can update their own preferences"
-                ON public.user_preferences
-                FOR UPDATE
-                USING (auth.uid()::text = user_id::text);
-                
-              CREATE POLICY "Users can insert their own preferences"
-                ON public.user_preferences
-                FOR INSERT
-                WITH CHECK (auth.uid()::text = user_id::text);
-                
-              GRANT ALL ON public.user_preferences TO authenticated;
-              GRANT ALL ON public.user_preferences TO service_role;
-            `
-          });
-        }
-      } catch (e) {
-        console.error('Error checking/creating user_preferences table:', e);
-      }
+      // Ensure the user_preferences record exists
+      await ensureUserPreferences();
       
       // Try direct SQL approach to avoid type issues
       const { error } = await supabase.rpc('execute_sql', {
@@ -127,8 +79,7 @@ export const DisclaimerScreen = () => {
       }
       
       // Navigate to a screen that definitely exists in your navigation stack
-      // Replace 'Landing' with a screen name that exists in your app
-      navigation.navigate('Home'); // Or try 'Auth', 'Profile', etc.
+      navigation.navigate('PostLoginScreen');
       
     } catch (error) {
       console.error('Error accepting disclaimer:', error);
@@ -147,12 +98,12 @@ export const DisclaimerScreen = () => {
       await supabase.auth.signOut();
       
       // Navigate back to landing page
-      navigation.navigate('Landing');
+      navigation.navigate('LandingScreen');
     } catch (error) {
       console.error('Error rejecting disclaimer:', error);
       Alert.alert('Error', 'Failed to process your rejection. Please try again.');
       // Ensure we still navigate to landing even if there's an error
-      navigation.navigate('Landing');
+      navigation.navigate('LandingScreen');
     } finally {
       setLoading(false);
     }
@@ -165,7 +116,7 @@ export const DisclaimerScreen = () => {
           {/* Header with logo */}
           <View style={tw`items-center mb-4`}>
             <Image 
-              source={require('../../assets/JungAppLogoAlpha.webp')} 
+              source={require('../../assets/JungAppLogo.webp')} 
               style={tw`w-16 h-16 mb-2`}
               resizeMode="contain"
             />
@@ -309,4 +260,4 @@ export const DisclaimerScreen = () => {
       </SafeAreaView>
     </GradientBackground>
   );
-}; 
+};

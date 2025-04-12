@@ -53,14 +53,14 @@ export const availableAvatars: Avatar[] = [
   },
   {
     id: 'oracle',
-    name: 'The Oracle',
-    description: 'Mystical guidance focusing on deeper patterns and possibilities.',
+    name: 'Sage Guide',
+    description: 'Wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding of life situations.',
     isPremium: false
   },
   {
     id: 'morpheus',
-    name: 'Morpheus',
-    description: 'Challenging guide who helps question assumptions and break free from limiting beliefs.',
+    name: 'Awakener',
+    description: 'Transformative approach that challenges perceptions, encourages critical thinking, and promotes personal liberation.',
     isPremium: false
   }
 ];
@@ -110,4 +110,4 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
       })}
     </ScrollView>
   );
-}; 
+};

@@ -131,7 +131,7 @@ export default function DailyMotivationScreen() {
       return (
         <View style={tw`flex-1 justify-center items-center`}>
           <ActivityIndicator size="large" color="#97C1A9" />
-          <Text style={tw`mt-4 text-lg text-motivation`}>Finding your daily inspiration...</Text>
+          <Text style={tw`mt-4 text-lg text-gray-700`}>Finding your daily inspiration...</Text>
         </View>
       );
     }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, checkDisclaimerStatus, storeAuthData } from '../lib/supabase';
+import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuthData, ensureUserPreferences } from '../lib/supabase';
 import { Alert } from 'react-native';
 import { Session, User } from '@supabase/supabase-js'; // Import types
 
@@ -46,8 +46,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     console.log("AuthContext: Checking disclaimer for user:", currentUser.id);
     try {
+      // First ensure the user_preferences record exists
+      await ensureUserPreferences();
+      
+      // Try the direct method first
+      try {
+        const hasSeenDisclaimer = await checkDisclaimerStatusDirect();
+        console.log("AuthContext: User has seen disclaimer (direct method):", hasSeenDisclaimer);
+        setIsNewUser(!hasSeenDisclaimer);
+        return;
+      } catch (directError) {
+        console.error("AuthContext: Error checking disclaimer with direct method:", directError);
+        // Fall back to the regular method
+      }
+      
+      // Fall back to regular method
       const hasSeenDisclaimer = await checkDisclaimerStatus();
-      console.log("AuthContext: User has seen disclaimer:", hasSeenDisclaimer);
+      console.log("AuthContext: User has seen disclaimer (regular method):", hasSeenDisclaimer);
       setIsNewUser(!hasSeenDisclaimer);
     } catch (error) {
       console.error("AuthContext: Error checking disclaimer:", error);
@@ -77,6 +92,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
+        console.log('Auth state change session:', session ? `User ID: ${session.user.id}` : 'No session');
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -84,12 +101,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // SIGNED_IN should cover the initial sign-in after signup as well
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           console.log("AuthContext: User signed in/updated, checking disclaimer");
-          await checkUserDisclaimerStatus(session?.user ?? null); // Pass null if user is undefined
           
-          // Store auth data to ensure it's available across the app - REMOVED (Client handles persistence)
-          // if (session) {
-          //   await storeAuthData(session);
-          // }
+          try {
+            await checkUserDisclaimerStatus(session?.user ?? null); // Pass null if user is undefined
+            
+            // Navigate to PostLoginScreen if needed
+            // This is a fallback in case the navigation in App.tsx or LoginScreen.tsx didn't work
+            const { navigationRef } = require('../navigation/navigationService');
+            if (navigationRef.current && navigationRef.isReady() && session) {
+              console.log("AuthContext: Navigating to PostLoginScreen");
+              navigationRef.current.reset({
+                index: 0,
+                routes: [{ name: 'PostLoginScreen' }],
+              });
+            }
+          } catch (error) {
+            console.error("AuthContext: Error in auth state change handler:", error);
+          }
         } else if (event === 'SIGNED_OUT') {
           setIsNewUser(false);
         }
@@ -116,19 +144,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
       
       if (data?.user) {
-        // Check if user has seen disclaimer
-        const hasSeenDisclaimer = await checkDisclaimerStatus();
-        
-        // Set isNewUser based on disclaimer status
-        setIsNewUser(!hasSeenDisclaimer);
-        
         // Store the user in state
         setUser(data.user);
         
-        // Store auth data to ensure it's available across the app - REMOVED (Client handles persistence)
-        // if (data.session) {
-        //   await storeAuthData(data.session);
-        // }
+        // Store auth data to ensure it's available across the app
+        if (data.session) {
+          await storeAuthData(data.session);
+        }
+        
+        // First ensure the user_preferences record exists
+        await ensureUserPreferences();
+        
+        // Try the direct method first
+        let hasSeenDisclaimer = false;
+        try {
+          hasSeenDisclaimer = await checkDisclaimerStatusDirect();
+          console.log("SignIn: User has seen disclaimer (direct method):", hasSeenDisclaimer);
+        } catch (directError) {
+          console.error("SignIn: Error checking disclaimer with direct method:", directError);
+          // Fall back to the regular method
+          hasSeenDisclaimer = await checkDisclaimerStatus();
+          console.log("SignIn: User has seen disclaimer (regular method):", hasSeenDisclaimer);
+        }
+        
+        // Set isNewUser based on disclaimer status
+        setIsNewUser(!hasSeenDisclaimer);
         
         return { success: true, isNewUser: !hasSeenDisclaimer };
       }
