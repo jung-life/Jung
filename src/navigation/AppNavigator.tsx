@@ -19,6 +19,7 @@ import SelfHelpResourcesScreen from '../screens/SelfHelpResourcesScreen';
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
+import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrackerScreen
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 
@@ -111,6 +112,11 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       name="SelfHelpResourcesScreen"
       component={SelfHelpResourcesScreen}
       options={{ headerShown: true, title: 'Self-Help Resources' }}
+    />
+    <Stack.Screen // Add MoodTrackerScreen
+      name="MoodTrackerScreen"
+      component={MoodTrackerScreen}
+      options={{ headerShown: true, title: 'Mood Tracker' }}
     />
   </Stack.Navigator>
 );

@@ -98,32 +98,21 @@ export const RegisterScreen = () => {
       // We no longer need to call saveUserProfile here.
 
       if (response.data.user) {
-        // Check if the user account requires confirmation
+        // User created successfully
         if (response.data.user.confirmed_at) {
           // User is already confirmed (e.g., email confirmation disabled)
-          setSuccessMessage('Registration successful! Logging you in...');
-          // Attempt to log in the user immediately
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password,
-          });
-
-          if (signInError) {
-            Alert.alert('Login Failed', 'An error occurred while logging in. Please try again.');
-            setLoading(false);
-            return;
-          }
-          
-          setLoading(false); // Stop loading before navigation timeout
-          // Navigate to the PostLoginScreen
-          setTimeout(() => navigation.navigate('PostLoginScreen'), 2000);
+          setSuccessMessage('Registration successful! Redirecting to login...');
         } else {
           // User requires email confirmation
           setSuccessMessage(
             'Registration successful! Please check your email to confirm your account.'
           );
-          setLoading(false); // Stop loading after setting success message
         }
+        
+        setLoading(false); // Stop loading before navigation
+        
+        // Navigate back to the login screen after a short delay
+        setTimeout(() => navigation.navigate('Login'), 2000);
       } else {
          // Handle case where response.data.user is null (should ideally be caught by response.error)
          Alert.alert('Registration Failed', 'Could not retrieve user data after sign up.');

@@ -19,6 +19,7 @@ export type RootStackParamList = {
   DailyMotivationScreen: undefined;
   EmotionalAssessmentScreen: undefined;
   SelfHelpResourcesScreen: undefined; // Add the missing screen
+  MoodTrackerScreen: undefined; // Add Mood Tracker screen
 };
 
 // Add these types for navigation

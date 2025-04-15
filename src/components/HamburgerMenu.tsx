@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { List, SignOut, Shield, FileText, Info } from 'phosphor-react-native';
+import { List, SignOut, Shield, FileText, Info, Smiley } from 'phosphor-react-native'; // Added Smiley
 import { supabase } from '../lib/supabase';
 import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
@@ -9,6 +9,14 @@ import tw from '../lib/tailwind';
 interface HamburgerMenuProps {
   showLogout?: boolean;
 }
+
+// Define a type for menu items
+type MenuItem = {
+  title: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+  textStyle?: object; // Make textStyle optional
+};
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true }) => {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -26,7 +34,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
     }
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [ // Apply the MenuItem type here
     {
       title: 'Account Settings',
       icon: <Shield size={20} color="#4A3B78" />,
@@ -49,6 +57,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       onPress: () => {
         setMenuVisible(false);
         navigation.navigate('TermsOfServiceScreen');
+      },
+    },
+    {
+      title: 'Mood Tracker', // New Menu Item
+      icon: <Smiley size={20} color="#4A3B78" />,
+      onPress: () => {
+        setMenuVisible(false);
+        // Navigate to PostLoginScreen and then we'll show the modal from there
+        navigation.navigate('PostLoginScreen');
+        // We can't directly control the modal from here, but the user can click the button on PostLoginScreen
       },
     },
     {
@@ -109,4 +127,4 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       </Modal>
     </>
   );
-}; 
+};

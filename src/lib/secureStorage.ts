@@ -121,7 +121,56 @@ export const getSession = async (): Promise<any | null> => {
 };
 
 /**
- * Clear all authentication data
+ * Generic function to save an item securely (or in AsyncStorage for web)
+ */
+export const saveItem = async (key: string, value: string): Promise<void> => {
+  try {
+    if (isWeb) {
+      await AsyncStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+    console.log(`Item saved securely for key: ${key}`);
+  } catch (error) {
+    console.error(`Error saving item for key ${key}:`, error);
+    throw error; // Re-throw error to allow caller handling
+  }
+};
+
+/**
+ * Generic function to retrieve an item securely (or from AsyncStorage for web)
+ */
+export const getItem = async (key: string): Promise<string | null> => {
+  try {
+    if (isWeb) {
+      return await AsyncStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  } catch (error) {
+    console.error(`Error retrieving item for key ${key}:`, error);
+    return null; // Return null on error
+  }
+};
+
+/**
+ * Generic function to delete an item securely (or from AsyncStorage for web)
+ */
+export const deleteItem = async (key: string): Promise<void> => {
+  try {
+    if (isWeb) {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+    console.log(`Item deleted securely for key: ${key}`);
+  } catch (error) {
+    console.error(`Error deleting item for key ${key}:`, error);
+  }
+};
+
+
+/**
+ * Clear all authentication data (uses specific keys)
  */
 export const clearAuthData = async (): Promise<void> => {
   try {
@@ -136,4 +185,4 @@ export const clearAuthData = async (): Promise<void> => {
   } catch (error) {
     console.error('Error clearing auth data:', error);
   }
-}; 
+};

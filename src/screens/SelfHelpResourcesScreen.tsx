@@ -5,7 +5,7 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Linking,
-  Alert 
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +13,7 @@ import { RootStackNavigationProp } from '../navigation/types';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import tw from '../lib/tailwind';
-import { ArrowLeft, House, Link as LinkIcon, FlowerLotus, Brain, Person, Heart, EnvelopeSimple, GoogleLogo, AppleLogo } from 'phosphor-react-native'; 
+import { ArrowLeft, House, Link as LinkIcon, FlowerLotus, Brain, Person, Heart, EnvelopeSimple, GoogleLogo, AppleLogo, Lifebuoy, FirstAidKit, Moon } from 'phosphor-react-native'; // Added Lifebuoy, FirstAidKit, Moon
 
 // Define resource data
 const resources = [
@@ -33,14 +33,6 @@ const resources = [
     color: 'bg-motivation/10 border-motivation/30',
     textColor: 'text-motivation'
   },
-  {
-    title: 'Mental Health Exercises (Psychology Tools)',
-    description: 'Worksheets and guides based on CBT and other therapies.',
-    url: 'https://www.psychologytools.com/professional/resources/',
-    icon: <Person size={24} color="#CEB5CD" weight="light" />, // Use Person instead of PersonSimpleRun
-    color: 'bg-emotional/10 border-emotional/30',
-    textColor: 'text-emotional'
-  },
    {
     title: 'National Alliance on Mental Illness (NAMI)',
     description: 'Information, support groups, and resources for mental health conditions.',
@@ -48,6 +40,30 @@ const resources = [
     icon: <Heart size={24} color="#A8DADC" weight="light" />, // Example icon - reusing Heart
     color: 'bg-soothing-blue/10 border-soothing-blue/30',
     textColor: 'text-soothing-blue'
+  },
+  {
+    title: 'Crisis Text Line',
+    description: 'Free, 24/7 text support for those in crisis.',
+    url: 'https://www.crisistextline.org/',
+    icon: <Lifebuoy size={24} color="#F47C7C" weight="light" />, 
+    color: 'bg-red-100/50 border-red-300/50', // Example new style
+    textColor: 'text-red-700'
+  },
+  {
+    title: 'SAMHSA National Helpline',
+    description: 'Treatment referral and information service.',
+    url: 'https://www.samhsa.gov/find-help/national-helpline',
+    icon: <FirstAidKit size={24} color="#87CEEB" weight="light" />, 
+    color: 'bg-sky-100/50 border-sky-300/50', // Example new style
+    textColor: 'text-sky-700'
+  },
+  {
+    title: 'Calm App',
+    description: 'App for sleep, meditation, and relaxation.',
+    url: 'https://www.calm.com/',
+    icon: <Moon size={24} color="#483D8B" weight="light" />, 
+    color: 'bg-indigo-100/50 border-indigo-300/50', // Example new style
+    textColor: 'text-indigo-700'
   },
   // Add more popular links as needed
 ];
