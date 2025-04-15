@@ -109,112 +109,134 @@ export const AccountScreen = () => {
       setInsights(formState.notification_preferences.insights);
     }
   }, [formState]);
-  
+
   const fetchUserProfile = async () => {
+    setLoading(true);
+    console.log('[AccountScreen] Starting profile fetch...');
     try {
-      setLoading(true);
-      console.log('Starting profile fetch');
-      
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
       if (userError) {
-        console.error('User fetch error:', userError);
+        console.error('[AccountScreen] User fetch error:', userError);
         throw userError;
       }
-      
-      if (!userData?.user?.id) {
-        console.log('No user ID found');
+
+      if (!user?.id) {
+        console.log('[AccountScreen] No authenticated user ID found.');
+        Alert.alert('Error', 'Could not find user information. Please try logging in again.');
         setLoading(false);
         return;
       }
-      
-      console.log('Fetching profile for user ID:', userData.user.id);
-      
-      // Try user_id first, which is the correct foreign key in most setups
-      const { data, error } = await supabase
+
+      console.log(`[AccountScreen] Fetching profile for user ID: ${user.id}`);
+      console.log(`[AccountScreen] User email: ${user.email}`);
+      console.log(`[AccountScreen] User metadata:`, user.user_metadata);
+
+      // Primarily query using the 'id' column which should match auth.users.id
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userData.user.id)
+        .eq('id', user.id) // Query by id matching auth.users.id
         .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching profile with user_id:', error);
-        
-        // Try with id field as fallback
-        console.log('Trying with id field instead...');
-        const { data: dataById, error: errorById } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userData.user.id)
-          .maybeSingle();
-          
-        if (errorById) {
-          console.error('Error fetching profile with id:', errorById);
-          // Instead of throwing, let's proceed to create a new profile
-          console.log('No profile found, creating a new one...');
-          await createUserProfile(userData.user.id);
-          return;
+
+      if (profileError) {
+        console.error('[AccountScreen] Error fetching profile by ID:', profileError);
+        // Don't immediately create profile, maybe it exists but query failed?
+        // Let's check if the error indicates the table doesn't exist or similar critical issue
+        if (profileError.code === '42P01') { // undefined_table
+           Alert.alert('Database Error', 'Profiles table not found. Please contact support.');
+        } else {
+           Alert.alert('Error', `Failed to load profile data: ${profileError.message}`);
         }
-        
-        if (dataById) {
-          console.log('Profile found using id field');
-          setProfile(dataById);
-          // Set form state with the profile data
-          setFormState({
-            full_name: dataById.full_name || userData.user.user_metadata?.full_name || '',
-            email: dataById.email || userData.user?.email || '',
-            username: dataById.username || userData.user?.email?.split('@')[0] || '',
-            avatar_url: dataById.avatar_url,
-            theme_preference: dataById.theme_preference || 'system',
-            notification_preferences: {
-              daily_reminders: dataById.notification_preferences?.daily_reminders || false,
-              new_features: dataById.notification_preferences?.new_features || true,
-              insights: dataById.notification_preferences?.insights || true
-            }
-          });
-          return;
-        }
-        
-        // If we get here, we need to create a profile
-        console.log('No profile found with either method, creating a new one');
-        await createUserProfile(userData.user.id);
-        return;
-      }
-      
-      if (data) {
-        setProfile(data);
-        // Set form state with the profile data
+        // Fallback: Try to use auth data directly for display
         setFormState({
-          full_name: data.full_name || userData.user.user_metadata?.full_name || '',
-          email: data.email || userData.user?.email || '',
-          username: data.username || userData.user?.email?.split('@')[0] || '',
-          avatar_url: data.avatar_url,
-          theme_preference: data.theme_preference || 'system',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          email: user.email || '',
+          username: user.email?.split('@')[0] || '',
+          avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar if available
+          theme_preference: 'system', // Default
+          notification_preferences: { daily_reminders: false, new_features: true, insights: true } // Defaults
+        });
+        setProfile(null); // Indicate profile wasn't loaded from DB
+      } else if (profileData) {
+        console.log('[AccountScreen] Profile found:', profileData);
+        setProfile(profileData); // Store the fetched profile
+
+        // Set form state using profile data, falling back to auth data if needed
+        setFormState({
+          full_name: profileData.full_name || user.user_metadata?.full_name || '',
+          email: profileData.email || user.email || '', // Prefer profile email, fallback to auth email
+          username: profileData.username || user.email?.split('@')[0] || '',
+          avatar_url: profileData.avatar_url, // This is the path in storage
+          theme_preference: profileData.theme_preference || 'system',
           notification_preferences: {
-            daily_reminders: data.notification_preferences?.daily_reminders || false,
-            new_features: data.notification_preferences?.new_features || true,
-            insights: data.notification_preferences?.insights || true
+            daily_reminders: profileData.notification_preferences?.daily_reminders ?? false,
+            new_features: profileData.notification_preferences?.new_features ?? true,
+            insights: profileData.notification_preferences?.insights ?? true
           }
         });
 
-        if (data.avatar_url) {
+        // Get public URL for display if avatar_url exists in profile
+        if (profileData.avatar_url) {
+          console.log(`[AccountScreen] Getting public URL for avatar path: ${profileData.avatar_url}`);
           const { data: publicUrlData } = supabase
             .storage
             .from('avatars')
-            .getPublicUrl(data.avatar_url);
-          setAvatarUrl(publicUrlData.publicUrl);
+            .getPublicUrl(profileData.avatar_url); // Use the path from profile
+          console.log('[AccountScreen] Public URL data:', publicUrlData);
+          setAvatarUrl(publicUrlData?.publicUrl || null); // Set the display URL
+        } else {
+           // If no avatar_url in profile, check user_metadata from auth (e.g., Google avatar)
+           setAvatarUrl(user.user_metadata?.avatar_url || null);
+           console.log(`[AccountScreen] No avatar path in profile, using metadata URL: ${user.user_metadata?.avatar_url}`);
         }
+
       } else {
-        // Create profile if it doesn't exist
-        await createUserProfile(userData.user.id);
+        // Profile does not exist in the database for this user ID
+        console.log('[AccountScreen] No profile found for this user ID. Trigger should have created one.');
+         // Attempt to create profile explicitly as a fallback (though the trigger should handle this)
+         // Alert.alert('Profile Issue', 'User profile not found. Attempting to create one.');
+         // await createUserProfile(user.id); // Consider if this is needed or if trigger is reliable
+
+         // For now, just use auth data for display
+         Alert.alert('Profile Not Found', 'Your profile data could not be loaded. Displaying information from your login provider.');
+         setFormState({
+           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+           email: user.email || '',
+           username: user.email?.split('@')[0] || '',
+           avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar
+           theme_preference: 'system',
+           notification_preferences: { daily_reminders: false, new_features: true, insights: true }
+         });
+         setAvatarUrl(user.user_metadata?.avatar_url || null); // Set display URL from metadata
+         setProfile(null);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile');
+      console.error('[AccountScreen] Unexpected error in fetchUserProfile:', error);
+      Alert.alert('Error', 'An unexpected error occurred while loading your profile.');
+      // Attempt to set form state from auth data as a last resort
+       try {
+         const { data: { user } } = await supabase.auth.getUser();
+         if (user) {
+            setFormState({
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+              email: user.email || '',
+              username: user.email?.split('@')[0] || '',
+              avatar_url: user.user_metadata?.avatar_url || null,
+              theme_preference: 'system',
+              notification_preferences: { daily_reminders: false, new_features: true, insights: true }
+            });
+            setAvatarUrl(user.user_metadata?.avatar_url || null);
+         }
+       } catch (authError) {
+         console.error('[AccountScreen] Failed to get auth user data on error fallback:', authError);
+       }
     } finally {
       setLoading(false);
+      console.log('[AccountScreen] Profile fetch finished.');
     }
   };
-  
+
   // Helper function to create a user profile
   const createUserProfile = async (userId: string) => {
     try {
@@ -389,12 +411,13 @@ export const AccountScreen = () => {
       }
       
       // Update the UI
-      setAvatarUrl(publicUrlData.publicUrl);
+      setAvatarUrl(publicUrlData.publicUrl); // Update display URL
+      // Update the form state's avatar_url which stores the *path*
       setFormState(prev => ({
         ...prev,
-        avatar_url: filePath
+        avatar_url: filePath // Store the path, not the public URL
       }));
-      
+
       Alert.alert('Success', 'Avatar uploaded successfully!');
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -417,12 +440,13 @@ export const AccountScreen = () => {
         return;
       }
       
-      // Prepare the profile data
-      const profileData = {
-        id: user.id,
+      // Prepare the profile data for upsert
+      // Ensure we use the correct avatar_url (path) from formState
+      const profileDataToSave = {
+        id: user.id, // Match on the primary key
         full_name: fullName,
-        email: email,
-        avatar_url: formState.avatar_url,
+        // email: email, // Email usually shouldn't be updated here, handle separately if needed
+        avatar_url: formState.avatar_url, // Use the path stored in formState
         theme_preference: themePreference,
         notification_preferences: {
           daily_reminders: dailyReminders,
@@ -432,21 +456,41 @@ export const AccountScreen = () => {
         updated_at: new Date().toISOString()
       };
       
-      // Update the profile
-      const { error } = await supabase
+      // Update the profile using upsert
+      const { data: upsertData, error: upsertError } = await supabase // Renamed error variable
         .from('profiles')
-        .upsert(profileData);
-        
-      if (error) {
-        throw error;
+        .upsert(profileDataToSave)
+        .select() // Select the updated/inserted row
+        .single(); // Expect a single row back
+
+      if (upsertError) { // Use the renamed error variable
+        console.error('[AccountScreen] Error saving profile:', upsertError);
+        throw upsertError; // Throw the renamed error variable
       }
-      
-      // Update the local state
-      setProfile({
-        ...profile,
-        ...profileData
-      });
-      
+
+      console.log('[AccountScreen] Profile saved successfully:', upsertData);
+
+      // Update the local profile state with the data returned from upsert
+      setProfile(upsertData);
+
+      // Optionally update formState as well if upsert returned different values
+      // (though ideally upsertData should match profileDataToSave)
+      setFormState(prev => ({
+         ...prev,
+         full_name: upsertData.full_name || prev.full_name,
+         avatar_url: upsertData.avatar_url || prev.avatar_url,
+         theme_preference: upsertData.theme_preference || prev.theme_preference,
+         notification_preferences: upsertData.notification_preferences || prev.notification_preferences,
+      }));
+      // Update display avatar URL if it changed
+      if (upsertData.avatar_url) {
+         const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(upsertData.avatar_url);
+         setAvatarUrl(publicUrlData?.publicUrl || null);
+      } else {
+         setAvatarUrl(null);
+      }
+
+
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);

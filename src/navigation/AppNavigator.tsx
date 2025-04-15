@@ -46,6 +46,10 @@ const AuthStack = () => (
     <Stack.Screen name="LandingScreen" component={LandingScreen} />
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
+    {/* Add legal screens accessible from Register */}
+    <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} />
+    <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} />
+    <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} />
   </Stack.Navigator>
 );
 

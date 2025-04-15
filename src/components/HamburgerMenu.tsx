@@ -40,7 +40,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       icon: <Shield size={20} color="#4A3B78" />,
       onPress: () => {
         setMenuVisible(false);
-        navigation.navigate('AccountScreen');
+        console.log('HamburgerMenu: Navigate to AccountScreen pressed');
+        navigation.navigate('AccountScreen'); // Restore navigation
       },
     },
     {
@@ -48,7 +49,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       icon: <FileText size={20} color="#4A3B78" />,
       onPress: () => {
         setMenuVisible(false);
-        navigation.navigate('PrivacyPolicyScreen');
+        console.log('HamburgerMenu: Navigate to PrivacyPolicyScreen pressed');
+        navigation.navigate('PrivacyPolicyScreen'); // Restore navigation
       },
     },
     {
@@ -56,7 +58,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       icon: <Info size={20} color="#4A3B78" />,
       onPress: () => {
         setMenuVisible(false);
-        navigation.navigate('TermsOfServiceScreen');
+        console.log('HamburgerMenu: Navigate to TermsOfServiceScreen pressed');
+        navigation.navigate('TermsOfServiceScreen'); // Restore navigation
       },
     },
     {
@@ -64,8 +67,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       icon: <Smiley size={20} color="#4A3B78" />,
       onPress: () => {
         setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to PostLoginScreen (for Mood Tracker) pressed');
         // Navigate to PostLoginScreen and then we'll show the modal from there
-        navigation.navigate('PostLoginScreen');
+        navigation.navigate('PostLoginScreen'); // Restore navigation
         // We can't directly control the modal from here, but the user can click the button on PostLoginScreen
       },
     },
@@ -74,7 +78,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       icon: <Info size={20} color="#4A3B78" />,
       onPress: () => {
         setMenuVisible(false);
-        navigation.navigate('DisclaimerScreen');
+        console.log('HamburgerMenu: Navigate to DisclaimerScreen pressed');
+        navigation.navigate('DisclaimerScreen'); // Restore navigation
       },
     },
   ];
