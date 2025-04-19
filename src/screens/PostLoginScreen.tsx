@@ -248,18 +248,6 @@ const PostLoginScreen = () => {
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
 
-          {/* Self-Help Resources Button */}
-          <TouchableOpacity 
-            style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
-            onPress={() => navigation.navigate('SelfHelpResourcesScreen')}
-            >
-            {/* Wrap icon in a View */}
-            <View>
-              <BookOpen size={28} color="#2D2B55" weight="fill" />
-            </View>
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
-
           {/* Mood Tracker Button */}
           <TouchableOpacity 
             style={tw`bg-indigo-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Example color
@@ -270,6 +258,18 @@ const PostLoginScreen = () => {
               <Smiley size={28} color="#2D2B55" weight="fill" />
             </View>
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Mood Tracker</Text> {/* Use jung-deep for text */}
+          </TouchableOpacity>
+
+          {/* Self-Help Resources Button */}
+          <TouchableOpacity 
+            style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
+            onPress={() => navigation.navigate('SelfHelpResourcesScreen')}
+            >
+            {/* Wrap icon in a View */}
+            <View>
+              <BookOpen size={28} color="#2D2B55" weight="fill" />
+            </View>
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
 
         </ScrollView>

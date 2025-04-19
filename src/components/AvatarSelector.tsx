@@ -53,7 +53,7 @@ export const availableAvatars: Avatar[] = [
   },
   {
     id: 'oracle',
-    name: 'Sage Guide',
+    name: 'Sage',
     description: 'Wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding of life situations.',
     isPremium: false
   },

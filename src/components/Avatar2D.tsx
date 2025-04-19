@@ -7,10 +7,10 @@ import tw from '../lib/tailwind';
 const AVATAR_IMAGES = {
   jung: require('../assets/avtars/jung.png'),
   freud: require('../assets/avtars/frued.png'), // Fixed typo in filename to match actual file
-  adler: require('../assets/avtars/adler.webp'),
+  adler: require('../assets/avtars/alfredadler.png'),
   horney: require('../assets/avtars/horney.jpeg'),
-  morpheus: require('../assets/avtars/morpheus.jpg'),
-  oracle: require('../assets/avtars/oracle.webp'),
+  morpheus: require('../assets/avtars/awakener.png'),
+  oracle: require('../assets/avtars/sage.png'),
   user: require('../assets/avtars/user.webp'),
   // Use jung as default if others aren't available
   default: require('../assets/avtars/jung.png'),
