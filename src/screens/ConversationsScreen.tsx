@@ -89,12 +89,24 @@ export const ConversationsScreen = () => {
         console.error('Supabase client not initialized');
         setLoading(false);
         return;
-      }
-      
-      // Get current user with error handling
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
+       }
+       
+       console.log('[fetchConversations] Attempting supabase.auth.getUser()...');
+       // Get current user with error handling
+       let userData, userError;
+       try {
+         const result = await supabase.auth.getUser();
+         userData = result.data;
+         userError = result.error;
+         console.log('[fetchConversations] supabase.auth.getUser() completed.');
+       } catch (getUserCatchError) {
+          console.error('[fetchConversations] Error caught during supabase.auth.getUser():', getUserCatchError);
+          setError('Failed to get user session. Please try logging out and back in.');
+          setLoading(false);
+          return;
+       }
+       
+       if (userError) {
         console.error('Error getting user:', userError);
         setLoading(false);
         return;
@@ -103,50 +115,40 @@ export const ConversationsScreen = () => {
       if (!userData?.user) {
         console.log('No authenticated user found');
         setLoading(false);
-        return;
-      }
-      
-      console.log('User found:', userData.user.id);
-      
-      // Fetch conversations
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
+         return;
+       }
+       
+       console.log('User found:', userData.user.id);
+       
+       console.log('Attempting to fetch conversations from DB...');
+       // Fetch conversations
+       const { data, error } = await supabase
+         .from('conversations')
+         .select('*')
+         .eq('user_id', userData.user.id)
+         .order('created_at', { ascending: false });
+       console.log('Fetch conversations query completed.');
+       
+       if (error) {
         console.error('Error fetching conversations:', error);
         setError('Failed to load conversations. Please try again later.');
         setLoading(false);
-        return;
-      }
-      
-      // Decrypt conversation titles before displaying
-      const decryptedConversations = data?.map(conversation => {
-        try {
-          // Check if the title is encrypted (has a pattern like "U2FsdGVkX1...")
-          if (conversation.title && conversation.title.startsWith('U2FsdGVkX1')) {
-            return {
-              ...conversation,
-              title: decryptData(conversation.title)
-            };
-          }
-          return conversation;
-        } catch (decryptError) {
-          console.error('Error decrypting conversation title:', decryptError);
-          return conversation;
-        }
-      }) || [];
-      
-      // Always set conversations, even if empty
-      console.log('Fetched conversations:', decryptedConversations.length || 0);
-      setConversations(decryptedConversations);
-      
-    } catch (error) {
-      console.error('Error in fetchConversations:', error);
-      setError('Failed to load conversations. Please try again later.');
-    } finally {
+         return;
+       }
+       
+        console.log(`Found ${data?.length || 0} conversations. Skipping decryption for testing.`);
+        // Temporarily skip decryption to isolate the issue
+        const conversationsWithoutDecryption = data || [];
+       
+       // Always set conversations, even if empty
+       console.log('Fetched conversations (without decryption):', conversationsWithoutDecryption.length || 0);
+       setConversations(conversationsWithoutDecryption);
+       
+     } catch (error) {
+       console.error('Error in fetchConversations:', error);
+       setError('Failed to load conversations. Please try again later.');
+       setLoading(false); // Ensure loading stops on error
+     } finally {
       setLoading(false);
     }
   }, []);
@@ -694,44 +696,13 @@ Return only the title text with no additional explanation or formatting.`;
     console.log('ConversationsScreen mounted');
     console.log('Route params:', route.params);
     console.log('Loading state:', loading);
-    console.log('Conversations:', conversations);
-  }, []);
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setLoading(true);
-        console.log('Checking authentication...');
-        
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Auth error:', error);
-          setError('Authentication error: ' + error.message);
-          return;
-        }
-        
-        if (!data?.session?.user) {
-          console.log('No authenticated user');
-          setError('Not authenticated. Please log in again.');
-          return;
-        }
-        
-        console.log('User authenticated:', data.session.user.id);
-        setUserId(data.session.user.id);
-      } catch (err) {
-        console.error('Error checking auth:', err);
-        setError('Unexpected error: ' + (err instanceof Error ? err.message : String(err)));
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, []);
-
-  // Add this function to test Supabase connection
+   console.log('Conversations:', conversations);
+ }, []);
+ 
+ // Removed redundant useEffect for checking authentication status on mount.
+ // fetchConversations handles getting the user when the screen focuses.
+ 
+ // Add this function to test Supabase connection
   const testSupabaseConnection = async () => {
     try {
       console.log('Testing Supabase connection...');

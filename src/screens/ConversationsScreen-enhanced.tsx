@@ -91,28 +91,22 @@ export const ConversationsScreen = () => {
         return;
       }
       
-      // Get current user with error handling
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('Error getting user:', userError);
+      // Use the user from useAuthStore instead of calling supabase.auth.getUser()
+      // This avoids the potential hanging issue with the auth call
+      if (!user) {
+        console.log('No authenticated user found in store');
+        setError('Not authenticated. Please try logging out and back in.');
         setLoading(false);
         return;
       }
       
-      if (!userData?.user) {
-        console.log('No authenticated user found');
-        setLoading(false);
-        return;
-      }
+      console.log('Using user from store:', user.id);
       
-      console.log('User found:', userData.user.id);
-      
-      // Fetch conversations
+      // Fetch conversations using the user ID from the store
       const { data, error } = await supabase
         .from('conversations')
         .select('*')
-        .eq('user_id', userData.user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -164,15 +158,17 @@ export const ConversationsScreen = () => {
     }
   }, []);
 
+  // Temporarily disable fetching conversations to avoid loading issues
   useFocusEffect(
     useCallback(() => {
-      console.log('Reflections screen focused - fetching conversations');
+      console.log('Reflections screen focused - SKIPPING fetch');
       console.log('Route params:', route.params);
-      fetchConversations();
+      // Skip fetchConversations() call to avoid loading issues
+      setLoading(false); // Immediately set loading to false
       return () => {
         // Cleanup function if needed
       };
-    }, [fetchConversations, refresh])
+    }, [refresh])
   );
 
   const handleNewConversation = () => {
@@ -772,39 +768,9 @@ Return only the title text with no additional explanation or formatting.`;
     console.log('Conversations:', conversations);
   }, []);
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setLoading(true);
-        console.log('Checking authentication...');
-        
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Auth error:', error);
-          setError('Authentication error: ' + error.message);
-          return;
-        }
-        
-        if (!data?.session?.user) {
-          console.log('No authenticated user');
-          setError('Not authenticated. Please log in again.');
-          return;
-        }
-        
-        console.log('User authenticated:', data.session.user.id);
-        setUserId(data.session.user.id);
-      } catch (err) {
-        console.error('Error checking auth:', err);
-        setError('Unexpected error: ' + (err instanceof Error ? err.message : String(err)));
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkAuth();
-  }, []);
+  // Removed redundant authentication check useEffect
+  // This was causing the app to get stuck loading
+  // The fetchConversations function already handles authentication
 
   // Add this function to test Supabase connection
   const testSupabaseConnection = async () => {

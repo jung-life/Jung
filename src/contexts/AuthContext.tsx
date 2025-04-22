@@ -97,29 +97,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check if this is a sign-in or token refresh/update
-        // SIGNED_IN should cover the initial sign-in after signup as well
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-          console.log("AuthContext: User signed in/updated, checking disclaimer");
-          
-          try {
-            await checkUserDisclaimerStatus(session?.user ?? null); // Pass null if user is undefined
-            
-            // Navigate to PostLoginScreen if needed
-            // This is a fallback in case the navigation in App.tsx or LoginScreen.tsx didn't work
-            const { navigationRef } = require('../navigation/navigationService');
-            if (navigationRef.current && navigationRef.isReady() && session) {
-              console.log("AuthContext: Navigating to PostLoginScreen");
-              navigationRef.current.reset({
-                index: 0,
-                routes: [{ name: 'PostLoginScreen' }],
-              });
-            }
-          } catch (error) {
-            console.error("AuthContext: Error in auth state change handler:", error);
-          }
+        // Update state based on event
+        if (event === 'SIGNED_IN') {
+          console.log("AuthContext: User signed in.");
+          // Disclaimer status is checked initially and on manual signIn, 
+          // no need to re-check aggressively here. Let the UI react to user state.
+          // Removed checkUserDisclaimerStatus call.
+          // Removed manual navigation logic. Navigation should react to context state changes.
         } else if (event === 'SIGNED_OUT') {
-          setIsNewUser(false);
+          console.log("AuthContext: User signed out.");
+          setIsNewUser(false); // Reset disclaimer status on sign out
+        } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+           console.log(`AuthContext: Event ${event} received.`);
+           // Potentially re-check disclaimer or other user details if needed, but keep it simple for now.
         }
         
         setLoading(false);

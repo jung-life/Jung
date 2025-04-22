@@ -24,13 +24,17 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log('Bypassing supabase.auth.signOut() due to potential hanging issue');
+      // Skip the potentially hanging supabase.auth.signOut() call
+      // and directly navigate to the landing screen
+      
+      // This is a temporary workaround
       navigation.reset({
         index: 0,
         routes: [{ name: 'LandingScreen' }],
       });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error during logout:', error);
     }
   };
 

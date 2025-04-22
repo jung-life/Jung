@@ -199,8 +199,8 @@ const PostLoginScreen = () => {
         <SymbolicBackground opacity={0.03} />
         
         {/* Header with hamburger menu */}
-        <View style={tw`flex-row justify-between items-center p-4`}>
-          <Text style={tw`text-xl font-bold text-jung-deep`}>Jung</Text>
+        <View style={tw`flex-row justify-end items-center p-4`}> {/* Changed justify-between to justify-end */}
+          {/* Removed Jung Text */}
           <HamburgerMenu />
         </View>
         

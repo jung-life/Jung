@@ -43,7 +43,7 @@ export const LoginScreenEnhanced = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(true);
+  // Removed initializing state
   const [errorMessage, setErrorMessage] = useState('');
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<'default' | 'conversation' | 'motivation' | 'emotional'>('default');
@@ -53,25 +53,19 @@ export const LoginScreenEnhanced = () => {
                         Constants.expoConfig?.extra?.googleClientId ||
                         '';
 
-  // Effect to check the initial session state ONLY for the loading indicator
-  useEffect(() => {
-    let isMounted = true; // Prevent state update on unmounted component
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // If there's no session initially, we can stop initializing
-      // If there IS a session, the listener below will handle navigation and stop initializing
-      if (!session && isMounted) {
-        setInitializing(false);
-      }
-    }).catch(error => {
-       console.error("Error getting initial session:", error);
-       if (isMounted) setInitializing(false); // Stop initializing even on error
-    });
-    
-    return () => { isMounted = false; };
-  }, []); // Run only once on mount
+  // Removed initial session check useEffect hook.
+  // The listener below handles navigation if a session exists.
 
   // Effect to listen for auth state changes and handle navigation
   useEffect(() => {
+    // Check session immediately upon listener setup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('Existing session found on mount, navigating...');
+        navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
+      }
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state change (standard client):', event, !!session);
       
@@ -80,11 +74,8 @@ export const LoginScreenEnhanced = () => {
         console.log('User signed in, navigating...');
         navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
       }
-      
-      // Stop initializing indicator once auth state is determined (signed in or not)
-      // This handles the case where the user was already signed in
-      setInitializing(false); 
-      
+      // Removed initializing state update
+
       // Handle SIGNED_OUT if needed (e.g., navigate back to login)
       // if (event === 'SIGNED_OUT') {
       //   navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); // Or appropriate screen
@@ -167,99 +158,17 @@ export const LoginScreenEnhanced = () => {
         );
 
         console.log('WebBrowser result (standard client):', JSON.stringify(result));
+        
+        // IMPORTANT: Removed all logic for handling result.type === 'success'.
+        // The AuthUrlHandler component is now solely responsible for processing 
+        // the redirect URL, extracting tokens, setting the session, and navigating.
+        // This screen only initiates the OAuth flow.
 
-        if (result.type === 'success') {
-          console.log('OAuth flow successful, URL:', result.url);
-          
-          // Extract token from URL if available
-          const url = result.url;
-          if (url.includes('#') || url.includes('?')) {
-            console.log('URL contains parameters, attempting to extract tokens');
-            
-            // Extract parameters from URL
-            let params: URLSearchParams | null = null;
-            
-            // Handle different URL formats
-            if (url.includes('#')) {
-              params = new URLSearchParams(url.split('#')[1]);
-            } else if (url.includes('?')) {
-              params = new URLSearchParams(url.split('?')[1]);
-            }
-            
-            if (params && params.has('access_token')) {
-              console.log('Found access token in URL, setting session manually...');
-              
-              const session = {
-                access_token: params.get('access_token')!,
-                refresh_token: params.get('refresh_token') || '',
-              };
-              
-              try {
-                // Set session in both regular and enhanced Supabase clients
-                const { data, error } = await supabase.auth.setSession(session);
-                
-                if (error) {
-                  console.error('Error setting session in regular client:', error);
-                } else {
-                  console.log('Session set successfully in regular client');
-                  
-                  // Also set session in enhanced client
-                  try {
-                    const enhancedResult = await supabaseEnhanced.auth.setSession(session);
-                    console.log('Session set in enhanced client:', enhancedResult.error ? 'Failed' : 'Success');
-                  } catch (enhancedError) {
-                    console.error('Error setting session in enhanced client:', enhancedError);
-                  }
-                  
-                  // Store session data manually as a backup
-                  if (data.session) {
-                    try {
-                      await storeAuthDataEnhanced(data.session);
-                      console.log('Session data manually stored');
-                    } catch (storageError) {
-                      console.error('Error storing session data:', storageError);
-                    }
-                  }
-                }
-              } catch (sessionError) {
-                console.error('Exception setting session:', sessionError);
-              }
-            }
-            
-            // Force a small delay to ensure the AuthUrlHandler has time to process
-            setTimeout(() => {
-              if (!navigation.isFocused()) {
-                console.log('Login screen is no longer focused, navigation likely occurred');
-              } else {
-                console.log('Login screen is still focused, manually navigating...');
-                navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
-                
-                // Double-check the session after navigation
-                setTimeout(async () => {
-                  const sessionCheck = await checkSessionEnhanced();
-                  if (!sessionCheck.session) {
-                    console.error('Session not found after navigation, trying to recover...');
-                    // Try to recover by checking for tokens again
-                    if (params && params.has('access_token')) {
-                      const session = {
-                        access_token: params.get('access_token')!,
-                        refresh_token: params.get('refresh_token') || '',
-                      };
-                      await supabase.auth.setSession(session);
-                      console.log('Session recovery attempt completed');
-                    }
-                  }
-                }, 1000);
-              }
-            }, 1000);
-          }
-        } else {
+        if (result.type !== 'success' && result.type !== 'cancel' && result.type !== 'dismiss') {
           console.log('OAuth flow browser session ended:', result.type);
-          if (result.type !== 'cancel' && result.type !== 'dismiss') {
-            // Handle potential browser errors
-            setErrorMessage('Authentication browser session failed.');
-            Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
-          }
+          // Handle potential browser errors if it wasn't a success or user cancellation
+          setErrorMessage('Authentication browser session failed.');
+          Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
         }
       } else {
         console.error('No URL returned from signInWithOAuth');
@@ -293,17 +202,7 @@ export const LoginScreenEnhanced = () => {
     }
   };
 
-  // Show loading screen during initialization
-  if (initializing) {
-    return (
-      <GradientBackground>
-        <SafeAreaView style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color="#4A3B78" />
-          <Text style={tw`mt-4 text-lg text-jung-purple`}>Initializing...</Text>
-        </SafeAreaView>
-      </GradientBackground>
-    );
-  }
+  // Removed conditional rendering based on initializing state
 
   return (
     <GradientBackground variant={selectedFeature}>

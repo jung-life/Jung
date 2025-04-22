@@ -45,53 +45,20 @@ export function AuthUrlHandler() {
           };
           
           try {
-            // Set session in both regular and enhanced Supabase clients
-            const { data, error } = await supabase.auth.setSession(session);
+            // Set session ONLY in the standard Supabase client.
+            // The onAuthStateChange listener should handle navigation.
+            const { error } = await supabase.auth.setSession(session);
             
             if (error) {
-              console.error('Error setting session in regular client:', error);
-              Alert.alert('Session Error', error.message);
+              console.error('Error setting session via AuthUrlHandler:', error);
+              Alert.alert('Session Error', `Failed to set session: ${error.message}`);
               return;
             }
             
-            console.log('Session set successfully in regular client:', data);
-            
-            // Also set session in enhanced client
-            try {
-              const enhancedResult = await supabaseEnhanced.auth.setSession(session);
-              console.log('Session set in enhanced client:', enhancedResult.error ? 'Failed' : 'Success');
-            } catch (enhancedError) {
-              console.error('Error setting session in enhanced client:', enhancedError);
-              // Continue anyway since the regular client succeeded
-            }
-            
-            // Store session data manually as a backup
-            if (data.session) {
-              try {
-                await storeAuthDataEnhanced(data.session);
-                console.log('Session data manually stored');
-              } catch (storageError) {
-                console.error('Error storing session data:', storageError);
-                // Continue anyway
-              }
-            }
-            
-            // Add a small delay to ensure the session is fully processed
-            setTimeout(() => {
-              console.log('Navigating to PostLoginScreen...');
-              NavigationService.reset('PostLoginScreen');
-              
-              // Double-check the session after navigation
-              setTimeout(async () => {
-                const { data: sessionData } = await supabase.auth.getSession();
-                if (!sessionData.session) {
-                  console.error('Session not found after navigation, trying to recover...');
-                  // Try to recover by setting the session again
-                  await supabase.auth.setSession(session);
-                  console.log('Session recovery attempt completed');
-                }
-              }, 1000);
-            }, 500);
+            console.log('Session set successfully via AuthUrlHandler. Manually navigating as fallback...');
+            // Manually navigate as a fallback/forcing mechanism
+            // The onAuthStateChange listener should also fire, but this ensures navigation happens.
+            NavigationService.reset('PostLoginScreen');
           } catch (sessionError) {
             console.error('Exception setting session:', sessionError);
             Alert.alert('Session Error', 'Failed to set session');
