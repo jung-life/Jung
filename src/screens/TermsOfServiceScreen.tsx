@@ -88,7 +88,7 @@ export const TermsOfServiceScreen = () => {
           <Text style={tw`text-lg font-bold mb-2 mt-6`}>Contact Us</Text>
           
           <Text style={tw`mb-12`}>
-            If you have any questions about these Terms, please contact us at terms@jungapp.com.
+            If you have any questions about these Terms, please contact us at jungapp.ai@gmail.com.
           </Text>
         </ScrollView>
       </SafeAreaView>
