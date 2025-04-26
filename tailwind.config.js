@@ -4,6 +4,7 @@ module.exports = {
     './src/**/*.{js,jsx,ts,tsx}', // Scan all JS, JSX, TS, TSX files in the src directory
     './App.{js,jsx,ts,tsx}',     // Scan App.js/tsx if classes are used there
   ],
+  darkMode: 'class', // Add this line
   theme: {
     extend: {
       colors: {

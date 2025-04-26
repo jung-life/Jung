@@ -1,197 +1,237 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRefContext } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
-import LandingScreen from './screens/LandingScreen';
-import LoginScreenEnhanced from './screens/LoginScreen-enhanced';
-import { RegisterScreen } from './screens/RegisterScreen';
-import { HomeScreen } from './screens/HomeScreen';
-import { AccountScreen } from './screens/AccountScreen';
-import { LoadingScreen } from './screens/LoadingScreen';
-import PostLoginScreen from './screens/PostLoginScreen';
-import DailyMotivationScreen from './screens/DailyMotivationScreen'; // Import the screen as default
-import { ConversationsScreen } from './screens/ConversationsScreen-enhanced'; // Corrected import name
-import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen'; // Use named import
-import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen'; // Import the missing screen
-import { ChatScreen } from './screens/ChatScreen'; // Import the Chat screen
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext'; // Import useAuth
 import { SupabaseProvider } from './contexts/SupabaseContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import * as Linking from 'expo-linking';
-import { AuthUrlHandler } from './components/AuthUrlHandler';
-import { navigationRef } from './navigation/navigationService';
+import { useURL } from 'expo-linking'; // Use useURL hook
+import { AuthUrlHandler } from './components/AuthUrlHandler'; // Keep AuthUrlHandler
+import { navigationRef, processPendingNavigationActions } from './navigation/navigationService';
 import * as NavigationService from './navigation/navigationService';
-import AppNavigator from './navigation/AppNavigator';
+// Remove AppNavigator import: import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet, View, Text, Alert } from 'react-native';
+import { StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
+import { useFonts } from 'expo-font'; // Import useFonts
 import { initializeSupabaseEnhanced, storeAuthDataEnhanced, checkSessionEnhanced, supabaseEnhanced } from './lib/supabase-enhanced';
 
-// Instead, use a conditional import with error handling
+// Import Screens directly
+import LandingScreen from './screens/LandingScreen';
+import LoginScreenEnhanced from './screens/LoginScreen-enhanced'; // Use enhanced version
+import { RegisterScreen } from './screens/RegisterScreen';
+import PostLoginScreen from './screens/PostLoginScreen';
+import { HomeScreen } from './screens/HomeScreen';
+import { ConversationsScreen } from './screens/ConversationsScreen-enhanced'; // Use enhanced version
+import { ChatScreen } from './screens/ChatScreen';
+import { AccountScreen } from './screens/AccountScreen';
+import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
+import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
+import { DisclaimerScreen } from './screens/DisclaimerScreen';
+import DailyMotivationScreen from './screens/DailyMotivationScreen';
+import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
+import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
+import MoodTrackerScreen from './screens/MoodTrackerScreen'; // Import MoodTrackerScreen
+import { LoadingScreen } from './screens/LoadingScreen';
+import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
+
+// Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
 try {
-  // Dynamic import to handle potential missing module
   const Mixpanel = require('mixpanel-react-native');
   mixpanelInstance = Mixpanel.default || Mixpanel;
-  
   if (mixpanelInstance && typeof mixpanelInstance.init === 'function') {
-    mixpanelInstance.init('YOUR_MIXPANEL_TOKEN', {
-      trackAutomaticEvents: true,
-    });
+    mixpanelInstance.init('YOUR_MIXPANEL_TOKEN', { trackAutomaticEvents: true });
     console.log('Mixpanel initialized successfully');
   } else {
     console.warn('Mixpanel module found but init method is missing');
   }
 } catch (error) {
   console.error('Failed to import or initialize Mixpanel:', error);
-  // Create a dummy implementation to prevent crashes
   mixpanelInstance = {
     track: (eventName: string, props?: Record<string, any>) => console.log('Mixpanel track (mock):', eventName, props),
     init: () => console.log('Mixpanel init (mock)'),
   };
 }
-
-// Export for use in other files
 export const mixpanel = mixpanelInstance;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Create a linking configuration for deep links
+// Linking configuration (keeping existing)
 const linking = {
   prefixes: [Linking.createURL('/')],
   config: {
     screens: {
       LandingScreen: 'landing',
-      Login: 'login',
+      Login: 'login', // Ensure this matches the screen name used in the stack
       Register: 'register',
       PostLoginScreen: 'post-login',
       Home: 'home',
-      Account: 'account',
+      AccountScreen: 'account', // Ensure this matches the screen name
+      // Add other deep linkable screens if needed
     },
   },
 };
 
-export default function EnhancedApp() {
-  const [initializing, setInitializing] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
+// Default header options for logged-in screens
+const defaultPostLoginOptions = {
+  headerShown: true,
+  headerRight: () => <HamburgerMenu />,
+  headerStyle: {
+    backgroundColor: '#ffffff', // Example color
+  },
+  headerTintColor: '#4A3B78', // Example color
+  headerTitleStyle: {
+    fontWeight: 'bold' as const,
+  },
+};
 
-  // Handle deep links for authentication
-  useEffect(() => {
-    const handleDeepLink = (url: string) => {
-      console.log('App received deep link:', url);
-      // The AuthUrlHandler component will handle the actual processing
-    };
+// Main App Component that includes the Navigator
+const AppContentEnhanced = () => {
+  const { session, isNewUser, loading: authLoading } = useAuth(); // Use auth loading state
+  const initialUrl = useURL();
+  const [initializing, setInitializing] = useState(true); // Keep app init state
+  const [initError, setInitError] = useState<string | null>(null); // Keep app init error state
 
-    // Listen for deep links while the app is open
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      console.log('App received URL event:', url);
-      handleDeepLink(url);
-    });
-
-    // Check if app was opened via a deep link
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        console.log('App opened with initial URL:', url);
-        handleDeepLink(url);
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  // Initialize Supabase
+  // Initialize Supabase Enhanced
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize the enhanced Supabase client
         const initResult = await initializeSupabaseEnhanced();
-        
         if (!initResult.success) {
           console.error('Failed to initialize Supabase:', initResult.error);
-          setInitError('Failed to initialize the app. Please restart the app and try again.');
+          setInitError('Failed to initialize the app. Please restart.');
         }
-        
-        // Log environment check results
-        if (initResult.envCheck && !initResult.envCheck.isValid) {
-          console.warn('Environment variable issues:', initResult.envCheck.issues);
-          if (initResult.envCheck.usingDefaults) {
-            console.warn('Using default Supabase credentials. This may cause authentication issues.');
-          }
-        }
-        
-        // Log database health check results
-        if (initResult.dbHealthCheck && !initResult.dbHealthCheck.success) {
-          console.error('Database health check failed:', initResult.dbHealthCheck.error);
-        }
+        // Log env/db checks if needed
       } catch (error) {
         console.error('Error during app initialization:', error);
-        setInitError('An unexpected error occurred during initialization. Please restart the app.');
+        setInitError('An unexpected error occurred during initialization.');
       } finally {
         setInitializing(false);
       }
     };
-    
     initialize();
   }, []);
 
-  // Show loading screen during initialization
-  if (initializing) {
+  // Handle deep linking (keep existing logic, but ensure it doesn't interfere)
+  // AuthUrlHandler might be handling the session setting now
+  useEffect(() => {
+     // If AuthUrlHandler is setting the session, this manual handling might be redundant
+     // or could cause conflicts. Review AuthUrlHandler's logic.
+     // For now, keep the listener but be aware of potential overlap.
+    const handleDeepLink = (url: string | null) => {
+      if (!url) return;
+      console.log('App received deep link URL:', url);
+      // Let AuthUrlHandler process it, or add specific logic here if needed
+    };
+
+    if (initialUrl) handleDeepLink(initialUrl);
+    const subscription = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => subscription.remove();
+  }, [initialUrl]);
+
+  // Load fonts
+  const [fontsLoaded, fontError] = useFonts({
+    'AntDesign': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/AntDesign.ttf'),
+    'FontAwesome': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf'),
+  });
+
+  // Combined loading state
+  const isLoading = initializing || authLoading || (!fontsLoaded && !fontError);
+
+  if (isLoading) {
     return (
-      <SafeAreaProvider>
-        <View style={styles.loadingContainer}>
-          <LoadingScreen />
-        </View>
-      </SafeAreaProvider>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A3B78" />
+      </View>
     );
   }
 
-  // Show error screen if initialization failed
   if (initError) {
     return (
-      <SafeAreaProvider>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Initialization Error</Text>
-          <Text style={styles.errorMessage}>{initError}</Text>
-        </View>
-      </SafeAreaProvider>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Initialization Error</Text>
+        <Text style={styles.errorMessage}>{initError}</Text>
+      </View>
     );
   }
 
+   if (fontError) {
+    console.error("Error loading fonts:", fontError);
+    return (
+       <View style={styles.errorContainer}>
+         <Text style={styles.errorTitle}>Font Error</Text>
+         <Text style={styles.errorMessage}>Could not load required fonts.</Text>
+       </View>
+    );
+  }
+
+  // Determine initial route based on auth state
+  const initialRoute: keyof RootStackParamList = session?.user
+    ? (isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen')
+    : 'LandingScreen';
+
+  return (
+    <NavigationContainer 
+      ref={navigationRef} 
+      linking={linking}
+      onReady={() => {
+        console.log('NavigationContainer is ready');
+        processPendingNavigationActions();
+      }}
+    >
+      <Stack.Navigator initialRouteName={initialRoute}>
+        {/* Screens always available */}
+        <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
+        <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
+        <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
+
+        {/* Conditional Screens based on Auth */}
+        {session?.user ? (
+          <>
+            {/* Logged-in Screens */}
+            <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
+             {/* Ensure Landing/Login/Register are NOT duplicated here if defined below */}
+          </>
+        ) : (
+          <>
+            {/* Logged-out Screens */}
+            <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Login" component={LoginScreenEnhanced} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+            {/* Note: Privacy/Terms/Disclaimer are already defined above */}
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+// Root App component wrapping providers
+export default function EnhancedApp() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <SupabaseProvider>
-            <AuthUrlHandler />
-            <NavigationContainer ref={navigationRef} linking={linking}>
-              <Stack.Navigator
-                initialRouteName="LandingScreen"
-                screenOptions={{
-                  headerShown: false,
-                }}
-              >
-                <Stack.Screen name="LandingScreen" component={LandingScreen} />
-                <Stack.Screen name="Login" component={LoginScreenEnhanced} />
-                <Stack.Screen name="Register" component={RegisterScreen} />
-                <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} />
-                <Stack.Screen name="Home" component={HomeScreen} />
-                <Stack.Screen name="AccountScreen" component={AccountScreen} />
-                <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} />
-                {/* Add the Conversations screen */}
-                <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} />
-                {/* Add the Emotional Assessment screen */}
-                <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} />
-                {/* Add the Self Help Resources screen */}
-                <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} />
-                {/* Add the Chat screen */}
-                <Stack.Screen name="Chat" component={ChatScreen} />
-              </Stack.Navigator>
-            </NavigationContainer>
-            <StatusBar style="auto" />
-          </SupabaseProvider>
-        </AuthProvider>
+        <SupabaseProvider> {/* Ensure SupabaseProvider uses supabaseEnhanced if needed */}
+          <AuthProvider> {/* Ensure AuthProvider uses supabaseEnhanced if needed */}
+            <ThemeProvider>
+              <AuthUrlHandler /> {/* Add AuthUrlHandler here, outside NavigationContainer */}
+              <AppContentEnhanced /> {/* Render the component containing hooks and navigator */}
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </AuthProvider>
+        </SupabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -205,24 +245,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f5f5f5', // Or theme-based color
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f5f5f5', // Or theme-based color
     padding: 20,
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#e53e3e',
+    color: '#e53e3e', // Or theme-based color
     marginBottom: 10,
   },
   errorMessage: {
     fontSize: 16,
-    color: '#4a5568',
+    color: '#4a5568', // Or theme-based color
     textAlign: 'center',
     lineHeight: 24,
   },

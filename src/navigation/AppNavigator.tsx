@@ -12,7 +12,7 @@ import { ChatScreen } from '../screens/ChatScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import PostLoginScreen from '../screens/PostLoginScreen';
-import { NavigationContainer } from '@react-navigation/native';
+// Remove NavigationContainer import from here
 import DailyMotivationScreen from '../screens/DailyMotivationScreen';
 import { EmotionalAssessmentScreen } from '../screens/EmotionalAssessmentScreen';
 import SelfHelpResourcesScreen from '../screens/SelfHelpResourcesScreen';
@@ -136,12 +136,9 @@ const AppNavigator = () => {
     return <LoadingScreen />;
   }
 
-  return (
-    // NavigationContainer wraps the conditionally rendered stack
-    <NavigationContainer ref={navigationRef}>
-      {user ? <MainAppStack isNewUser={isNewUser} /> : <AuthStack />}
-    </NavigationContainer>
-  );
+  // Return the appropriate stack directly, or the LoadingScreen
+  // NavigationContainer will be handled in App.tsx
+  return user ? <MainAppStack isNewUser={isNewUser} /> : <AuthStack />;
 };
 
 export default AppNavigator;

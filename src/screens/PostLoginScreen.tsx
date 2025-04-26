@@ -198,11 +198,8 @@ const PostLoginScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        {/* Header with hamburger menu */}
-        <View style={tw`flex-row justify-end items-center p-4`}> {/* Changed justify-between to justify-end */}
-          {/* Removed Jung Text */}
-          <HamburgerMenu />
-        </View>
+        {/* Header space - removed hamburger menu as it's now in the navigation header */}
+        <View style={tw`h-2`}></View>
         
         <ScrollView style={tw`flex-1 px-4`}>
           <View style={tw`mt-4 mb-8`}>

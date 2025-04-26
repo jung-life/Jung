@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+// Remove useNavigation import
 import { List, SignOut, Shield, FileText, Info, Smiley } from 'phosphor-react-native'; // Added Smiley
 import { supabase } from '../lib/supabase';
-import { RootStackNavigationProp } from '../navigation/types';
+// Remove RootStackNavigationProp import if no longer needed directly
+import * as NavigationService from '../navigation/navigationService'; // Import the navigation service
 import tw from '../lib/tailwind';
 
 interface HamburgerMenuProps {
@@ -20,7 +21,7 @@ type MenuItem = {
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const navigation = useNavigation<RootStackNavigationProp>();
+  // Remove useNavigation hook
 
   const handleLogout = async () => {
     try {
@@ -29,10 +30,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       // and directly navigate to the landing screen
       
       // This is a temporary workaround
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'LandingScreen' }],
-      });
+      // Use NavigationService for reset as well
+      NavigationService.reset('LandingScreen');
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -45,7 +44,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       onPress: () => {
         setMenuVisible(false);
         console.log('HamburgerMenu: Navigate to AccountScreen pressed');
-        navigation.navigate('AccountScreen'); // Restore navigation
+        NavigationService.navigate('AccountScreen'); // Use service
       },
     },
     {
@@ -54,7 +53,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       onPress: () => {
         setMenuVisible(false);
         console.log('HamburgerMenu: Navigate to PrivacyPolicyScreen pressed');
-        navigation.navigate('PrivacyPolicyScreen'); // Restore navigation
+        NavigationService.navigate('PrivacyPolicyScreen'); // Use service
       },
     },
     {
@@ -63,7 +62,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       onPress: () => {
         setMenuVisible(false);
         console.log('HamburgerMenu: Navigate to TermsOfServiceScreen pressed');
-        navigation.navigate('TermsOfServiceScreen'); // Restore navigation
+        NavigationService.navigate('TermsOfServiceScreen'); // Use service
       },
     },
     {
@@ -73,7 +72,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
         setMenuVisible(false);
         console.log('HamburgerMenu: Navigate to PostLoginScreen (for Mood Tracker) pressed');
         // Navigate to PostLoginScreen and then we'll show the modal from there
-        navigation.navigate('PostLoginScreen'); // Restore navigation
+        NavigationService.navigate('PostLoginScreen'); // Use service
         // We can't directly control the modal from here, but the user can click the button on PostLoginScreen
       },
     },
@@ -83,7 +82,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
       onPress: () => {
         setMenuVisible(false);
         console.log('HamburgerMenu: Navigate to DisclaimerScreen pressed');
-        navigation.navigate('DisclaimerScreen'); // Restore navigation
+        NavigationService.navigate('DisclaimerScreen'); // Use service
       },
     },
   ];

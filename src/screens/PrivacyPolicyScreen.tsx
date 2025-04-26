@@ -36,7 +36,7 @@ export const PrivacyPolicyScreen = () => {
           <Text style={tw`text-lg font-bold mb-4`}>Jung App Privacy Policy</Text>
           
           <Text style={tw`mb-4`}>
-            Last Updated: June 1, 2023
+            Last Updated: May 16, 2025
           </Text>
           
           <Text style={tw`mb-4`}>
@@ -52,7 +52,7 @@ export const PrivacyPolicyScreen = () => {
           <Text style={tw`mb-2`}>• Email address</Text>
           <Text style={tw`mb-2`}>• Name (optional)</Text>
           <Text style={tw`mb-2`}>• Profile picture (optional)</Text>
-          <Text style={tw`mb-4`}>• Content of your conversations with AI avatars</Text>
+          
           
           <Text style={tw`text-lg font-bold mb-2 mt-6`}>How We Use Your Information</Text>
           
@@ -84,7 +84,7 @@ export const PrivacyPolicyScreen = () => {
           <Text style={tw`text-lg font-bold mb-2 mt-6`}>Contact Us</Text>
           
           <Text style={tw`mb-12`}>
-            If you have any questions about this Privacy Policy, please contact us at privacy@jungapp.com.
+            If you have any questions about this Privacy Policy, please contact us at jungapp.ai@gmail.com.
           </Text>
         </ScrollView>
       </SafeAreaView>

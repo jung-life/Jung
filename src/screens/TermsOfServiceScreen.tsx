@@ -36,7 +36,7 @@ export const TermsOfServiceScreen = () => {
           <Text style={tw`text-lg font-bold mb-4`}>Jung App Terms of Service</Text>
           
           <Text style={tw`mb-4`}>
-            Last Updated: June 1, 2023
+            Last Updated: May 16, 2025
           </Text>
           
           <Text style={tw`mb-4`}>
