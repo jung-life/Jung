@@ -37,7 +37,15 @@ export function AuthUrlHandler() {
           // If it's a database error saving new user, we can still proceed
           if (errorDesc.includes('Database error saving new user')) {
             console.log('Database error detected in AuthUrlHandler, but proceeding anyway');
+            console.log('Database error detected, but proceeding to PostLoginScreen anyway');
+            console.log('Database error detected, but session should still trigger navigation in App-enhanced.');
             // This is a known issue where the user is actually created but there's an error saving additional data
+            // Show a non-blocking notification to the user
+            Alert.alert(
+              'Account Created',
+              'Your account was created successfully, but some profile data may be incomplete. You can update your profile later if needed.',
+              [{ text: 'Continue' }]
+            );
             
             // Try to extract tokens from the URL
             try {
@@ -90,10 +98,17 @@ export function AuthUrlHandler() {
                 console.log('Session confirmed after database error - user should be logged in');
               } else {
                 console.warn('No session found after database error - user may need to log in again');
+                // Don't navigate immediately, let the user see the message first
                 Alert.alert(
-                  'Partial Registration',
-                  'Your account was created, but some profile data could not be saved. Please log in again.',
-                  [{ text: 'OK' }]
+                  'Login Required',
+                  'Your account was created, but we need you to log in again to complete the setup.',
+                  [{ 
+                    text: 'OK',
+                    onPress: () => {
+                      // Navigate to login screen
+                      NavigationService.navigate('Login');
+                    }
+                  }]
                 );
               }
             }, 1000);

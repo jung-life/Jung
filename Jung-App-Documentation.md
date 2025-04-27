@@ -109,8 +109,8 @@ The `avatarPrompts.ts` file defines the different therapist avatars and their pr
 - **Viktor Frankl**: Logotherapy approach
 - **Abraham Maslow**: Humanistic psychology approach
 - **Karen Horney**: Neo-Freudian approach
-- **The Oracle**: Mystical, philosophical approach
-- **Morpheus**: Challenging, thought-provoking approach
+- **The Sage**: Mystical, philosophical approach
+- **Awakener**: Challenging, thought-provoking approach
 
 Each avatar has a defined:
 - Name

@@ -24,6 +24,7 @@ export const availableAvatars = [
   { id: 'jung', name: 'Jung', filename: 'jung.png', premium: false },
   { id: 'freud', name: 'Freud', filename: 'frued.png', premium: false }, // Note: Filename has a typo "frued" to match actual file
   { id: 'adler', name: 'Adler', filename: 'alfredadler.png', premium: false },
+  { id: 'rogers', name: 'Carl Rogers', filename: 'carl_rogers.png', premium: false },
   { id: 'horney', name: 'Horney', filename: 'horney.webp', premium: true },
   { id: 'morpheus', name: 'Morpheus', filename: 'awakener.png', premium: true },
   { id: 'oracle', name: 'Oracle', filename: 'sage.png', premium: true },

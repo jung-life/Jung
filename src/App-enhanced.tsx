@@ -35,6 +35,7 @@ import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
 import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
 import MoodTrackerScreen from './screens/MoodTrackerScreen'; // Import MoodTrackerScreen
 import { LoadingScreen } from './screens/LoadingScreen';
+import TestAvatarScreen from './screens/TestAvatarScreen'; // Import TestAvatarScreen
 import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
 
 // Mixpanel setup (keeping existing logic)

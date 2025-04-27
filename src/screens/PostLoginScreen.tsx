@@ -123,7 +123,9 @@ const PostLoginScreen = () => {
     return (
       <View style={tw`bg-white/70 border border-gray-200/50 rounded-lg p-3 mb-3 shadow-sm mx-4`}> {/* Added mx-4 */}
         <View style={tw`flex-row items-center mb-1`}>
-          <View style={tw`mr-2 ${color}`}>{icon}</View>
+          <View style={tw`mr-2 ${color}`}>
+            {icon}
+          </View>
           <Text style={tw`font-semibold ${color}`}>{item.mood}</Text>
           <Text style={tw`text-xs text-gray-500 ml-auto`}>{formattedDate}</Text>
         </View>
@@ -151,7 +153,9 @@ const PostLoginScreen = () => {
             style={tw`items-center p-2 rounded-lg w-1/5 mx-1 mb-2 ${selectedMood === option.name ? 'bg-jung-purple/20' : ''}`} 
             onPress={() => setSelectedMood(option.name)}
           >
-            <View style={tw`${option.color}`}>{option.icon}</View>
+            <View style={tw`${option.color}`}>
+              {option.icon}
+            </View>
             <Text style={tw`text-xs mt-1 ${option.color} ${selectedMood === option.name ? 'font-bold' : ''}`}>
               {option.name}
             </Text>
@@ -176,7 +180,9 @@ const PostLoginScreen = () => {
         onPress={handleSaveMood}
         disabled={!selectedMood}
       >
-        <FloppyDisk size={20} color="white" weight="bold" style={tw`mr-2`} />
+        <View>
+          <FloppyDisk size={20} color="white" weight="bold" style={tw`mr-2`} />
+        </View>
         <Text style={tw`text-white text-lg font-bold`}>Log Mood</Text>
       </TouchableOpacity>
 
@@ -288,7 +294,9 @@ const PostLoginScreen = () => {
                   style={tw`p-2 mr-2`}
                   onPress={closeMoodModal}
                 >
-                  <ArrowLeft size={20} color="#4A3B78" />
+                  <View>
+                    <ArrowLeft size={20} color="#4A3B78" />
+                  </View>
                 </TouchableOpacity>
                 <Text style={tw`text-xl font-bold text-center text-jung-deep flex-1`}>
                   How are you feeling?
