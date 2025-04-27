@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator, Image } from 'react-native';
-// Import icons from phosphor-react-native instead
+import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
+// Import icons from phosphor-react-native
 import { Envelope, GoogleLogo, AppleLogo } from 'phosphor-react-native'; 
 import tw from '../lib/tailwind';
 
@@ -48,25 +48,22 @@ export const SocialButton = ({
       case 'google':
         return (
           <>
-            {/* Use Phosphor GoogleLogo */}
-            <GoogleLogo size={22} color="#DB4437" weight="bold" style={tw`mr-3`} /> 
-            <Text style={tw`font-medium text-base ${colors.text}`}>Login with Google</Text>
+            <GoogleLogo size={22} color="#DB4437" weight="bold" style={tw`mr-3`} />
+            <Text style={tw`font-medium text-base ${colors.text}`}>Sign in with Google</Text>
           </>
         );
       case 'apple':
         return (
           <>
-            {/* Use Phosphor AppleLogo */}
-            <AppleLogo size={22} color="#000" weight="fill" style={tw`mr-3`} /> 
-            <Text style={tw`font-medium text-base ${colors.text}`}>Login with Apple</Text>
+            <AppleLogo size={22} color="#000000" weight="fill" style={tw`mr-3`} />
+            <Text style={tw`font-medium text-base ${colors.text}`}>Sign in with Apple</Text>
           </>
         );
       case 'email':
         return (
           <>
-            {/* Use Phosphor Envelope */}
             <Envelope size={22} color="#6A8EAE" weight="bold" style={tw`mr-3`} /> 
-            <Text style={tw`font-medium text-base ${colors.text}`}>Login with Email</Text>
+            <Text style={tw`font-medium text-base ${colors.text}`}>Sign in with Email</Text>
           </>
         );
       default:

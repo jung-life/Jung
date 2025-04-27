@@ -78,8 +78,12 @@ export const DisclaimerScreen = () => {
         handleDisclaimerAccepted();
       }
       
-      // Navigate to a screen that definitely exists in your navigation stack
-      navigation.navigate('PostLoginScreen');
+      // Navigate to PostLoginScreen after accepting the disclaimer
+      console.log('Disclaimer accepted, navigating to PostLoginScreen');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'PostLoginScreen' }]
+      });
       
     } catch (error) {
       console.error('Error accepting disclaimer:', error);

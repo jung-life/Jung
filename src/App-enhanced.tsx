@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer, NavigationContainerRefContext } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native'; // Removed NavigationContainerRefContext
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,12 +11,12 @@ import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking'; // Use useURL hook
 import { AuthUrlHandler } from './components/AuthUrlHandler'; // Keep AuthUrlHandler
 import { navigationRef, processPendingNavigationActions } from './navigation/navigationService';
-import * as NavigationService from './navigation/navigationService';
+// Removed * as NavigationService import as it's not directly used after refactor
 // Remove AppNavigator import: import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
 import { useFonts } from 'expo-font'; // Import useFonts
-import { initializeSupabaseEnhanced, storeAuthDataEnhanced, checkSessionEnhanced, supabaseEnhanced } from './lib/supabase-enhanced';
+import { initializeSupabaseEnhanced } from './lib/supabase-enhanced'; // Removed unused imports
 
 // Import Screens directly
 import LandingScreen from './screens/LandingScreen';
@@ -88,7 +88,48 @@ const defaultPostLoginOptions = {
   },
 };
 
-// Main App Component that includes the Navigator
+// Define Auth Stack Navigator
+const AuthStackNavigator = () => (
+  <Stack.Navigator initialRouteName="LandingScreen">
+    {/* Logged-out Screens */}
+    <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="Login" component={LoginScreenEnhanced} options={{ headerShown: false }} />
+    <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+    {/* Common screens accessible without login */}
+    <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
+  </Stack.Navigator>
+);
+
+// Define Main App Stack Navigator
+// Pass isNewUser as a prop
+const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
+   <Stack.Navigator 
+     initialRouteName={isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen'}
+     screenOptions={{ headerShown: false }}
+   >
+    {/* Logged-in Screens */}
+    <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
+    {/* Common screens also accessible when logged in */}
+    <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
+     {/* Loading screen might not be needed here if handled outside */}
+     {/* <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} /> */}
+  </Stack.Navigator>
+);
+
+
+// Main App Component that renders the correct navigator
 const AppContentEnhanced = () => {
   const { session, isNewUser, loading: authLoading } = useAuth(); // Use auth loading state
   const initialUrl = useURL();
@@ -104,7 +145,6 @@ const AppContentEnhanced = () => {
           console.error('Failed to initialize Supabase:', initResult.error);
           setInitError('Failed to initialize the app. Please restart.');
         }
-        // Log env/db checks if needed
       } catch (error) {
         console.error('Error during app initialization:', error);
         setInitError('An unexpected error occurred during initialization.');
@@ -115,16 +155,12 @@ const AppContentEnhanced = () => {
     initialize();
   }, []);
 
-  // Handle deep linking (keep existing logic, but ensure it doesn't interfere)
-  // AuthUrlHandler might be handling the session setting now
+  // Handle deep linking (keep existing logic)
   useEffect(() => {
-     // If AuthUrlHandler is setting the session, this manual handling might be redundant
-     // or could cause conflicts. Review AuthUrlHandler's logic.
-     // For now, keep the listener but be aware of potential overlap.
     const handleDeepLink = (url: string | null) => {
       if (!url) return;
       console.log('App received deep link URL:', url);
-      // Let AuthUrlHandler process it, or add specific logic here if needed
+      // Let AuthUrlHandler process it
     };
 
     if (initialUrl) handleDeepLink(initialUrl);
@@ -168,52 +204,21 @@ const AppContentEnhanced = () => {
     );
   }
 
-  // Determine initial route based on auth state
-  const initialRoute: keyof RootStackParamList = session?.user
-    ? (isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen')
-    : 'LandingScreen';
-
+  // Render the NavigationContainer wrapping the conditional navigator logic
   return (
-    <NavigationContainer 
-      ref={navigationRef} 
+    <NavigationContainer
+      ref={navigationRef}
       linking={linking}
       onReady={() => {
         console.log('NavigationContainer is ready');
-        processPendingNavigationActions();
+        // No longer processing pending actions - relying on declarative navigation
+      }}
+      onStateChange={(state) => {
+        console.log('Navigation state changed:', state ? 'New state available' : 'No state');
       }}
     >
-      <Stack.Navigator initialRouteName={initialRoute}>
-        {/* Screens always available */}
-        <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
-        <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
-        <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
-
-        {/* Conditional Screens based on Auth */}
-        {session?.user ? (
-          <>
-            {/* Logged-in Screens */}
-            <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
-             {/* Ensure Landing/Login/Register are NOT duplicated here if defined below */}
-          </>
-        ) : (
-          <>
-            {/* Logged-out Screens */}
-            <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Login" component={LoginScreenEnhanced} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-            {/* Note: Privacy/Terms/Disclaimer are already defined above */}
-          </>
-        )}
-      </Stack.Navigator>
+      {/* Conditionally render the correct navigator based on session state */}
+      {session?.user ? <MainStackNavigator isNewUser={isNewUser} /> : <AuthStackNavigator />}
     </NavigationContainer>
   );
 };

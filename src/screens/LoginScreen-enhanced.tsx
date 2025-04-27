@@ -25,7 +25,7 @@ import * as AuthSession from 'expo-auth-session';
 import tw from '../lib/tailwind';
 
 // Import both Supabase clients and functions
-import { supabase } from '../lib/supabase';
+import { supabase, storeAuthData } from '../lib/supabase';
 import { 
   supabaseEnhanced, 
   storeAuthDataEnhanced, 
@@ -61,18 +61,18 @@ export const LoginScreenEnhanced = () => {
     // Check session immediately upon listener setup
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        console.log('Existing session found on mount, navigating...');
-        navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
+        // No need to navigate here, App-enhanced.tsx handles initial routing based on session
+        console.log('Existing session found on mount. App-enhanced will handle navigation.');
       }
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state change (standard client):', event, !!session);
       
-      // Navigate on SIGNED_IN
+      // Navigate on SIGNED_IN - Let App-enhanced.tsx handle this based on session state change
       if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in, navigating...');
-        navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
+         console.log('User signed in via listener. App-enhanced will handle navigation.');
+         // No explicit navigation needed here.
       }
       // Removed initializing state update
 
@@ -127,8 +127,11 @@ export const LoginScreenEnhanced = () => {
       setErrorMessage('');
       console.log('Starting Google login flow with standard client...');
       
-      // Get the redirect URI
-      const redirectUri = AuthSession.makeRedirectUri({});
+      // Get the redirect URI - explicitly set scheme to match app.json
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'jung',
+        preferLocalhost: true
+      });
       console.log('Using redirect URI:', redirectUri);
       
       // Use the standard Supabase client
@@ -137,6 +140,10 @@ export const LoginScreenEnhanced = () => {
         options: {
           redirectTo: redirectUri,
           skipBrowserRedirect: false,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
 
@@ -159,14 +166,153 @@ export const LoginScreenEnhanced = () => {
 
         console.log('WebBrowser result (standard client):', JSON.stringify(result));
         
-        // IMPORTANT: Removed all logic for handling result.type === 'success'.
-        // The AuthUrlHandler component is now solely responsible for processing 
-        // the redirect URL, extracting tokens, setting the session, and navigating.
-        // This screen only initiates the OAuth flow.
-
-        if (result.type !== 'success' && result.type !== 'cancel' && result.type !== 'dismiss') {
-          console.log('OAuth flow browser session ended:', result.type);
-          // Handle potential browser errors if it wasn't a success or user cancellation
+        // Handle the WebBrowser result
+        if (result.type === 'success') {
+          console.log('OAuth flow completed successfully');
+          
+          // Check if there's an error in the URL
+          const resultUrl = result.url || '';
+          if (resultUrl.includes('error=')) {
+            console.warn('Error found in redirect URL:', resultUrl);
+            
+            // Extract error description
+            const errorMatch = resultUrl.match(/error_description=([^&]+)/);
+            const errorDesc = errorMatch ? decodeURIComponent(errorMatch[1].replace(/\+/g, ' ')) : 'Unknown error';
+            
+            console.log('Error description:', errorDesc);
+            
+            // If it's a database error saving new user, we can still proceed
+            if (errorDesc.includes('Database error saving new user')) {
+              console.log('Database error detected, but proceeding to PostLoginScreen anyway');
+              
+              // Let App-enhanced.tsx handle navigation based on session state
+              console.log('Database error detected, but session should still trigger navigation in App-enhanced.');
+              return;
+            } else {
+              // For other errors, show an alert
+              setErrorMessage(errorDesc);
+              Alert.alert('Login Error', errorDesc);
+              return;
+            }
+          }
+          
+          // Check if we have a session after the OAuth flow
+          const { data } = await supabase.auth.getSession();
+          
+          if (data?.session) {
+            console.log('Session found after OAuth flow, navigating to PostLoginScreen');
+            
+            // Let App-enhanced.tsx handle navigation based on session state
+            console.log('Session found after OAuth flow. App-enhanced will handle navigation.');
+          } else {
+            console.log('No session found after OAuth flow, manually checking for session');
+            
+            // Try to get the session again after a short delay
+            setTimeout(async () => {
+              const { data: delayedData } = await supabase.auth.getSession();
+              
+              if (delayedData?.session) {
+                console.log('Session found after delay, navigating to PostLoginScreen');
+                
+                // Let App-enhanced.tsx handle navigation based on session state
+                console.log('Session found after delay. App-enhanced will handle navigation.');
+              } else {
+                console.error('No session found after OAuth flow and delay');
+                
+              // No session found after delay, but we can try to extract tokens from the URL
+              console.log('No session found after OAuth flow and delay. Attempting to extract tokens from URL...');
+              
+              try {
+                // Try to extract tokens from the URL
+                const resultUrl = result.url || '';
+                
+                // Try to extract from fragment first (after #)
+                let fragment = resultUrl.split('#')[1];
+                let params = fragment ? new URLSearchParams(fragment) : null;
+                
+                // If no tokens in fragment, try query params (after ?)
+                if (!params || !params.get('access_token')) {
+                  const query = resultUrl.split('?')[1];
+                  params = query ? new URLSearchParams(query) : null;
+                }
+                
+                // Check if we found any params
+                if (params) {
+                  console.log('Found URL parameters, attempting to extract tokens');
+                  const access_token = params.get('access_token');
+                  const refresh_token = params.get('refresh_token');
+                  
+                  if (access_token) {
+                    console.log('Access token found in URL. Setting session manually...');
+                    
+                    // Manually set the session with the extracted tokens
+                    const sessionData = { 
+                      access_token,
+                      refresh_token: refresh_token || '' // Use empty string if no refresh token
+                    };
+                    
+                    // Store the token in AsyncStorage as well for redundancy
+                    await storeAuthData(sessionData);
+                    
+                    // Set the session in Supabase
+                    const { data, error } = await supabase.auth.setSession(sessionData);
+                    
+                    if (error) {
+                      console.error('Error setting session manually:', error);
+                      setErrorMessage('Login failed. Could not set session: ' + error.message);
+                      Alert.alert('Login Error', 'Could not set session: ' + error.message);
+                    } else if (data?.session) {
+                      console.log('Session set successfully from URL tokens');
+                      // App-enhanced will handle navigation based on session state
+                    } else {
+                      console.error('No session returned after manual setSession');
+                      
+                      // Try one more approach - sign in with the token directly
+                      try {
+                        console.log('Attempting to sign in with token directly...');
+                        const { data: signInData, error: signInError } = await supabase.auth.signInWithIdToken({
+                          provider: 'google',
+                          token: access_token
+                        });
+                        
+                        if (signInError) {
+                          console.error('Error signing in with token:', signInError);
+                          setErrorMessage('Login failed. Could not sign in with token.');
+                          Alert.alert('Login Error', 'Login failed. Could not sign in with token.');
+                        } else if (signInData?.session) {
+                          console.log('Successfully signed in with token');
+                          // App-enhanced will handle navigation based on session state
+                        }
+                      } catch (signInError) {
+                        console.error('Exception during token sign-in:', signInError);
+                        setErrorMessage('Login failed. Could not verify session.');
+                        Alert.alert('Login Error', 'Login failed. Could not verify session.');
+                      }
+                    }
+                    return;
+                  }
+                }
+                
+                // If we get here, we couldn't extract tokens
+                console.error('No tokens found in URL after OAuth flow');
+                setErrorMessage('Login failed. Could not verify session.');
+                Alert.alert('Login Error', 'Login failed. Could not verify session.');
+              } catch (tokenError) {
+                console.error('Error processing OAuth tokens:', tokenError);
+                setErrorMessage('Login failed. Error processing authentication response.');
+                Alert.alert('Login Error', 'Error processing authentication response.');
+              }
+              }
+            }, 1000);
+          }
+        } else if (result.type === 'cancel' || result.type === 'dismiss') {
+          console.log('OAuth flow was cancelled by the user:', result.type);
+          // User cancelled the authentication, just show a message
+          setErrorMessage('Authentication was cancelled.');
+          // No need for an alert as this is a user-initiated cancellation
+        } else {
+          console.log('OAuth flow browser session ended with error:', result.type);
+          // Handle potential browser errors
           setErrorMessage('Authentication browser session failed.');
           Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
         }

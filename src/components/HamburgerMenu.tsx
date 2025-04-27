@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 // Remove useNavigation import
-import { List, SignOut, Shield, FileText, Info, Smiley } from 'phosphor-react-native'; // Added Smiley
-import { supabase } from '../lib/supabase';
+import { List, SignOut, Shield, FileText, Info } from 'phosphor-react-native'; // Removed Smiley
+// Remove direct supabase import
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 // Remove RootStackNavigationProp import if no longer needed directly
 import * as NavigationService from '../navigation/navigationService'; // Import the navigation service
 import tw from '../lib/tailwind';
@@ -21,17 +22,18 @@ type MenuItem = {
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  // Remove useNavigation hook
+  const { signOut } = useAuth(); // Use the signOut method from AuthContext
 
   const handleLogout = async () => {
     try {
-      console.log('Bypassing supabase.auth.signOut() due to potential hanging issue');
-      // Skip the potentially hanging supabase.auth.signOut() call
-      // and directly navigate to the landing screen
+      console.log('Signing out user...');
+      setMenuVisible(false); // Close menu first
       
-      // This is a temporary workaround
-      // Use NavigationService for reset as well
-      NavigationService.reset('LandingScreen');
+      // Use the signOut method from AuthContext
+      await signOut();
+      
+      // The navigation will be handled by the App-enhanced.tsx component
+      // which will detect the auth state change and render the appropriate screens
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -65,17 +67,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
         NavigationService.navigate('TermsOfServiceScreen'); // Use service
       },
     },
-    {
-      title: 'Mood Tracker', // New Menu Item
-      icon: <Smiley size={20} color="#4A3B78" />,
-      onPress: () => {
-        setMenuVisible(false);
-        console.log('HamburgerMenu: Navigate to PostLoginScreen (for Mood Tracker) pressed');
-        // Navigate to PostLoginScreen and then we'll show the modal from there
-        NavigationService.navigate('PostLoginScreen'); // Use service
-        // We can't directly control the modal from here, but the user can click the button on PostLoginScreen
-      },
-    },
+    // Mood Tracker menu item removed as requested
     {
       title: 'Disclaimer',
       icon: <Info size={20} color="#4A3B78" />,

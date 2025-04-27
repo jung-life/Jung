@@ -33,20 +33,8 @@ export function navigate(name: keyof RootStackParamList, params?: any) {
       })
     );
   } else {
-    console.log(`Navigator not ready, queueing navigation to: ${name}`);
-    
-    // Queue the navigation action for later
-    pendingNavigationActions.push(() => {
-      console.log(`Executing queued navigation to: ${name}`);
-      if (navigationRef.current) {
-        navigationRef.current.dispatch(
-          CommonActions.navigate({
-            name,
-            params,
-          })
-        );
-      }
-    });
+    // If navigator is not ready, do nothing. Navigation should be handled declaratively.
+    console.log(`Navigator not ready for navigate to: ${name}. Navigation will be handled by state change.`);
   }
 }
 
@@ -60,17 +48,7 @@ export function reset(name: keyof RootStackParamList) {
       routes: [{ name }],
     });
   } else {
-    console.log(`Navigator not ready, queueing reset to: ${name}`);
-    
-    // Queue the reset action for later
-    pendingNavigationActions.push(() => {
-      console.log(`Executing queued reset to: ${name}`);
-      if (navigationRef.current) {
-        navigationRef.current.reset({
-          index: 0,
-          routes: [{ name }],
-        });
-      }
-    });
+    // If navigator is not ready, do nothing. Navigation should be handled declaratively.
+    console.log(`Navigator not ready for reset to: ${name}. Navigation will be handled by state change.`);
   }
 }

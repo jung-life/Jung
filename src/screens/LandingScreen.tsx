@@ -1,7 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
 
 const LandingScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -11,70 +15,79 @@ const LandingScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Colorful JUNG text */}
-      <View style={styles.titleContainer}>
-        <Text style={[styles.letter, styles.j]}>J</Text>
-        <Text style={[styles.letter, styles.u]}>U</Text>
-        <Text style={[styles.letter, styles.n]}>N</Text>
-        <Text style={[styles.letter, styles.g]}>G</Text>
-      </View>
+    <ImageBackground 
+      source={require('../assets/logo/jung-app-log.png')} 
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container}>
+        {/* Top Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>JUNG</Text>
+        </View>
+        
+        {/* Spacer to push content to bottom */}
+        <View style={styles.spacer} />
+        
+        {/* Bottom Tagline */}
+        <View style={styles.taglineContainer}>
+          <Text style={styles.tagline}>
+            <Text style={styles.highlightJ}>J</Text>ourney{' '}
+            <Text style={styles.highlightU}>U</Text>nfolding,{' '}
+            <Text style={styles.highlightN}>N</Text>urturing{' '}
+            <Text style={styles.highlightG}>G</Text>rowth
+          </Text>
+        </View>
 
-      {/* Tagline with highlighted letters */}
-      <View style={styles.taglineContainer}>
-        <Text style={styles.tagline}>
-          <Text style={styles.highlightJ}>J</Text>ourney{' '}
-          <Text style={styles.highlightU}>U</Text>nfolding,{' '}
-          <Text style={styles.highlightN}>N</Text>urturing{' '}
-          <Text style={styles.highlightG}>G</Text>rowth
-        </Text>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={handleBeginJourney}
-      >
-        <Text style={styles.buttonText}>Begin Journey</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Begin Journey Button */}
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={handleBeginJourney}
+        >
+          <Text style={styles.buttonText}>Begin Journey</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    width: width,
+    height: height,
+    flex: 1,
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#F9F7F4',
+    backgroundColor: 'rgba(0,0,0,0.3)', // Semi-transparent overlay for better text visibility
   },
   titleContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
+    alignItems: 'center',
+    marginTop: 20,
   },
-  letter: {
-    fontSize: 64,
+  titleText: {
+    fontSize: 48,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
-  j: {
-    color: '#FF5757', // Red
-  },
-  u: {
-    color: '#FFD256', // Yellow
-  },
-  n: {
-    color: '#57C84D', // Green
-  },
-  g: {
-    color: '#4D7CC8', // Blue
+  spacer: {
+    flex: 1,
   },
   taglineContainer: {
-    marginBottom: 40,
+    marginBottom: 20,
+    alignItems: 'center',
   },
   tagline: {
-    fontSize: 20,
+    fontSize: 22,
     textAlign: 'center',
-    color: '#333',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   highlightJ: {
     color: '#FF5757',
@@ -94,12 +107,16 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#4A3B78',
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 40,
+    width: '80%',
+    alignSelf: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
 });

@@ -4,7 +4,8 @@ import {
   Text, 
   ScrollView, 
   TouchableOpacity, 
-  StyleSheet 
+  StyleSheet,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -33,6 +34,15 @@ export const PrivacyPolicyScreen = () => {
         </View>
         
         <ScrollView style={tw`flex-1 p-4`}>
+          {/* App Logo */}
+          <View style={tw`items-center mb-6`}>
+            <Image 
+              source={require('../assets/logo/jung-app-log.png')} 
+              style={tw`w-32 h-32`}
+              resizeMode="contain"
+            />
+          </View>
+          
           <Text style={tw`text-lg font-bold mb-4`}>Jung App Privacy Policy</Text>
           
           <Text style={tw`mb-4`}>
@@ -90,4 +100,4 @@ export const PrivacyPolicyScreen = () => {
       </SafeAreaView>
     </GradientBackground>
   );
-}; 
+};

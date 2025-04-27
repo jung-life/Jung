@@ -4,11 +4,11 @@
     "slug": "jung",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/JungAppLogo.webp",
+    "icon": "./src/assets/logo/jung-app-log.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/JungAppLogoAlpha.png",
+      "image": "./src/assets/logo/jung-app-log.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -30,7 +30,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/JungAppLogoAlpha.png",
+        "foregroundImage": "./src/assets/logo/jung-app-log.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourcompany.jungai",
@@ -59,7 +59,7 @@
       "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./assets/JungAppLogoAlpha.png",
+      "favicon": "./src/assets/logo/jung-app-log.png",
       "bundler": "metro"
     },
     "scheme": "jung",
