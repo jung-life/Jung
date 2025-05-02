@@ -8,8 +8,12 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Modal,      // Add Modal
+  ScrollView, // Add ScrollView
+  Share       // Add Share
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard'; // Import Clipboard
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
@@ -18,7 +22,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight } from 'phosphor-react-native';
+import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen } from 'phosphor-react-native'; // Import phosphor icons
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -58,6 +62,9 @@ export const ChatScreen = () => {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysisContent, setAnalysisContent] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // Use the avatarId in your chat interface
   const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
@@ -89,6 +96,16 @@ export const ChatScreen = () => {
   
   // Fetch messages for this conversation
   const fetchMessages = useCallback(async () => {
+    // Add check: Ensure conversationId exists before proceeding
+    if (!conversationId) {
+      console.error('fetchMessages called without a conversationId.');
+      Alert.alert('Error', 'Cannot load messages: Conversation ID is missing.');
+      setLoading(false);
+      // Optionally navigate back or show an error state
+      // navigation.goBack(); 
+      return; 
+    }
+    
     try {
       setLoading(true);
       
@@ -126,6 +143,25 @@ export const ChatScreen = () => {
         // If avatarId wasn't passed in route params, use the one from the database
         if (!route.params.avatarId && convData.avatar_id) {
           console.log('Using avatar_id from database:', convData.avatar_id);
+          // Update the conversation state with the avatar_id from the database
+          setConversation(prev => {
+            if (prev) {
+              // If conversation exists, just update the avatar_id
+              return {
+                ...prev,
+                avatar_id: convData.avatar_id
+              };
+            } else {
+              // If conversation doesn't exist yet, create a minimal valid conversation object
+              return {
+                id: conversationId,
+                title: decryptedTitle,
+                avatar_id: convData.avatar_id,
+                user_id: '', // This will be populated later when we fetch the full conversation
+                created_at: new Date().toISOString()
+              };
+            }
+          });
         }
       }
       
@@ -350,7 +386,8 @@ export const ChatScreen = () => {
         .join('\n\n');
       
       // Generate the prompt based on the selected avatar
-      const currentAvatarId = route.params.avatarId || avatarId;
+      // First check conversation.avatar_id (from database), then route.params.avatarId, then default avatarId
+      const currentAvatarId = conversation?.avatar_id || route.params.avatarId || avatarId;
       const prompt = generatePromptForAvatar(
         currentAvatarId,
         history,
@@ -485,6 +522,273 @@ export const ChatScreen = () => {
     );
   };
   
+  // Function to handle conversation analysis
+  const handleAnalyzeConversation = async () => {
+    try {
+      setIsAnalyzing(true);
+      
+      // Use existing messages from state instead of re-fetching
+      if (!messages || messages.length === 0) {
+        Alert.alert('Error', 'No messages available for analysis.');
+        setIsAnalyzing(false);
+        return;
+      }
+      
+      // Note: Messages in state are already decrypted during fetchMessages or when added
+      
+      // Format conversation history for analysis prompt using messages from state
+      const formattedConversation = messages
+        .map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`) // Use role property
+        .join('\n\n');
+        
+      // Create avatar-specific prompt based on the avatar's philosophy
+      // Use the same avatar ID priority as in handleSendMessage
+      const currentAvatarId = conversation?.avatar_id || route.params.avatarId || avatarId;
+      const currentAvatar = availableAvatars.find(a => a.id === currentAvatarId) || avatar;
+      
+      let avatarContext = '';
+      switch (currentAvatar.id) {
+        case 'jung':
+          avatarContext = `As Carl Jung, analyze this conversation through the lens of analytical psychology. 
+          Focus on archetypes, the collective unconscious, individuation, and psychological types. 
+          Identify potential shadow elements and opportunities for integration of the psyche.`;
+          break;
+        case 'freud':
+          avatarContext = `As Sigmund Freud, analyze this conversation through the lens of psychoanalysis. 
+          Focus on unconscious motivations, defense mechanisms, psychosexual development, and the dynamics 
+          of id, ego, and superego. Look for repressed desires and childhood influences.`;
+          break;
+        case 'adler':
+          avatarContext = `As Alfred Adler, analyze this conversation through the lens of individual psychology. 
+          Focus on striving for superiority, social interest, inferiority feelings, and lifestyle. 
+          Consider birth order, family dynamics, and life tasks.`;
+          break;
+        case 'rogers':
+          avatarContext = `As Carl Rogers, analyze this conversation through the lens of person-centered therapy. 
+          Focus on unconditional positive regard, empathy, congruence, and the actualizing tendency. 
+          Consider the person's movement toward self-actualization and authentic self-expression.`;
+          break;
+        case 'frankl':
+          avatarContext = `As Viktor Frankl, analyze this conversation through the lens of logotherapy. 
+          Focus on the search for meaning, existential frustration, and the will to meaning. 
+          Consider how suffering can be transformed through finding purpose.`;
+          break;
+        case 'maslow':
+          avatarContext = `As Abraham Maslow, analyze this conversation through the lens of humanistic psychology. 
+          Focus on the hierarchy of needs, self-actualization, peak experiences, and human potential. 
+          Consider which needs are being met or unmet.`;
+          break;
+        case 'horney':
+          avatarContext = `As Karen Horney, analyze this conversation through the lens of neo-Freudian psychology. 
+          Focus on cultural and social influences, neurotic needs, and coping strategies. 
+          Consider the person's movement toward, against, or away from others.`;
+          break;
+        case 'oracle':
+          avatarContext = `As the Oracle, analyze this conversation through a lens of mystical wisdom and pattern recognition. 
+          Focus on hidden connections, synchronicities, and deeper meanings. 
+          Offer guidance that helps the person see beyond their immediate circumstances.`;
+          break;
+        case 'morpheus':
+          avatarContext = `As Morpheus, analyze this conversation with a focus on questioning perceived reality and limitations. 
+          Focus on breaking free from mental constraints, awakening to deeper truths, and realizing potential. 
+          Challenge assumptions and offer perspectives that expand consciousness.`;
+          break;
+        default:
+          avatarContext = `Analyze this conversation from a psychological perspective, focusing on patterns, 
+          insights, and opportunities for growth.`;
+      }
+      
+      // Generate analysis prompt with avatar-specific context
+      const prompt = `
+        ${avatarContext}
+        
+        Conversation to analyze:
+        ${formattedConversation}
+        
+        Please provide a comprehensive analysis with the following sections:
+        
+        # Key Themes and Patterns
+        [Identify the main topics, recurring themes, and patterns in the conversation]
+        
+        # Psychological Insights (from ${currentAvatar.name}'s perspective)
+        [Provide deeper psychological insights about the user's thoughts, feelings, and behaviors using ${currentAvatar.name}'s theoretical framework]
+        
+        # Areas for Personal Growth
+        [Suggest potential areas for personal development based on the conversation]
+        
+        # Recommendations (based on ${currentAvatar.name}'s approach)
+        [Offer specific recommendations for further reflection or action that align with ${currentAvatar.name}'s philosophy]
+        
+        Format your response with clear section headings and concise, insightful content.
+        IMPORTANT: Maintain the perspective and theoretical framework of ${currentAvatar.name} throughout the analysis.
+      `;
+      
+      // Generate analysis using AI
+      const analysisResult = await generateAIResponse(prompt);
+      const extractedAnalysis = extractResponseContent(analysisResult); // Use existing helper
+      
+      setAnalysisContent(extractedAnalysis);
+      setShowAnalysisModal(true);
+      
+    } catch (error) {
+      console.error('Error analyzing conversation:', error);
+      Alert.alert('Error', 'Failed to analyze conversation. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
+  // Function to handle sharing the analysis
+  const handleShareAnalysis = async () => {
+    if (!analysisContent) return;
+    try {
+      await Share.share({
+        message: analysisContent,
+        title: `Analysis of Conversation: ${conversationTitle}`
+      });
+    } catch (error) {
+      console.error('Error sharing analysis:', error);
+      Alert.alert('Error', 'Failed to share analysis.');
+    }
+  };
+  
+  // Function to handle copying the analysis
+  const handleCopyAnalysis = async () => {
+    if (!analysisContent) return;
+    try {
+      await Clipboard.setStringAsync(analysisContent);
+      Alert.alert('Copied!', 'Analysis copied to clipboard.');
+    } catch (error) {
+      console.error('Error copying analysis:', error);
+      Alert.alert('Error', 'Failed to copy analysis.');
+    }
+  };
+  
+  // Function to save conversation to history
+  const handleSaveToHistory = async () => {
+    try {
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        Alert.alert('Authentication Error', 'Please log in again');
+        return;
+      }
+      
+      // Check if conversation exists
+      if (!conversationId) {
+        Alert.alert('Error', 'Conversation ID not found');
+        return;
+      }
+      
+      // Check if conversation is already in history
+      const { data: existingHistory, error: historyError } = await supabase
+        .from('conversation_history')
+        .select('id')
+        .eq('conversation_id', conversationId)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (existingHistory) {
+        Alert.alert('Info', 'This conversation is already saved to your history.');
+        return;
+      }
+
+      const historyEntry = {
+        user_id: user.id,
+        conversation_id: conversationId,
+        title: conversationTitle || 'Untitled Conversation', // Ensure title is never null/undefined
+        saved_at: new Date().toISOString()
+      };
+
+      console.log('Attempting to save to history with data:', JSON.stringify(historyEntry, null, 2));
+      
+      // Save conversation to history
+      const { error: insertError } = await supabase
+        .from('conversation_history')
+        .insert(historyEntry);
+        
+      if (insertError) {
+        // Log detailed error information
+        console.error('Error saving to history:', JSON.stringify(insertError, null, 2));
+        Alert.alert(
+          'Error Saving History', 
+          `Failed to save conversation. Code: ${insertError.code}. Message: ${insertError.message}`
+        );
+        return;
+      }
+      
+      console.log('Successfully saved conversation to history.');
+      Alert.alert('Success', 'Conversation saved to history');
+    } catch (error: any) { // Catch specific error type if possible
+      console.error('Error in handleSaveToHistory catch block:', error);
+      Alert.alert('Error', `An unexpected error occurred: ${error.message || 'Unknown error'}`);
+    }
+  };
+  
+  // Modal for displaying analysis
+  const renderAnalysisModal = () => (
+    <Modal
+      visible={showAnalysisModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowAnalysisModal(false)}
+    >
+      <View style={tw`flex-1 bg-white`}>
+        <SafeAreaView style={tw`flex-1`}>
+          {/* Modal Header */}
+          <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
+            <TouchableOpacity 
+              style={tw`p-2`}
+              onPress={() => setShowAnalysisModal(false)}
+            >
+              <X size={24} color="#4A3B78" />
+            </TouchableOpacity>
+            <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`} numberOfLines={1} ellipsizeMode="tail">
+              Conversation Analysis
+            </Text>
+            <View style={tw`w-10`} />{/* Spacer */}
+          </View>
+          
+          {/* Analysis Content */}
+          <ScrollView style={tw`flex-1 p-4`}>
+            {isAnalyzing ? (
+              <View style={tw`items-center justify-center py-10`}>
+                <ActivityIndicator size="large" color="#4A3B78" />
+                <Text style={tw`mt-4 text-jung-purple`}>Analyzing...</Text>
+              </View>
+            ) : (
+              <Text style={tw`text-base leading-6 text-gray-800`}>
+                {analysisContent}
+              </Text>
+            )}
+          </ScrollView>
+
+          {/* Modal Footer Actions */}
+          {!isAnalyzing && (
+            <View style={tw`flex-row justify-around p-4 border-t border-gray-200`}>
+              <TouchableOpacity 
+                style={tw`flex-row items-center bg-gray-100 p-3 rounded-lg`}
+                onPress={handleCopyAnalysis}
+              >
+                <Copy size={20} color="#4A3B78" />
+                <Text style={tw`ml-2 text-jung-purple font-medium`}>Copy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={tw`flex-row items-center bg-gray-100 p-3 rounded-lg`}
+                onPress={handleShareAnalysis}
+              >
+                <ShareNetwork size={20} color="#4A3B78" />
+                <Text style={tw`ml-2 text-jung-purple font-medium`}>Share</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
@@ -498,11 +802,24 @@ export const ChatScreen = () => {
             <ArrowLeft size={24} color="#4A3B78" />
           </TouchableOpacity>
           
-          <Text style={tw`text-xl font-bold text-jung-deep`}>
+          <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`} numberOfLines={1} ellipsizeMode="tail">
             {conversationTitle || 'Conversation'}
           </Text>
           
-          <View style={tw`w-10`} />
+          <View style={tw`flex-row`}>
+            <TouchableOpacity 
+              style={tw`p-2 mr-1`}
+              onPress={handleSaveToHistory}
+            >
+              <BookOpen size={22} color="#4A3B78" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={tw`p-2`}
+              onPress={handleAnalyzeConversation}
+            >
+              <Brain size={22} color="#4A3B78" />
+            </TouchableOpacity>
+          </View>
         </View>
         
         <KeyboardAvoidingView 
@@ -526,7 +843,7 @@ export const ChatScreen = () => {
                   ListHeaderComponent={
                     <View style={tw`items-center mb-6`}>
                       <AvatarComponent 
-                        avatarId={route.params.avatarId || avatarId} 
+                        avatarId={conversation?.avatar_id || route.params.avatarId || avatarId} 
                         isSpeaking={isTyping}
                       />
                     </View>
@@ -571,6 +888,7 @@ export const ChatScreen = () => {
             </>
           )}
         </KeyboardAvoidingView>
+        {renderAnalysisModal()} 
       </SafeAreaView>
     </GradientBackground>
   );

@@ -158,17 +158,16 @@ export const ConversationsScreen = () => {
     }
   }, []);
 
-  // Temporarily disable fetching conversations to avoid loading issues
+  // Fetch conversations when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      console.log('Reflections screen focused - SKIPPING fetch');
+      console.log('Reflections screen focused - fetching conversations');
       console.log('Route params:', route.params);
-      // Skip fetchConversations() call to avoid loading issues
-      setLoading(false); // Immediately set loading to false
+      fetchConversations(); // Re-enable fetching
       return () => {
         // Cleanup function if needed
       };
-    }, [refresh])
+    }, [fetchConversations, refresh]) // Add fetchConversations dependency back
   );
 
   const handleNewConversation = () => {
@@ -282,6 +281,10 @@ export const ConversationsScreen = () => {
         {
           text: 'Read Analysis',
           onPress: () => showAnalysis(conversationId, title)
+        },
+        {
+          text: 'View Insights',
+          onPress: () => navigation.navigate('ConversationInsightsScreen', { conversationId })
         },
         {
           text: 'Export Analysis',
@@ -984,6 +987,13 @@ Return only the title text with no additional explanation or formatting.`;
         
         <View style={tw`flex-row justify-between items-center p-4`}>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
+          {/* Link to the enhanced history screen */}
+          <TouchableOpacity
+            style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
+            onPress={() => navigation.navigate('ConversationHistoryScreen-enhanced')}
+          >
+            <Text style={tw`text-jung-purple font-medium`}>History</Text>
+          </TouchableOpacity>
         </View>
         
         {loading ? (

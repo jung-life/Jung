@@ -227,6 +227,18 @@ const PostLoginScreen = () => {
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversations</Text> {/* Use jung-deep for text */}
           </TouchableOpacity>
           
+          {/* Journaling Button */}
+          <TouchableOpacity
+            style={tw`bg-purple-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use purple color for journaling
+            onPress={() => navigation.navigate('JournalingScreen')}
+          >
+            {/* Wrap icon in a View */}
+            <View>
+              <BookOpen size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            </View>
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Journal</Text> {/* Use jung-deep for text */}
+          </TouchableOpacity>
+          
           {/* Daily Motivation Button */}
           <TouchableOpacity 
             style={tw`bg-motivation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use motivation color

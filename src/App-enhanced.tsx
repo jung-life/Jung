@@ -34,9 +34,12 @@ import DailyMotivationScreen from './screens/DailyMotivationScreen';
 import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
 import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
 import MoodTrackerScreen from './screens/MoodTrackerScreen'; // Import MoodTrackerScreen
+import JournalingScreen from './screens/JournalingScreen'; // Import JournalingScreen
 import { LoadingScreen } from './screens/LoadingScreen';
 import TestAvatarScreen from './screens/TestAvatarScreen'; // Import TestAvatarScreen
 import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
+import { ConversationHistoryScreen } from './screens/ConversationHistoryScreen-enhanced'; // Import enhanced version
+import { ConversationInsightsScreenEnhanced } from './screens/ConversationInsightsScreen-enhanced'; // Import enhanced version (Corrected import name)
 
 // Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
@@ -114,12 +117,16 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
     <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
     <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="ConversationHistoryScreen" component={ConversationHistoryScreen} options={{ title: 'Conversation History', ...defaultPostLoginOptions }} />
+    {/* Use the correct component name and screen name from types.ts */}
+    <Stack.Screen name="ConversationInsightsScreen-enhanced" component={ConversationInsightsScreenEnhanced} options={{ title: 'Conversation Insights', ...defaultPostLoginOptions }} /> 
     <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
     <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
     <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
     <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
     <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
     <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal', ...defaultPostLoginOptions }} />
     {/* Common screens also accessible when logged in */}
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
     <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />

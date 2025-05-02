@@ -20,6 +20,9 @@ import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrackerScreen
+import JournalingScreen from '../screens/JournalingScreen'; // Import JournalingScreen
+import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen';
+import { ConversationInsightsScreen } from '../screens/ConversationInsightsScreen';
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 
@@ -121,6 +124,21 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       name="MoodTrackerScreen"
       component={MoodTrackerScreen}
       options={{ headerShown: true, title: 'Mood Tracker' }}
+    />
+    <Stack.Screen // Add JournalingScreen
+      name="JournalingScreen"
+      component={JournalingScreen}
+      options={{ headerShown: true, title: 'Journal' }}
+    />
+    <Stack.Screen
+      name="ConversationHistoryScreen"
+      component={ConversationHistoryScreen}
+      options={{ headerShown: true, title: 'Conversation History' }}
+    />
+    <Stack.Screen
+      name="ConversationInsightsScreen"
+      component={ConversationInsightsScreen}
+      options={{ headerShown: true, title: 'Conversation Insights' }}
     />
   </Stack.Navigator>
 );

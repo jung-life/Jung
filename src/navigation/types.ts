@@ -8,6 +8,10 @@ export type RootStackParamList = {
   PostLoginScreen: undefined;
   Home: undefined;
   ConversationsScreen: { refresh?: boolean };
+  ConversationHistoryScreen: undefined;
+  ConversationInsightsScreen: { conversationId?: string };
+  'ConversationHistoryScreen-enhanced': undefined; // Add enhanced history screen (quoted)
+  'ConversationInsightsScreen-enhanced': { conversationId?: string }; // Add enhanced insights screen (quoted)
   Chat: { 
     conversationId: string;
     avatarId?: string;
@@ -21,6 +25,7 @@ export type RootStackParamList = {
   SelfHelpResourcesScreen: undefined; // Add the missing screen
   MoodTrackerScreen: undefined; // Add Mood Tracker screen
   LoadingScreen: undefined; // Add LoadingScreen
+  JournalingScreen: undefined; // Add Journaling screen
 };
 
 // Add these types for navigation

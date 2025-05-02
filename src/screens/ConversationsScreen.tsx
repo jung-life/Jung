@@ -887,6 +887,12 @@ Return only the title text with no additional explanation or formatting.`;
         
         <View style={tw`flex-row justify-between items-center p-4`}>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
+          <TouchableOpacity
+            style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
+            onPress={() => navigation.navigate('ConversationHistoryScreen')}
+          >
+            <Text style={tw`text-jung-purple font-medium`}>History</Text>
+          </TouchableOpacity>
         </View>
         
         {loading ? (

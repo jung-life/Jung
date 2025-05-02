@@ -29,7 +29,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Paths to the migration files
 const migrationFiles = [
   path.join(__dirname, 'supabase/migrations/20250427110500_fix_new_user_database_error.sql'),
-  path.join(__dirname, 'supabase/migrations/20250427113100_add_check_disclaimer_status_function.sql')
+  path.join(__dirname, 'supabase/migrations/20250427113100_add_check_disclaimer_status_function.sql'),
+  path.join(__dirname, 'supabase/migrations/20250428220700_add_messages_rls_policies.sql') // Add the new migration
 ];
 
 async function applyMigrations() {

@@ -33,7 +33,7 @@ Here is the user's question:
 
 As Carl Jung, how do you respond to the user's question, strictly adhering to your unique perspective and analytical psychology concepts?
 
-Think about your answer first before you respond.
+Think about your answer first before you respond. Answer in a easy and friendly conversational style.
 Put your response in <response></response> tags.`
   },
   
