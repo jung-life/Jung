@@ -1,7 +1,13 @@
 -- supabase/migrations/20250428220700_add_messages_rls_policies.sql
 
 -- Enable Row Level Security on the messages table
+-- It's safe to run this even if already enabled.
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies before creating them to ensure idempotency
+DROP POLICY IF EXISTS "Users can insert their own messages" ON public.messages;
+DROP POLICY IF EXISTS "Users can select messages from their own conversations" ON public.messages;
+DROP POLICY IF EXISTS "Users can delete messages from their own conversations" ON public.messages;
 
 -- Policy: Allow users to insert their own messages
 -- Users should only be able to insert messages linked to conversations they own.

@@ -935,22 +935,41 @@ Return only the title text with no additional explanation or formatting.`;
       // Encrypt the conversation title
       const encryptedTitle = encryptData(title);
       
+      // --- Fetch the Avatar UUID based on the selected slug ---
+      console.log(`[handleCreateNewConversation] Fetching UUID for avatar slug: ${selectedAvatar}`);
+      const { data: avatarData, error: avatarError } = await supabase
+        .from('avatars')
+        .select('id') // Select the UUID primary key
+        .eq('avatar_id', selectedAvatar) // Match using the text slug (e.g., 'frankl')
+        .single();
+
+      if (avatarError || !avatarData) {
+        console.error('Error fetching avatar UUID:', avatarError);
+        Alert.alert('Error', `Could not find avatar details for "${selectedAvatar}". Please try again.`);
+        setLoading(false);
+        return;
+      }
+      
+      const avatarUuid = avatarData.id; // This is the UUID we need
+      console.log(`[handleCreateNewConversation] Found Avatar UUID: ${avatarUuid}`);
+      // --- End Fetch Avatar UUID ---
+
       // Generate a UUID for the conversation
       const conversationId = generateUUID();
       
       console.log('[handleCreateNewConversation] Creating conversation with ID:', conversationId);
-      // console.log('User ID:', user.id); // Already logged above
       console.log('[handleCreateNewConversation] Title:', title, '(encrypted)');
-      console.log('[handleCreateNewConversation] Avatar:', selectedAvatar);
+      console.log('[handleCreateNewConversation] Avatar Slug:', selectedAvatar);
+      console.log('[handleCreateNewConversation] Avatar UUID to insert:', avatarUuid);
       
-      // Create the conversation with the selected avatar and encrypted title
+      // Create the conversation using the fetched avatar UUID
       const { data, error: insertError } = await supabase
         .from('conversations')
         .insert({
           id: conversationId, 
           user_id: user.id, 
           title: encryptedTitle, 
-          avatar_id: selectedAvatar, 
+          avatar_id: avatarUuid, // Use the fetched UUID here
           updated_at: new Date().toISOString() 
         });
       
