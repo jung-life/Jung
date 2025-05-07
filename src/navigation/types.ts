@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Chat: { 
     conversationId: string;
     avatarId?: string;
+    isNewConversation?: boolean;
   };
   AccountScreen: undefined;
   PrivacyPolicyScreen: undefined;

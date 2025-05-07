@@ -13,46 +13,46 @@ export type Avatar = {
 // Define all available avatars without premium restrictions
 export const availableAvatars: Avatar[] = [
   {
-    id: 'jung',
-    name: 'Carl Jung',
-    description: 'Analytical psychology focused on the psyche through exploring dreams, art, mythology, religion, and philosophy.',
+    id: 'symbolsage', // Carl Jung -> The Symbol Sage
+    name: 'The Symbol Sage',
+    description: 'AI embodying analytical psychology, exploring dreams, archetypes, and the collective unconscious.',
   },
   {
-    id: 'freud',
-    name: 'Sigmund Freud',
-    description: 'Founder of psychoanalysis focusing on unconscious mind, defense mechanisms, and childhood experiences.',
+    id: 'mindmapper', // Sigmund Freud -> The Mind Mapper
+    name: 'The Mind Mapper',
+    description: 'AI embodying psychoanalysis, focusing on the unconscious mind, defense mechanisms, and early experiences.',
   },
   {
-    id: 'adler',
-    name: 'Alfred Adler',
-    description: 'Individual psychology emphasizing social interest, inferiority feelings, and striving for superiority.',
+    id: 'communitybuilder', // Alfred Adler -> The Community Builder
+    name: 'The Community Builder',
+    description: 'AI embodying individual psychology, emphasizing social interest, community, and life goals.',
   },
   {
-    id: 'rogers',
-    name: 'Carl Rogers',
-    description: 'Person-centered approach focusing on empathy, unconditional positive regard, and authenticity.',
-    isPremium: false, // Previously premium, now free
+    id: 'empathyengine', // Carl Rogers -> The Empathy Engine
+    name: 'The Empathy Engine',
+    description: 'AI embodying person-centered therapy, focusing on empathy, unconditional positive regard, and authenticity.',
+    isPremium: false,
   },
   {
-    id: 'frankl',
-    name: 'Viktor Frankl',
-    description: 'Logotherapy focusing on finding meaning in life and overcoming suffering.',
-    isPremium: false, // Previously premium, now free
+    id: 'meaningfinder', // Viktor Frankl -> The Meaning Finder
+    name: 'The Meaning Finder',
+    description: 'AI embodying logotherapy, focusing on finding meaning in life and overcoming suffering.',
+    isPremium: false,
   },
   {
-    id: 'maslow',
-    name: 'Abraham Maslow',
-    description: 'Humanistic psychology focusing on self-actualization and the hierarchy of needs.',
-    isPremium: false, // Previously premium, now free
+    id: 'potentialseeker', // Abraham Maslow -> The Potential Seeker
+    name: 'The Potential Seeker',
+    description: 'AI embodying humanistic psychology, focusing on self-actualization and the hierarchy of needs.',
+    isPremium: false,
   },
   {
-    id: 'horney',
-    name: 'Karen Horney',
-    description: 'Neo-Freudian psychology focusing on cultural influences and self-realization.',
+    id: 'culturecompass', // Karen Horney -> The Culture Compass
+    name: 'The Culture Compass',
+    description: 'AI embodying neo-Freudian psychology, focusing on cultural influences and self-realization.',
     isPremium: false
   },
   {
-    id: 'oracle',
+    id: 'oracle', // Stays as is
     name: 'Sage',
     description: 'Wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding of life situations.',
     isPremium: false

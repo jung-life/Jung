@@ -129,9 +129,9 @@ const PostLoginScreen = () => {
           <Text style={tw`font-semibold ${color}`}>{item.mood}</Text>
           <Text style={tw`text-xs text-gray-500 ml-auto`}>{formattedDate}</Text>
         </View>
-        {item.note && (
+        {item.note ? (
           <Text style={tw`text-sm text-gray-700 mt-1`}>{item.note}</Text>
-        )}
+        ) : null}
       </View>
     );
   };

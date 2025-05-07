@@ -48,54 +48,56 @@ export const encryptData = (data: string): string => {
  * @returns Decrypted string
  */
 export const decryptData = (encryptedData: string): string => {
+  // Attempt 1: AES (expects U2FsdGVkX1... format from CryptoJS AES)
   try {
-    // Try standard AES decryption first
     const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-    
-    // If we got a valid result, return it
-    if (decrypted) {
-      return decrypted;
-    }
-    
-    throw new Error('Standard decryption produced empty result');
-  } catch (error) {
-    console.error('Error with standard decryption, trying fallback:', error);
-    
-    try {
-      // Try Triple DES decryption as fallback
-      const simpleKey = CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY);
-      const decrypted = CryptoJS.TripleDES.decrypt(
-        encryptedData,
-        simpleKey,
-        {
-          mode: CryptoJS.mode.ECB,
-          padding: CryptoJS.pad.Pkcs7
-        }
-      );
-      
-      const result = decrypted.toString(CryptoJS.enc.Utf8);
-      if (result) {
-        return result;
+    if (bytes.sigBytes > 0) {
+      const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+      // If no replacement chars, assume success (empty string is valid plaintext)
+      if (!decryptedText.includes('\uFFFD')) {
+        return decryptedText;
       }
-      
-      throw new Error('Fallback decryption produced empty result');
-    } catch (fallbackError) {
-      console.error('Fallback decryption also failed:', fallbackError);
-      
-      // Check if it's our base64 encoded last resort
-      try {
-        const decoded = atob(encryptedData);
-        if (decoded.startsWith('UNENCRYPTED:')) {
-          return decoded.substring(12); // Remove the prefix
-        }
-      } catch (base64Error) {
-        // Not base64 encoded, continue to final error
-      }
-      
-      // If all methods fail, return the original data with a warning
-      console.warn('All decryption methods failed, returning original data');
-      return encryptedData;
+      console.warn('AES decryption resulted in replacement characters.');
     }
+    // If sigBytes <= 0 or replacement characters found, fall through.
+    // No explicit throw here to allow fallbacks if AES was tried on non-AES data.
+  } catch (aesError) {
+    // AES decryption itself threw an error (e.g. malformed input for AES)
+    // Log but allow fallbacks, as input might not have been AES.
+    // console.log('AES decryption attempt threw error, trying fallbacks:', aesError.message);
   }
+
+  // Attempt 2: TripleDES (for data possibly encrypted by TripleDES fallback in encryptData)
+  try {
+    const tdesKey = CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY);
+    const tdesBytes = CryptoJS.TripleDES.decrypt(encryptedData, tdesKey, {
+      mode: CryptoJS.mode.ECB,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    if (tdesBytes.sigBytes > 0) {
+      const tdesDecryptedText = tdesBytes.toString(CryptoJS.enc.Utf8);
+      if (!tdesDecryptedText.includes('\uFFFD')) {
+        // console.log('Successfully decrypted with TripleDES fallback.');
+        return tdesDecryptedText;
+      }
+      console.warn('TripleDES decryption resulted in replacement characters.');
+    }
+  } catch (tdesError) {
+    // console.log('TripleDES decryption attempt threw error, trying fallbacks:', tdesError.message);
+  }
+  
+  // Attempt 3: Base64 "UNENCRYPTED:" fallback (for very old data from encryptData's last resort)
+  try {
+    const decoded = atob(encryptedData); // atob throws if not valid base64
+    if (decoded.startsWith('UNENCRYPTED:')) {
+      // console.log('Successfully "decrypted" with base64 UNENCRYPTED fallback.');
+      return decoded.substring(12);
+    }
+  } catch (base64Error) {
+    // Not base64 or not our specific format.
+  }
+
+  // If all attempts fail to produce clean text, throw an error.
+  console.warn('All decryption methods failed to produce clean text for the provided encryptedData.');
+  throw new Error('All decryption methods failed.');
 };

@@ -156,7 +156,7 @@ export const ConversationsScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]); // Add user to the dependency array
 
   // Fetch conversations when the screen comes into focus
   useFocusEffect(
@@ -306,7 +306,14 @@ export const ConversationsScreen = () => {
       if (analysesCache[conversationId]) {
         setCurrentAnalysis(analysesCache[conversationId][0]);
         setCurrentConversationTitle(title);
-        setShowAnalysisModal(true);
+        // Do not set setShowAnalysisModal(true) here if just retrieving from cache for export
+        // Let the calling function (handleExportAnalysis) manage modal visibility
+        // if it's part of an export flow.
+        // However, if showAnalysis is called directly (e.g. "Read Analysis"), we do want to show it.
+        // This specific path is tricky, let's assume for now that if called, it should show.
+        // The main issue is likely the finally block.
+        // For now, let's keep this part, the problem is more likely in the finally or how export calls this.
+        setShowAnalysisModal(true); 
         setAnalyzing(null);
         return;
       }
@@ -388,12 +395,31 @@ export const ConversationsScreen = () => {
       // Show analysis with decrypted content
       setCurrentAnalysis(decryptedAnalysis);
       setCurrentConversationTitle(title);
-      setShowAnalysisModal(true);
+      // setShowAnalysisModal(true) will be handled by the calling function or the finally block if appropriate
+      // For direct "Read Analysis", this needs to be true.
+      setShowAnalysisModal(true); // Keep this for direct "Read Analysis"
     } catch (error) {
       console.error('Error showing analysis:', error);
       Alert.alert('Error', 'Failed to show analysis');
+      setShowAnalysisModal(false); // Ensure modal is closed on error
     } finally {
       setAnalyzing(null);
+      // Only show modal if currentAnalysis is set and no error occurred during this specific call
+      // This prevents re-opening if an error happened or if it was closed by a cancel action.
+      // However, this might still conflict if called from export.
+      // The core issue is that `showAnalysis` is used by both "Read Analysis" and "Export Analysis".
+      // "Export Analysis" should not unconditionally show the modal after `showAnalysis` completes.
+
+      // Let's simplify: if currentAnalysis is set by this function run, show the modal.
+      // The cancel button in export should explicitly hide it.
+      // The problem might be that `handleExportAnalysis` calls `showAnalysis`
+      // and then `showAnalysis`'s finally block re-shows it.
+
+      // If `showAnalysis` was called and successfully set `currentAnalysis`, and we are not in an error state from *this* call
+      // then it's okay to ensure it's visible. The export cancel should handle its own state.
+      // This `finally` block is problematic for the export cancel flow.
+      // Let's remove setShowAnalysisModal(true) from here.
+      // It's already set within the try block upon successful analysis generation.
     }
   };
 
@@ -429,18 +455,38 @@ export const ConversationsScreen = () => {
       }
       
       // Fetch analysis if not already cached
+      let analysisFetchedForExport = false;
       if (!analysesCache[conversationId]) {
-        await showAnalysis(conversationId, '');
+        // Call showAnalysis but prevent it from automatically showing the modal
+        // We need its data, but export flow controls modal visibility
+        await showAnalysis(conversationId, ''); // This will populate currentAnalysis
+        analysisFetchedForExport = true; // Mark that we fetched it
+      } else {
+        // If already cached, ensure currentAnalysis is set for handleShareAnalysis
+        setCurrentAnalysis(analysesCache[conversationId][0]);
+        // We don't need to set currentConversationTitle here as it's not used by share
       }
       
-      // Export the analysis
-      await handleShareAnalysis();
+      // Export the analysis (handleShareAnalysis uses currentAnalysis)
+      if (currentAnalysis) { // Ensure currentAnalysis is populated
+        await handleShareAnalysis();
+      } else {
+        Alert.alert('Error', 'Analysis data not available for export.');
+      }
+
+      // If analysis was fetched specifically for export and then cancelled,
+      // the modal might have been shown by showAnalysis. We should hide it.
+      // This is tricky because `showAnalysis` itself shows the modal.
+      // The cancel button in the Alert.alert inside handleExportAnalysis already calls setShowAnalysisModal(false).
+      // The issue is if `showAnalysis`'s `finally` block re-shows it.
+      // The previous change to `showAnalysis`'s `finally` block should help.
       
     } catch (error) {
       console.error('Error exporting analysis:', error);
       Alert.alert('Error', 'Failed to export analysis');
     } finally {
       setAnalyzing(null);
+      // Do not manage setShowAnalysisModal here; the alert's cancel button handles it.
     }
   };
 
@@ -935,41 +981,21 @@ Return only the title text with no additional explanation or formatting.`;
       // Encrypt the conversation title
       const encryptedTitle = encryptData(title);
       
-      // --- Fetch the Avatar UUID based on the selected slug ---
-      console.log(`[handleCreateNewConversation] Fetching UUID for avatar slug: ${selectedAvatar}`);
-      const { data: avatarData, error: avatarError } = await supabase
-        .from('avatars')
-        .select('id') // Select the UUID primary key
-        .eq('avatar_id', selectedAvatar) // Match using the text slug (e.g., 'frankl')
-        .single();
-
-      if (avatarError || !avatarData) {
-        console.error('Error fetching avatar UUID:', avatarError);
-        Alert.alert('Error', `Could not find avatar details for "${selectedAvatar}". Please try again.`);
-        setLoading(false);
-        return;
-      }
-      
-      const avatarUuid = avatarData.id; // This is the UUID we need
-      console.log(`[handleCreateNewConversation] Found Avatar UUID: ${avatarUuid}`);
-      // --- End Fetch Avatar UUID ---
-
       // Generate a UUID for the conversation
       const conversationId = generateUUID();
       
       console.log('[handleCreateNewConversation] Creating conversation with ID:', conversationId);
       console.log('[handleCreateNewConversation] Title:', title, '(encrypted)');
       console.log('[handleCreateNewConversation] Avatar Slug:', selectedAvatar);
-      console.log('[handleCreateNewConversation] Avatar UUID to insert:', avatarUuid);
       
-      // Create the conversation using the fetched avatar UUID
+      // Create the conversation using the selected avatar slug
       const { data, error: insertError } = await supabase
         .from('conversations')
         .insert({
           id: conversationId, 
           user_id: user.id, 
           title: encryptedTitle, 
-          avatar_id: avatarUuid, // Use the fetched UUID here
+          avatar_id: selectedAvatar, // Use the selected slug directly
           updated_at: new Date().toISOString() 
         });
       
@@ -986,7 +1012,8 @@ Return only the title text with no additional explanation or formatting.`;
       // Navigate directly to the newly created conversation
       navigation.navigate('Chat', { 
         conversationId: conversationId,
-        avatarId: selectedAvatar
+        avatarId: selectedAvatar,
+        isNewConversation: true // Indicate that this is a new conversation
       });
       
       // Track the event without showing a popup

@@ -14,7 +14,7 @@ import {
   Share       // Add Share
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard'; // Import Clipboard
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { RootStackParamList, RootStackNavigationProp } from '../navigation/types';
@@ -53,7 +53,7 @@ type Conversation = {
 export const ChatScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Chat'>>();
-  const { conversationId, avatarId = 'jung' } = route.params;
+  const { conversationId, avatarId = 'jung', isNewConversation } = route.params; // Added isNewConversation
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -75,7 +75,12 @@ export const ChatScreen = () => {
   }, [avatarId]);
   
   // Fetch conversation details including the avatar_id and title
-  const fetchConversation = async () => {
+  const fetchConversation = useCallback(async () => {
+    if (!conversationId) {
+      console.error('fetchConversation called without a conversationId.');
+      // Alert.alert('Error', 'Cannot load conversation details: Conversation ID is missing.');
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('conversations')
@@ -92,7 +97,7 @@ export const ChatScreen = () => {
     } catch (error) {
       console.error('Error fetching conversation:', error);
     }
-  };
+  }, [conversationId]);
   
   // Fetch messages for this conversation
   const fetchMessages = useCallback(async () => {
@@ -105,9 +110,20 @@ export const ChatScreen = () => {
       // navigation.goBack(); 
       return; 
     }
+    console.log(`fetchMessages: Called for conversationId: ${conversationId}`); // Diagnostic log
     
     try {
       setLoading(true);
+
+      // Diagnostic: Check current auth state directly before fetching messages
+      const { data: { user: currentUser }, error: authCheckError } = await supabase.auth.getUser();
+      if (authCheckError || !currentUser) {
+        console.error('fetchMessages: Auth check failed or no current user.', { authCheckError, userId: currentUser?.id });
+        Alert.alert('Authentication Error', 'Cannot load messages. User not authenticated during fetch.');
+        setLoading(false);
+        return;
+      }
+      console.log(`fetchMessages: Authenticated user for RLS check: ${currentUser.id}`); // Diagnostic log
       
       // Fetch conversation details to get the title and avatar
       const { data: convData, error: convError } = await supabase
@@ -171,9 +187,13 @@ export const ChatScreen = () => {
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
+
+      // Diagnostic: Log the result of fetching messages
+      console.log(`fetchMessages: Result for conversationId ${conversationId}`, { dataLength: data?.length, error });
         
       if (error) {
         console.error('Error fetching messages:', error);
+        Alert.alert('Error', `Failed to load messages: ${error.message}`);
         return;
       }
       
@@ -181,13 +201,13 @@ export const ChatScreen = () => {
         const formattedMessages = data.map(msg => {
           let messageContent = msg.content;
           
-          // Decrypt message content if it appears to be encrypted
-          if (messageContent && messageContent.startsWith('U2FsdGVkX1')) {
+          // Always attempt to decrypt content from DB if it's not null or undefined
+          if (messageContent) {
             try {
               messageContent = decryptData(messageContent);
             } catch (decryptError) {
-              console.error('Error decrypting message:', decryptError);
-              // If decryption fails, use the original content
+              console.error('Error decrypting message:', decryptError, msg.id);
+              messageContent = "[Unable to decrypt message]";
             }
           }
           
@@ -201,8 +221,8 @@ export const ChatScreen = () => {
         
         setMessages(formattedMessages);
         
-        // If no messages, send an initial greeting
-        if (formattedMessages.length === 0) {
+        // If no messages AND it's a new conversation, send an initial greeting
+        if (formattedMessages.length === 0 && isNewConversation) {
           sendInitialGreeting();
         }
       }
@@ -213,46 +233,98 @@ export const ChatScreen = () => {
     }
   }, [conversationId, route.params]);
   
-  useEffect(() => {
-    fetchConversation();
-    fetchMessages();
-    
-    // Set up real-time subscription for new messages
-    const subscription = supabase
-      .channel('messages')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`
-      }, (payload) => {
-        console.log('New message received:', payload);
-        
-        // Need to handle the incoming message by properly mapping it to our Message type
-        const newMsg = payload.new;
-        const messageContent = newMsg.content;
-        
-        // Try to decrypt the message if it appears to be encrypted
-        const decryptedContent = messageContent && messageContent.startsWith('U2FsdGVkX1') 
-          ? decryptData(messageContent) 
-          : messageContent;
+  // useFocusEffect for fetching data and managing subscriptions
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true; // Flag to prevent state updates if component is unmounted quickly
+
+      if (conversationId) {
+        console.log(`ChatScreen focused with conversationId: ${conversationId}`);
+        fetchConversation().catch(err => console.error("Error in fetchConversation on focus:", err));
+        fetchMessages().catch(err => console.error("Error in fetchMessages on focus:", err));
+      } else {
+        console.warn("ChatScreen focused without a conversationId.");
+        // Potentially clear messages or show an error state if appropriate
+        // setMessages([]); 
+        // setLoading(false);
+      }
+
+      // Ensure conversationId is available before subscribing
+      if (!conversationId) {
+        return;
+      }
+
+      const channelName = `chat-messages-${conversationId}`;
+      const channel = supabase.channel(channelName);
+
+      const subscription = channel
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        }, (payload) => {
+          if (!isActive) return;
+
+          console.log('New message received via subscription:', payload);
           
-        const formattedMessage: Message = {
-          id: newMsg.id,
-          conversation_id: newMsg.conversation_id,
-          content: decryptedContent,
-          role: newMsg.is_from_user ? 'user' as const : 'assistant' as const,
-          created_at: newMsg.created_at
-        };
+          const newMsg = payload.new;
+          // Ensure newMsg and its properties are defined
+          if (!newMsg || !newMsg.id || !newMsg.content || !newMsg.created_at) {
+            console.error('Received incomplete message payload:', payload);
+            return;
+          }
+
+          let messageContent = newMsg.content;
+          
+          // Always attempt to decrypt content from DB if it's not null or undefined
+          if (messageContent) {
+            try {
+              messageContent = decryptData(messageContent);
+            } catch (decryptError) {
+              console.error('Error decrypting subscribed message:', decryptError, newMsg.id);
+              messageContent = "[Unable to decrypt message]";
+            }
+          }
+            
+          const formattedMessage: Message = {
+            id: newMsg.id,
+            conversation_id: newMsg.conversation_id,
+            content: messageContent,
+            role: newMsg.is_from_user ? 'user' as const : 'assistant' as const,
+            created_at: newMsg.created_at
+          };
+          
+          // Check for duplicate messages before adding
+          setMessages(prev => {
+            if (prev.find(m => m.id === formattedMessage.id)) {
+              return prev; // Message already exists, do not add duplicate
+            }
+            return [...prev, formattedMessage];
+          });
+        })
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Successfully subscribed to ${channelName}`);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Subscription error on ${channelName}: ${status}`, err);
+            // Optionally, try to resubscribe or notify user
+          } else {
+            console.log(`Subscription status on ${channelName}: ${status}`);
+          }
+        });
         
-        setMessages(prev => [...prev, formattedMessage]);
-      })
-      .subscribe();
-      
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [conversationId, fetchMessages]);
+      return () => {
+        isActive = false;
+        console.log(`Cleaning up subscription for ${channelName}`);
+        if (channel) {
+          supabase.removeChannel(channel)
+            .then(status => console.log(`Removed channel ${channelName} status:`, status))
+            .catch(error => console.error(`Error removing channel ${channelName}:`, error));
+        }
+      };
+    }, [conversationId, fetchMessages, fetchConversation]) // Dependencies for useFocusEffect's useCallback
+  );
 
   // Automatically scroll to the new message when messages change
   useEffect(() => {
@@ -283,36 +355,51 @@ export const ChatScreen = () => {
       // Normalize the avatar ID to handle case sensitivity and trim any whitespace
       const normalizedAvatarId = currentAvatarId.toLowerCase().trim();
       
-      switch (normalizedAvatarId) {
-        case 'jung':
-          greeting = "Hello, I'm an AI assistant with knowledge of Carl Jung's analytical psychology. I can help you explore your psyche through the lens of Jung's theories on dreams, archetypes, and the collective unconscious. What's on your mind today?";
+      // Map to new creative keys if old keys are somehow still passed.
+      // This provides a layer of backward compatibility for the greeting switch.
+      // Ideally, currentAvatarId should already be the new creative key.
+      const keyMap: Record<string, string> = {
+        'jung': 'symbolsage', 'freud': 'mindmapper', 'adler': 'communitybuilder',
+        'rogers': 'empathyengine', 'frankl': 'meaningfinder', 'maslow': 'potentialseeker',
+        'horney': 'culturecompass',
+        // New keys map to themselves
+        'symbolsage': 'symbolsage', 'mindmapper': 'mindmapper', 'communitybuilder': 'communitybuilder',
+        'empathyengine': 'empathyengine', 'meaningfinder': 'meaningfinder', 'potentialseeker': 'potentialseeker',
+        'culturecompass': 'culturecompass', 'oracle': 'oracle', 'morpheus': 'morpheus'
+      };
+      const displayKey = keyMap[normalizedAvatarId] || normalizedAvatarId;
+
+      switch (displayKey) {
+        case 'symbolsage': // Carl Jung -> The Symbol Sage
+          greeting = "Hello, I am The Symbol Sage, an AI assistant embodying analytical psychology. I can help you explore your psyche through theories on dreams, archetypes, and the collective unconscious. What's on your mind today?";
           break;
-        case 'freud':
-          greeting = "Good day, I'm an AI assistant with expertise in Sigmund Freud's psychoanalytic theories. I can help you explore concepts like the unconscious mind, defense mechanisms, and childhood experiences. What would you like to discuss?";
+        case 'mindmapper': // Sigmund Freud -> The Mind Mapper
+          greeting = "Greetings. I am The Mind Mapper, an AI assistant versed in psychoanalytic theories. I can help you explore concepts like the unconscious mind, defense mechanisms, and early experiences. What would you like to discuss?";
           break;
-        case 'adler':
-          greeting = "Hello, I'm an AI assistant specializing in Alfred Adler's individual psychology. I can help you understand your social context, feelings of inferiority, and life goals through an Adlerian perspective. What brings you here today?";
+        case 'communitybuilder': // Alfred Adler -> The Community Builder
+          greeting = "Hello! I'm The Community Builder, an AI assistant specializing in individual psychology. I can help you understand your social context, feelings, and life goals. What brings you here today?";
           break;
-        case 'rogers':
-          greeting = "Hello there, I'm an AI assistant informed by Carl Rogers' person-centered approach. I aim to provide a space of empathy and unconditional positive regard as you explore your feelings. What would you like to talk about?";
+        case 'empathyengine': // Carl Rogers -> The Empathy Engine
+          greeting = "Hello there. I am The Empathy Engine, an AI assistant informed by the person-centered approach. I aim to provide a space of empathy and unconditional positive regard. What would you like to talk about?";
           break;
-        case 'frankl':
-          greeting = "Greetings, I'm an AI assistant with knowledge of Viktor Frankl's logotherapy. I can help you explore meaning in your life and ways to transform suffering into purpose. What matters to you most right now?";
+        case 'meaningfinder': // Viktor Frankl -> The Meaning Finder
+          greeting = "Greetings. I am The Meaning Finder, an AI assistant with knowledge of logotherapy. I can help you explore meaning in your life and transform suffering into purpose. What matters to you most right now?";
           break;
-        case 'maslow':
-          greeting = "Hello, I'm an AI assistant versed in Abraham Maslow's humanistic psychology. I can help you explore self-actualization and your hierarchy of needs. What aspects of your potential would you like to discuss?";
+        case 'potentialseeker': // Abraham Maslow -> The Potential Seeker
+          greeting = "Hello! I am The Potential Seeker, an AI assistant versed in humanistic psychology. I can help you explore self-actualization and your hierarchy of needs. What aspects of your potential would you like to discuss?";
           break;
-        case 'horney':
-          greeting = "Hello, I'm an AI assistant with expertise in Karen Horney's neo-Freudian psychology. I can help you understand how cultural and social influences shape your experiences and self-concept. What would you like to discuss?";
+        case 'culturecompass': // Karen Horney -> The Culture Compass
+          greeting = "Hello. I am The Culture Compass, an AI assistant with expertise in neo-Freudian psychology. I can help you understand how cultural and social influences shape your experiences. What would you like to discuss?";
           break;
-        case 'oracle':
+        case 'oracle': // Stays Sage/Oracle
           greeting = "Welcome, I'm the Sage Guide AI assistant. I use a wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding. I can help you see connections and possibilities you might have missed. What guidance do you seek today?";
           break;
-        case 'morpheus':
+        case 'morpheus': // Stays Awakener/Morpheus
           greeting = "Welcome. I'm the Awakener AI assistant. My approach is to help you question assumptions, think critically about your beliefs, and discover new perspectives. What limitations or beliefs are you ready to examine?";
           break;
         default:
-          console.warn(`Unknown avatar ID: ${currentAvatarId}, using default greeting`);
+          console.warn(`Unknown avatar ID for greeting: '${currentAvatarId}' (normalized to '${normalizedAvatarId}', displayKey '${displayKey}'). Using default greeting.`);
+          // Default to a generic greeting or Symbol Sage's greeting if preferred
           greeting = "Hello, I'm an AI assistant here to support your journey of self-discovery and personal growth. How can I help you today?";
       }
       
@@ -330,18 +417,31 @@ export const ChatScreen = () => {
       const encryptedContent = encryptData(greeting);
       
       // Save to database
-      await supabase
+      const initialMsgToInsert = {
+        id: aiMessage.id,
+        conversation_id: conversationId,
+        content: encryptedContent,
+        role: 'assistant', // Explicitly set role
+        is_from_user: false,
+        created_at: aiMessage.created_at
+      };
+      console.log('sendInitialGreeting: Attempting to insert initial message:', initialMsgToInsert);
+      const { data: insertData, error: insertError } = await supabase
         .from('messages')
-        .insert({
-          id: aiMessage.id,
-          conversation_id: conversationId,
-          content: encryptedContent,
-          is_from_user: false,
-          created_at: aiMessage.created_at
-        });
+        .insert(initialMsgToInsert)
+        .select(); // select() to get the inserted row back, or error
+        
+      if (insertError) {
+        console.error('sendInitialGreeting: Error inserting initial message:', insertError, 'Data:', initialMsgToInsert);
+        Alert.alert('Error', `Failed to save initial greeting: ${insertError.message}`);
+      } else {
+        console.log('sendInitialGreeting: Successfully inserted initial message:', insertData);
+      }
         
     } catch (error) {
       console.error('Error sending initial greeting:', error);
+      // Ensure Alert is shown for any other catch block error
+      Alert.alert('Error', 'An unexpected error occurred while sending initial greeting.');
     } finally {
       setIsTyping(false);
     }
@@ -369,15 +469,31 @@ export const ChatScreen = () => {
       const encryptedContent = encryptData(userMessage.content);
       
       // Save user message to database
-      await supabase
+      const userMsgToInsert = {
+        id: userMessage.id,
+        conversation_id: conversationId,
+        content: encryptedContent,
+        role: 'user', // Explicitly set role
+        is_from_user: true,
+        created_at: userMessage.created_at
+      };
+      console.log('handleSendMessage: Attempting to insert user message:', userMsgToInsert);
+      const { data: userInsertData, error: userInsertError } = await supabase
         .from('messages')
-        .insert({
-          id: userMessage.id,
-          conversation_id: conversationId,
-          content: encryptedContent,
-          is_from_user: true,
-          created_at: userMessage.created_at
-        });
+        .insert(userMsgToInsert)
+        .select();
+      
+      if (userInsertError) {
+        console.error('handleSendMessage: Error inserting user message:', userInsertError, 'Data:', userMsgToInsert);
+        // Display a more specific error and stop further execution in this block
+        Alert.alert('Error', `Failed to save your message: ${userInsertError.message}`);
+        setIsTyping(false); // Reset typing indicator
+        // Optionally, remove the optimistically added message from local state if save fails
+        // setMessages(prevMessages => prevMessages.filter(msg => msg.id !== userMessage.id));
+        return; // Stop if user message failed to save
+      } else {
+        console.log('handleSendMessage: Successfully inserted user message:', userInsertData);
+      }
       
       // Format conversation history for AI
       const history = updatedMessages
@@ -417,19 +533,33 @@ export const ChatScreen = () => {
       const encryptedAIContent = encryptData(aiMessage.content);
       
       // Save AI message to database
-      await supabase
+      const aiMsgToInsert = {
+        id: aiMessage.id,
+        conversation_id: conversationId,
+        content: encryptedAIContent,
+        role: 'assistant', // Explicitly set role
+        is_from_user: false,
+        created_at: aiMessage.created_at
+      };
+      console.log('handleSendMessage: Attempting to insert AI message:', aiMsgToInsert);
+      const { data: aiInsertData, error: aiInsertError } = await supabase
         .from('messages')
-        .insert({
-          id: aiMessage.id,
-          conversation_id: conversationId,
-          content: encryptedAIContent,
-          is_from_user: false,
-          created_at: aiMessage.created_at
-        });
+        .insert(aiMsgToInsert)
+        .select();
+
+      if (aiInsertError) {
+        console.error('handleSendMessage: Error inserting AI message:', aiInsertError, 'Data:', aiMsgToInsert);
+        Alert.alert('Error', `Failed to save AI response: ${aiInsertError.message}`);
+        // Optionally, handle the UI for the AI message if its save fails
+        // e.g., remove it or mark it as unsaved
+      } else {
+        console.log('handleSendMessage: Successfully inserted AI message:', aiInsertData);
+      }
       
     } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      // Ensure a generic alert for other types of errors in this try-catch
+      Alert.alert('Error', 'An unexpected error occurred while sending your message. Please try again.');
     } finally {
       setIsTyping(false);
     }

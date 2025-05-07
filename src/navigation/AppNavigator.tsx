@@ -26,7 +26,10 @@ import { ConversationInsightsScreen } from '../screens/ConversationInsightsScree
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 
+// Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
+// New Stack specifically for the Loading state
+const LoadingStateStack = createNativeStackNavigator<{ LoadingScreen: undefined }>();
 
 // Default header options with hamburger menu
 const defaultPostLoginOptions = {
@@ -150,11 +153,15 @@ const AppNavigator = () => {
 
   // Show loading screen while checking auth state
   if (loading) {
-    // Render LoadingScreen directly, NavigationContainer will wrap the chosen stack
-    return <LoadingScreen />;
+    // Ensure LoadingScreen is part of a navigator
+    return (
+      <LoadingStateStack.Navigator screenOptions={{ headerShown: false }}>
+        <LoadingStateStack.Screen name="LoadingScreen" component={LoadingScreen} />
+      </LoadingStateStack.Navigator>
+    );
   }
 
-  // Return the appropriate stack directly, or the LoadingScreen
+  // Return the appropriate stack directly.
   // NavigationContainer will be handled in App.tsx
   return user ? <MainAppStack isNewUser={isNewUser} /> : <AuthStack />;
 };
