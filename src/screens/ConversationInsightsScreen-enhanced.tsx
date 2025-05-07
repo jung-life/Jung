@@ -71,14 +71,17 @@ export const ConversationInsightsScreenEnhanced = () => {
       }
       
       if (data) {
-        // Decrypt title if needed
+        // Decrypt title if needed - using the improved decryptData that doesn't throw errors
         let title = data.title;
-        try {
-          if (title && title.startsWith('U2FsdGVkX1')) {
-            title = decryptData(title);
+        if (title) {
+          // decryptData now handles all errors internally
+          title = decryptData(title);
+          
+          // If decryption failed, use a default title
+          if (title === '[Encrypted Content]') {
+            title = 'Untitled Conversation';
           }
-        } catch (e) {
-          console.error('Error decrypting title:', e);
+        } else {
           title = 'Untitled Conversation';
         }
         
@@ -117,23 +120,37 @@ export const ConversationInsightsScreenEnhanced = () => {
         return;
       }
       
-      // Decrypt messages
+      // Decrypt messages - using the improved decryptData that doesn't throw errors
       const decryptedMessages = messages.map(msg => {
         let content = msg.content;
-        try {
-          if (content && content.startsWith('U2FsdGVkX1')) {
-            content = decryptData(content);
-          }
-        } catch (e) {
-          console.error('Error decrypting message:', e);
-          content = '[Encrypted Message]';
+        if (content) {
+          // decryptData now handles all errors internally and returns a placeholder if needed
+          content = decryptData(content);
         }
         return { ...msg, content };
       });
       
-      // Format messages for analysis
-      const formattedConversation = decryptedMessages
-        .map(msg => `${msg.is_from_user ? 'User' : 'AI'}: ${msg.content}`)
+      // Filter out any messages that couldn't be decrypted properly
+      const validMessages = decryptedMessages.filter(msg => 
+        msg.content && 
+        msg.content !== '[Encrypted Content]' && 
+        msg.content !== '[Encrypted Message]'
+      );
+      
+      // Check if we have enough valid messages to perform analysis
+      if (validMessages.length === 0) {
+        setError('No readable messages found in this conversation. The messages may be encrypted or corrupted.');
+        setAnalyzing(false);
+        return;
+      }
+      
+      // Format messages for analysis - only use validMessages (not decryptedMessages)
+      // Use a more explicit format to make it clear this is a human conversation
+      const formattedConversation = validMessages
+        .map(msg => {
+          const role = msg.is_from_user ? 'Human' : 'Assistant';
+          return `${role}: ${msg.content}`;
+        })
         .join('\n\n');
       
       // Get the avatar details for the conversation
@@ -203,8 +220,13 @@ export const ConversationInsightsScreenEnhanced = () => {
       const prompt = `
         ${avatarContext}
         
-        Conversation to analyze:
+        SYSTEM INSTRUCTION: The following text block contains a transcript of a dialogue between a Human user and an AI Assistant. This is plain, unencrypted English text. Your task is to perform a psychological analysis of this dialogue. Do NOT treat this text as encrypted or coded. Analyze it as a standard human-AI conversation.
+        
+        --- BEGIN CONVERSATION TRANSCRIPT ---
         ${formattedConversation}
+        --- END CONVERSATION TRANSCRIPT ---
+        
+        ${validMessages.some(msg => msg.content === "[Unable to decrypt message]") ? "Note: Some parts of the conversation were unavailable (marked as '[Unable to decrypt message]') and are not included in the transcript above. Please provide your analysis based on the available text." : ""}
         
         Please provide a comprehensive analysis with the following sections:
         
@@ -307,15 +329,19 @@ export const ConversationInsightsScreenEnhanced = () => {
       }
       
       if (data && data.length > 0) {
-        // Decrypt content if needed
+        // Decrypt content if needed - using the improved decryptData that doesn't throw errors
         let content = data[0].content;
-        try {
-          if (content && content.startsWith('U2FsdGVkX1')) {
-            content = decryptData(content);
-          }
-        } catch (e) {
-          console.error('Error decrypting insight content:', e);
-          content = 'Error decrypting insight content.';
+        if (content) {
+          // decryptData now handles all errors internally
+          content = decryptData(content);
+        }
+        
+        // Check if content was successfully decrypted
+        if (content === '[Encrypted Content]') {
+          console.warn('Could not decrypt insight content');
+          setError('Unable to decrypt the analysis content. Please try regenerating the analysis.');
+          setLoading(false);
+          return;
         }
         
         setInsight({

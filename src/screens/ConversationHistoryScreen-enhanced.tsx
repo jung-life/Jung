@@ -93,14 +93,17 @@ export const ConversationHistoryScreen = () => {
         // Extract avatar_id from the conversations join
         const avatarId = item.conversations ? (item.conversations as any).avatar_id : null;
         
-        // Decrypt title if needed
+        // Decrypt title if needed - using the improved decryptData that doesn't throw errors
         let title = item.title;
-        try {
-          if (title && title.startsWith('U2FsdGVkX1')) {
-            title = decryptData(title);
+        if (title) {
+          // decryptData now handles all errors internally
+          title = decryptData(title);
+          
+          // If decryption failed, use a default title
+          if (title === '[Encrypted Content]') {
+            title = 'Untitled Conversation';
           }
-        } catch (e) {
-          console.error('Error decrypting title:', e);
+        } else {
           title = 'Untitled Conversation';
         }
         

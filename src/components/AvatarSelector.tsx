@@ -13,43 +13,16 @@ export type Avatar = {
 // Define all available avatars without premium restrictions
 export const availableAvatars: Avatar[] = [
   {
-    id: 'symbolsage', // Carl Jung -> The Symbol Sage
-    name: 'The Symbol Sage',
-    description: 'AI embodying analytical psychology, exploring dreams, archetypes, and the collective unconscious.',
-  },
-  {
-    id: 'mindmapper', // Sigmund Freud -> The Mind Mapper
-    name: 'The Mind Mapper',
-    description: 'AI embodying psychoanalysis, focusing on the unconscious mind, defense mechanisms, and early experiences.',
-  },
-  {
-    id: 'communitybuilder', // Alfred Adler -> The Community Builder
-    name: 'The Community Builder',
-    description: 'AI embodying individual psychology, emphasizing social interest, community, and life goals.',
-  },
-  {
-    id: 'empathyengine', // Carl Rogers -> The Empathy Engine
-    name: 'The Empathy Engine',
-    description: 'AI embodying person-centered therapy, focusing on empathy, unconditional positive regard, and authenticity.',
+    id: 'depthdelver',
+    name: 'The Depth Delver',
+    description: 'An AI guide into the profound depths of the psyche, illuminating the landscapes of the unconscious, interpreting dreams, and revealing the power of archetypes and symbols to unlock self-understanding.',
     isPremium: false,
   },
   {
-    id: 'meaningfinder', // Viktor Frankl -> The Meaning Finder
-    name: 'The Meaning Finder',
-    description: 'AI embodying logotherapy, focusing on finding meaning in life and overcoming suffering.',
+    id: 'flourishingguide',
+    name: 'The Flourishing Guide',
+    description: 'An AI companion dedicated to fostering holistic well-being. It champions empathy, guides users in discovering their unique potential, finding meaning in their experiences, building strong community connections, and navigating cultural influences for authentic self-realization.',
     isPremium: false,
-  },
-  {
-    id: 'potentialseeker', // Abraham Maslow -> The Potential Seeker
-    name: 'The Potential Seeker',
-    description: 'AI embodying humanistic psychology, focusing on self-actualization and the hierarchy of needs.',
-    isPremium: false,
-  },
-  {
-    id: 'culturecompass', // Karen Horney -> The Culture Compass
-    name: 'The Culture Compass',
-    description: 'AI embodying neo-Freudian psychology, focusing on cultural influences and self-realization.',
-    isPremium: false
   },
   {
     id: 'oracle', // Stays as is

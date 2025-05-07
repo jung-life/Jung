@@ -45,25 +45,80 @@ export const encryptData = (data: string): string => {
 /**
  * Decrypts AES encrypted data with fallback methods
  * @param encryptedData - Encrypted string to decrypt
- * @returns Decrypted string
+ * @returns Decrypted string or a placeholder if decryption fails
  */
 export const decryptData = (encryptedData: string): string => {
+  // If input is null, undefined, or not a string, return a placeholder
+  if (!encryptedData || typeof encryptedData !== 'string') {
+    console.warn('decryptData received invalid input:', encryptedData);
+    return "[Encrypted Content]";
+  }
+  
+  // If the input doesn't look encrypted (doesn't start with common encryption patterns),
+  // it might already be plaintext, so return it as is
+  if (!encryptedData.startsWith('U2FsdGVkX1') && 
+      !encryptedData.match(/^[A-Za-z0-9+/=]{20,}$/) &&
+      encryptedData.length < 100) {
+    return encryptedData;
+  }
+
+  // Helper to check if decrypted text is suspicious (e.g., still looks encrypted)
+  const isSuspiciousOutput = (text: string, originalInput: string): boolean => {
+    if (typeof text !== 'string') return true; 
+    if (text === originalInput) return true; 
+    if (text.startsWith('U2FsdGVkX1')) return true; 
+
+    // Check for non-printable ASCII characters (excluding tab, newline, carriage return)
+    let nonPrintableCharFound = false;
+    for (let i = 0; i < text.length; i++) {
+      const charCode = text.charCodeAt(i);
+      if (charCode < 32 && charCode !== 9 && charCode !== 10 && charCode !== 13) {
+        nonPrintableCharFound = true;
+        break;
+      }
+    }
+    if (nonPrintableCharFound) {
+      // console.warn("Suspicious: output contains non-printable characters.");
+      return true;
+    }
+
+    // Heuristic: If the string is moderately long and consists ONLY of hex characters 
+    // or ONLY of base64 characters (without spaces), it might be suspicious.
+    if (text.length > 20) { // Arbitrary length threshold 
+      const hexRegex = /^[0-9a-fA-F]+$/;
+      const base64Regex = /^[A-Za-z0-9+/=]+$/;
+      
+      if (hexRegex.test(text)) {
+        // Further check: ensure it's not just a large number that happens to be in hex.
+        // If it contains A-F, it's more likely a hex string than a decimal number.
+        if (/[a-fA-F]/.test(text) || text.length > String(Number.MAX_SAFE_INTEGER).length) {
+           // console.warn("Suspicious: output looks like a long hex string.");
+          return true;
+        }
+      }
+      
+      if (base64Regex.test(text) && !text.includes(' ') && text.length > 32) { // Stricter length for spaceless base64
+        // This is more likely an encoded blob if it's long, pure base64, and has no spaces.
+        // console.warn("Suspicious: output looks like a long, spaceless base64 string.");
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Attempt 1: AES (expects U2FsdGVkX1... format from CryptoJS AES)
   try {
     const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
     if (bytes.sigBytes > 0) {
       const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-      // If no replacement chars, assume success (empty string is valid plaintext)
-      if (!decryptedText.includes('\uFFFD')) {
+      if (!decryptedText.includes('\uFFFD') && !isSuspiciousOutput(decryptedText, encryptedData)) {
         return decryptedText;
       }
-      console.warn('AES decryption resulted in replacement characters.');
+      // console.warn('AES decryption resulted in replacement characters or suspicious output.');
     }
-    // If sigBytes <= 0 or replacement characters found, fall through.
-    // No explicit throw here to allow fallbacks if AES was tried on non-AES data.
+    // If sigBytes <= 0, replacement characters found, or output is suspicious, fall through.
   } catch (aesError) {
     // AES decryption itself threw an error (e.g. malformed input for AES)
-    // Log but allow fallbacks, as input might not have been AES.
     // console.log('AES decryption attempt threw error, trying fallbacks:', aesError.message);
   }
 
@@ -76,11 +131,11 @@ export const decryptData = (encryptedData: string): string => {
     });
     if (tdesBytes.sigBytes > 0) {
       const tdesDecryptedText = tdesBytes.toString(CryptoJS.enc.Utf8);
-      if (!tdesDecryptedText.includes('\uFFFD')) {
+      if (!tdesDecryptedText.includes('\uFFFD') && !isSuspiciousOutput(tdesDecryptedText, encryptedData)) {
         // console.log('Successfully decrypted with TripleDES fallback.');
         return tdesDecryptedText;
       }
-      console.warn('TripleDES decryption resulted in replacement characters.');
+      // console.warn('TripleDES decryption resulted in replacement characters or suspicious output.');
     }
   } catch (tdesError) {
     // console.log('TripleDES decryption attempt threw error, trying fallbacks:', tdesError.message);
@@ -97,7 +152,7 @@ export const decryptData = (encryptedData: string): string => {
     // Not base64 or not our specific format.
   }
 
-  // If all attempts fail to produce clean text, throw an error.
+  // If all attempts fail to produce clean text, return a placeholder instead of throwing an error
   console.warn('All decryption methods failed to produce clean text for the provided encryptedData.');
-  throw new Error('All decryption methods failed.');
+  return "[Encrypted Content]";
 };

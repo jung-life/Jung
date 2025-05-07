@@ -135,21 +135,20 @@ export const ChatScreen = () => {
       if (convError) {
         console.error('Error fetching conversation:', convError);
       } else if (convData) {
-        // Decrypt the conversation title if needed
+        // Decrypt the conversation title if needed - using the improved decryptData that doesn't throw errors
         let decryptedTitle = convData.title;
-        try {
-          // Check if the title is encrypted (has a pattern like "U2FsdGVkX1...")
-          if (decryptedTitle && decryptedTitle.startsWith('U2FsdGVkX1')) {
-            decryptedTitle = decryptData(decryptedTitle);
-          } else if (decryptedTitle && decryptedTitle.length > 30 && /[^\w\s]/.test(decryptedTitle)) {
-            // If title looks like it might be encrypted but doesn't have the expected prefix
-            // or is a random string (long with special characters), use a fallback title
+        if (decryptedTitle) {
+          // decryptData now handles all errors internally
+          decryptedTitle = decryptData(decryptedTitle);
+          
+          // If decryption failed or title looks suspicious, use a fallback title
+          if (decryptedTitle === '[Encrypted Content]' || 
+              (decryptedTitle.length > 30 && /[^\w\s]/.test(decryptedTitle))) {
             const avatarName = availableAvatars.find((a) => a.id === convData.avatar_id)?.name || 'Jung';
             decryptedTitle = `Conversation with ${avatarName}`;
           }
-        } catch (decryptError) {
-          console.error('Error decrypting conversation title:', decryptError);
-          // Use a fallback title if decryption fails
+        } else {
+          // If title is null or undefined, use a fallback title
           const avatarName = availableAvatars.find((a) => a.id === convData.avatar_id)?.name || 'Jung';
           decryptedTitle = `Conversation with ${avatarName}`;
         }
@@ -203,10 +202,11 @@ export const ChatScreen = () => {
           
           // Always attempt to decrypt content from DB if it's not null or undefined
           if (messageContent) {
-            try {
-              messageContent = decryptData(messageContent);
-            } catch (decryptError) {
-              console.error('Error decrypting message:', decryptError, msg.id);
+            // decryptData now handles all errors internally
+            messageContent = decryptData(messageContent);
+            
+            // If decryption failed, use a placeholder
+            if (messageContent === '[Encrypted Content]') {
               messageContent = "[Unable to decrypt message]";
             }
           }
@@ -279,10 +279,11 @@ export const ChatScreen = () => {
           
           // Always attempt to decrypt content from DB if it's not null or undefined
           if (messageContent) {
-            try {
-              messageContent = decryptData(messageContent);
-            } catch (decryptError) {
-              console.error('Error decrypting subscribed message:', decryptError, newMsg.id);
+            // decryptData now handles all errors internally
+            messageContent = decryptData(messageContent);
+            
+            // If decryption failed, use a placeholder
+            if (messageContent === '[Encrypted Content]') {
               messageContent = "[Unable to decrypt message]";
             }
           }
@@ -359,37 +360,20 @@ export const ChatScreen = () => {
       // This provides a layer of backward compatibility for the greeting switch.
       // Ideally, currentAvatarId should already be the new creative key.
       const keyMap: Record<string, string> = {
-        'jung': 'symbolsage', 'freud': 'mindmapper', 'adler': 'communitybuilder',
-        'rogers': 'empathyengine', 'frankl': 'meaningfinder', 'maslow': 'potentialseeker',
-        'horney': 'culturecompass',
         // New keys map to themselves
-        'symbolsage': 'symbolsage', 'mindmapper': 'mindmapper', 'communitybuilder': 'communitybuilder',
-        'empathyengine': 'empathyengine', 'meaningfinder': 'meaningfinder', 'potentialseeker': 'potentialseeker',
-        'culturecompass': 'culturecompass', 'oracle': 'oracle', 'morpheus': 'morpheus'
+        'depthdelver': 'depthdelver',
+        'flourishingguide': 'flourishingguide',
+        'oracle': 'oracle',
+        'morpheus': 'morpheus'
       };
       const displayKey = keyMap[normalizedAvatarId] || normalizedAvatarId;
 
       switch (displayKey) {
-        case 'symbolsage': // Carl Jung -> The Symbol Sage
-          greeting = "Hello, I am The Symbol Sage, an AI assistant embodying analytical psychology. I can help you explore your psyche through theories on dreams, archetypes, and the collective unconscious. What's on your mind today?";
+        case 'depthdelver':
+          greeting = "Greetings. I am The Depth Delver, an AI guide into the profound depths of your psyche. Together, we can explore the landscapes of the unconscious, interpret dreams, and understand the power of archetypes and early experiences. What is on your mind?";
           break;
-        case 'mindmapper': // Sigmund Freud -> The Mind Mapper
-          greeting = "Greetings. I am The Mind Mapper, an AI assistant versed in psychoanalytic theories. I can help you explore concepts like the unconscious mind, defense mechanisms, and early experiences. What would you like to discuss?";
-          break;
-        case 'communitybuilder': // Alfred Adler -> The Community Builder
-          greeting = "Hello! I'm The Community Builder, an AI assistant specializing in individual psychology. I can help you understand your social context, feelings, and life goals. What brings you here today?";
-          break;
-        case 'empathyengine': // Carl Rogers -> The Empathy Engine
-          greeting = "Hello there. I am The Empathy Engine, an AI assistant informed by the person-centered approach. I aim to provide a space of empathy and unconditional positive regard. What would you like to talk about?";
-          break;
-        case 'meaningfinder': // Viktor Frankl -> The Meaning Finder
-          greeting = "Greetings. I am The Meaning Finder, an AI assistant with knowledge of logotherapy. I can help you explore meaning in your life and transform suffering into purpose. What matters to you most right now?";
-          break;
-        case 'potentialseeker': // Abraham Maslow -> The Potential Seeker
-          greeting = "Hello! I am The Potential Seeker, an AI assistant versed in humanistic psychology. I can help you explore self-actualization and your hierarchy of needs. What aspects of your potential would you like to discuss?";
-          break;
-        case 'culturecompass': // Karen Horney -> The Culture Compass
-          greeting = "Hello. I am The Culture Compass, an AI assistant with expertise in neo-Freudian psychology. I can help you understand how cultural and social influences shape your experiences. What would you like to discuss?";
+        case 'flourishingguide':
+          greeting = "Welcome! I am The Flourishing Guide, your AI companion for holistic well-being. I'm here to help you discover your potential, find meaning, build connections, and navigate life's journey with empathy. How can I support you today?";
           break;
         case 'oracle': // Stays Sage/Oracle
           greeting = "Welcome, I'm the Sage Guide AI assistant. I use a wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding. I can help you see connections and possibilities you might have missed. What guidance do you seek today?";
@@ -399,7 +383,7 @@ export const ChatScreen = () => {
           break;
         default:
           console.warn(`Unknown avatar ID for greeting: '${currentAvatarId}' (normalized to '${normalizedAvatarId}', displayKey '${displayKey}'). Using default greeting.`);
-          // Default to a generic greeting or Symbol Sage's greeting if preferred
+          // Default to a generic greeting or Depth Delver's greeting if preferred
           greeting = "Hello, I'm an AI assistant here to support your journey of self-discovery and personal growth. How can I help you today?";
       }
       
@@ -498,7 +482,11 @@ export const ChatScreen = () => {
       // Format conversation history for AI
       const history = updatedMessages
         .slice(0, -1) // Exclude the message we just added
-        .map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`)
+        .filter(msg => msg.content !== "[Unable to decrypt message]" && msg.content !== "[Encrypted Content]") // Filter out undecryptable messages
+        .map(msg => {
+          const role = msg.role === 'user' ? 'Human' : 'Assistant';
+          return `${role}: ${msg.content}`;
+        })
         .join('\n\n');
       
       // Generate the prompt based on the selected avatar
@@ -667,8 +655,27 @@ export const ChatScreen = () => {
       // Note: Messages in state are already decrypted during fetchMessages or when added
       
       // Format conversation history for analysis prompt using messages from state
-      const formattedConversation = messages
-        .map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`) // Use role property
+      // Filter out any messages that couldn't be decrypted properly
+      const validMessages = messages.filter(msg => 
+        msg.content && 
+        msg.content !== "[Unable to decrypt message]" && 
+        msg.content !== "[Encrypted Content]"
+      );
+      
+      // Check if we have enough valid messages to perform analysis
+      if (validMessages.length === 0) {
+        setAnalysisContent("I am unable to provide an analysis as the conversation content is not available or could not be decrypted.");
+        setShowAnalysisModal(true);
+        setIsAnalyzing(false); // Ensure loading state is reset
+        return;
+      }
+      
+      // Use a more explicit format to make it clear this is a human conversation
+      const formattedConversation = validMessages
+        .map(msg => {
+          const role = msg.role === 'user' ? 'Human' : 'Assistant';
+          return `${role}: ${msg.content}`;
+        })
         .join('\n\n');
         
       // Create avatar-specific prompt based on the avatar's philosophy
@@ -678,63 +685,37 @@ export const ChatScreen = () => {
       
       let avatarContext = '';
       switch (currentAvatar.id) {
-        case 'jung':
-          avatarContext = `As Carl Jung, analyze this conversation through the lens of analytical psychology. 
-          Focus on archetypes, the collective unconscious, individuation, and psychological types. 
-          Identify potential shadow elements and opportunities for integration of the psyche.`;
+        case 'depthdelver':
+          avatarContext = `As The Depth Delver, analyze this conversation by integrating principles from both analytical psychology (Jung) and psychoanalysis (Freud). Focus on archetypes, the collective unconscious, dream symbolism, as well as unconscious motivations, defense mechanisms, and the influence of early experiences. Identify potential shadow elements, repressed content, and opportunities for psychic integration.`;
           break;
-        case 'freud':
-          avatarContext = `As Sigmund Freud, analyze this conversation through the lens of psychoanalysis. 
-          Focus on unconscious motivations, defense mechanisms, psychosexual development, and the dynamics 
-          of id, ego, and superego. Look for repressed desires and childhood influences.`;
-          break;
-        case 'adler':
-          avatarContext = `As Alfred Adler, analyze this conversation through the lens of individual psychology. 
-          Focus on striving for superiority, social interest, inferiority feelings, and lifestyle. 
-          Consider birth order, family dynamics, and life tasks.`;
-          break;
-        case 'rogers':
-          avatarContext = `As Carl Rogers, analyze this conversation through the lens of person-centered therapy. 
-          Focus on unconditional positive regard, empathy, congruence, and the actualizing tendency. 
-          Consider the person's movement toward self-actualization and authentic self-expression.`;
-          break;
-        case 'frankl':
-          avatarContext = `As Viktor Frankl, analyze this conversation through the lens of logotherapy. 
-          Focus on the search for meaning, existential frustration, and the will to meaning. 
-          Consider how suffering can be transformed through finding purpose.`;
-          break;
-        case 'maslow':
-          avatarContext = `As Abraham Maslow, analyze this conversation through the lens of humanistic psychology. 
-          Focus on the hierarchy of needs, self-actualization, peak experiences, and human potential. 
-          Consider which needs are being met or unmet.`;
-          break;
-        case 'horney':
-          avatarContext = `As Karen Horney, analyze this conversation through the lens of neo-Freudian psychology. 
-          Focus on cultural and social influences, neurotic needs, and coping strategies. 
-          Consider the person's movement toward, against, or away from others.`;
+        case 'flourishingguide':
+          avatarContext = `As The Flourishing Guide, analyze this conversation using an integrated humanistic and existential approach, drawing from person-centered therapy (Rogers), individual psychology (Adler), logotherapy (Frankl), humanistic psychology (Maslow), and neo-Freudian insights (Horney). Focus on empathy, self-actualization, social interest, the search for meaning, cultural influences, and personal growth. Identify strengths, opportunities for greater authenticity, and pathways to a more fulfilling life.`;
           break;
         case 'oracle':
-          avatarContext = `As the Oracle, analyze this conversation through a lens of mystical wisdom and pattern recognition. 
-          Focus on hidden connections, synchronicities, and deeper meanings. 
-          Offer guidance that helps the person see beyond their immediate circumstances.`;
+          avatarContext = `As the Sage Guide, analyze this conversation through a lens of mystical wisdom and pattern recognition. Focus on hidden connections, synchronicities, and deeper meanings. Offer guidance that helps the person see beyond their immediate circumstances.`;
           break;
         case 'morpheus':
-          avatarContext = `As Morpheus, analyze this conversation with a focus on questioning perceived reality and limitations. 
-          Focus on breaking free from mental constraints, awakening to deeper truths, and realizing potential. 
-          Challenge assumptions and offer perspectives that expand consciousness.`;
+          avatarContext = `As the Awakener, analyze this conversation with a focus on questioning perceived reality and limitations. Focus on breaking free from mental constraints, awakening to deeper truths, and realizing potential. Challenge assumptions and offer perspectives that expand consciousness.`;
           break;
         default:
-          avatarContext = `Analyze this conversation from a psychological perspective, focusing on patterns, 
-          insights, and opportunities for growth.`;
+          // This default should ideally not be hit if currentAvatar.id is always one of the four valid IDs.
+          // If it is, it means currentAvatar.id is something unexpected.
+          console.warn(`handleAnalyzeConversation: Unexpected avatar.id "${currentAvatar.id}". Using generic analysis context.`);
+          avatarContext = `Analyze this conversation from a general psychological perspective, focusing on patterns, insights, and opportunities for growth.`;
       }
       
       // Generate analysis prompt with avatar-specific context
       const prompt = `
         ${avatarContext}
         
-        Conversation to analyze:
-        ${formattedConversation}
+        SYSTEM INSTRUCTION: The following text block contains a transcript of a dialogue between a Human user and an AI Assistant. This is plain, unencrypted English text. Your task is to perform a psychological analysis of this dialogue. Do NOT treat this text as encrypted or coded. Analyze it as a standard human-AI conversation.
         
+        --- BEGIN CONVERSATION TRANSCRIPT ---
+        ${formattedConversation}
+        --- END CONVERSATION TRANSCRIPT ---
+        
+        ${validMessages.some(msg => msg.content === "[Unable to decrypt message]") ? "Note: Some parts of the conversation were unavailable (marked as '[Unable to decrypt message]') and are not included in the transcript above. Please provide your analysis based on the available text." : ""}
+
         Please provide a comprehensive analysis with the following sections:
         
         # Key Themes and Patterns
@@ -752,6 +733,14 @@ export const ChatScreen = () => {
         Format your response with clear section headings and concise, insightful content.
         IMPORTANT: Maintain the perspective and theoretical framework of ${currentAvatar.name} throughout the analysis.
       `;
+      
+      // Check if formattedConversation is empty after filtering
+      if (!formattedConversation.trim()) {
+        setAnalysisContent("I am unable to provide an analysis as the conversation content is not available or could not be decrypted.");
+        setShowAnalysisModal(true);
+        setIsAnalyzing(false); // Ensure loading state is reset
+        return;
+      }
       
       // Generate analysis using AI
       const analysisResult = await generateAIResponse(prompt);
