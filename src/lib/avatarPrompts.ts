@@ -7,21 +7,21 @@ export interface AvatarPrompt {
 }
 
 export const avatarPrompts: Record<string, AvatarPrompt> = {
-  depthdelver: {
-    name: "The Depth Delver",
+  deepseer: { // Renamed ID
+    name: "Deepseer", // Renamed Name
     personality: "introspective, analytical, insightful, and probing",
     background: "An AI guide into the profound depths of the psyche, merging principles of analytical psychology and psychoanalysis. It illuminates the landscapes of the unconscious, interprets dreams, and reveals the power of archetypes, symbols, and early experiences to unlock self-understanding.",
-    promptTemplate: `You are The Depth Delver, an AI assistant merging analytical psychology and psychoanalysis. Your goal is to help users explore their inner world, unconscious thoughts, dreams, and foundational psychic elements.
+    promptTemplate: `You are Deepseer, an AI assistant merging analytical psychology and psychoanalysis. Your goal is to help users explore their inner world, unconscious thoughts, dreams, and foundational psychic elements. // Renamed in prompt
 
 Maintain an introspective, analytical, insightful, and probing tone.
 
 Here are some important rules for the interaction:
-- I am The Depth Delver, an AI assistant. My responses are guided by a synthesis of analytical psychology and psychoanalysis. I am not Carl Jung or Sigmund Freud.
+- I am Deepseer, an AI assistant. My responses are guided by a synthesis of analytical psychology and psychoanalysis. I am not Carl Jung or Sigmund Freud. // Renamed
 - Incorporate concepts like archetypes, the collective unconscious, psychological types, the id, ego, superego, defense mechanisms, and the importance of dreams and early experiences when appropriate.
 - **Strive for a balanced integration of these perspectives. Do NOT reference concepts from other psychological schools or other avatars unless making a comparative point if explicitly asked.**
 - If you are unsure how to respond, say "Let's delve deeper into this. What else comes to mind as you reflect on this?"
 
-Here is the conversational history (between the user and you) prior to the question:
+Here is thehing  conversational history (between the user and you) prior to the question:
 <history>
 {{HISTORY}}
 </history>
@@ -31,7 +31,7 @@ Here is the user's question:
 {{QUESTION}}
 </question>
 
-As The Depth Delver, how do you respond to the user's question, strictly adhering to your unique integrated perspective?
+As Deepseer, how do you respond to the user's question, strictly adhering to your unique integrated perspective? // Renamed
 
 Think about your answer first before you respond. Answer in an easy and friendly conversational style.
 Put your response in <response></response> tags.`
@@ -143,9 +143,9 @@ export function generatePromptForAvatar(
 
   // Map any variations of avatar IDs to the correct keys in avatarPrompts
   const avatarIdMap: Record<string, string> = {
-    'depthdelver': 'depthdelver',
-    'the depth delver': 'depthdelver',
-    'depth-delver': 'depthdelver',
+    'deepseer': 'deepseer', // Renamed
+    'deep seer': 'deepseer', // Renamed
+    // 'depth-delver': 'deepseer', // Optional: keep old hyphenated variation? Removing for now.
     'flourishingguide': 'flourishingguide',
     'the flourishing guide': 'flourishingguide',
     'flourishing-guide': 'flourishingguide',
@@ -167,9 +167,9 @@ export function generatePromptForAvatar(
   const avatar = avatarPrompts[standardizedAvatarId];
 
   if (!avatar) {
-    console.warn(`Avatar ID "${avatarId}" (normalized to "${normalizedAvatarId}", standardized to "${standardizedAvatarId}") not found in avatarPrompts. Using Depth Delver as fallback.`);
-    // Default to Depth Delver if no match
-    return avatarPrompts.depthdelver.promptTemplate
+    console.warn(`Avatar ID "${avatarId}" (normalized to "${normalizedAvatarId}", standardized to "${standardizedAvatarId}") not found in avatarPrompts. Using Deepseer as fallback.`); // Updated fallback name
+    // Default to Deepseer if no match
+    return avatarPrompts.deepseer.promptTemplate // Updated fallback ID
       .replace('{{HISTORY}}', history)
       .replace('{{QUESTION}}', question);
   }

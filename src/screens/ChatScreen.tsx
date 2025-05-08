@@ -62,9 +62,10 @@ export const ChatScreen = () => {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  const [analysisContent, setAnalysisContent] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Removed analysis-related state
+  // const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  // const [analysisContent, setAnalysisContent] = useState('');
+  // const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // Use the avatarId in your chat interface
   const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
@@ -361,7 +362,7 @@ export const ChatScreen = () => {
       // Ideally, currentAvatarId should already be the new creative key.
       const keyMap: Record<string, string> = {
         // New keys map to themselves
-        'depthdelver': 'depthdelver',
+        'deepseer': 'deepseer', // Renamed
         'flourishingguide': 'flourishingguide',
         'oracle': 'oracle',
         'morpheus': 'morpheus'
@@ -369,8 +370,8 @@ export const ChatScreen = () => {
       const displayKey = keyMap[normalizedAvatarId] || normalizedAvatarId;
 
       switch (displayKey) {
-        case 'depthdelver':
-          greeting = "Greetings. I am The Depth Delver, an AI guide into the profound depths of your psyche. Together, we can explore the landscapes of the unconscious, interpret dreams, and understand the power of archetypes and early experiences. What is on your mind?";
+        case 'deepseer': // Renamed
+          greeting = "Greetings. I am Deepseer, an AI guide into the profound depths of your psyche. Together, we can explore the landscapes of the unconscious, interpret dreams, and understand the power of archetypes and early experiences. What is on your mind?"; // Renamed
           break;
         case 'flourishingguide':
           greeting = "Welcome! I am The Flourishing Guide, your AI companion for holistic well-being. I'm here to help you discover your potential, find meaning, build connections, and navigate life's journey with empathy. How can I support you today?";
@@ -640,273 +641,20 @@ export const ChatScreen = () => {
     );
   };
   
-  // Function to handle conversation analysis
-  const handleAnalyzeConversation = async () => {
-    try {
-      setIsAnalyzing(true);
-      
-      // Use existing messages from state instead of re-fetching
-      if (!messages || messages.length === 0) {
-        Alert.alert('Error', 'No messages available for analysis.');
-        setIsAnalyzing(false);
-        return;
-      }
-      
-      // Note: Messages in state are already decrypted during fetchMessages or when added
-      
-      // Format conversation history for analysis prompt using messages from state
-      // Filter out any messages that couldn't be decrypted properly
-      const validMessages = messages.filter(msg => 
-        msg.content && 
-        msg.content !== "[Unable to decrypt message]" && 
-        msg.content !== "[Encrypted Content]"
-      );
-      
-      // Check if we have enough valid messages to perform analysis
-      if (validMessages.length === 0) {
-        setAnalysisContent("I am unable to provide an analysis as the conversation content is not available or could not be decrypted.");
-        setShowAnalysisModal(true);
-        setIsAnalyzing(false); // Ensure loading state is reset
-        return;
-      }
-      
-      // Use a more explicit format to make it clear this is a human conversation
-      const formattedConversation = validMessages
-        .map(msg => {
-          const role = msg.role === 'user' ? 'Human' : 'Assistant';
-          return `${role}: ${msg.content}`;
-        })
-        .join('\n\n');
-        
-      // Create avatar-specific prompt based on the avatar's philosophy
-      // Use the same avatar ID priority as in handleSendMessage
-      const currentAvatarId = conversation?.avatar_id || route.params.avatarId || avatarId;
-      const currentAvatar = availableAvatars.find(a => a.id === currentAvatarId) || avatar;
-      
-      let avatarContext = '';
-      switch (currentAvatar.id) {
-        case 'depthdelver':
-          avatarContext = `As The Depth Delver, analyze this conversation by integrating principles from both analytical psychology (Jung) and psychoanalysis (Freud). Focus on archetypes, the collective unconscious, dream symbolism, as well as unconscious motivations, defense mechanisms, and the influence of early experiences. Identify potential shadow elements, repressed content, and opportunities for psychic integration.`;
-          break;
-        case 'flourishingguide':
-          avatarContext = `As The Flourishing Guide, analyze this conversation using an integrated humanistic and existential approach, drawing from person-centered therapy (Rogers), individual psychology (Adler), logotherapy (Frankl), humanistic psychology (Maslow), and neo-Freudian insights (Horney). Focus on empathy, self-actualization, social interest, the search for meaning, cultural influences, and personal growth. Identify strengths, opportunities for greater authenticity, and pathways to a more fulfilling life.`;
-          break;
-        case 'oracle':
-          avatarContext = `As the Sage Guide, analyze this conversation through a lens of mystical wisdom and pattern recognition. Focus on hidden connections, synchronicities, and deeper meanings. Offer guidance that helps the person see beyond their immediate circumstances.`;
-          break;
-        case 'morpheus':
-          avatarContext = `As the Awakener, analyze this conversation with a focus on questioning perceived reality and limitations. Focus on breaking free from mental constraints, awakening to deeper truths, and realizing potential. Challenge assumptions and offer perspectives that expand consciousness.`;
-          break;
-        default:
-          // This default should ideally not be hit if currentAvatar.id is always one of the four valid IDs.
-          // If it is, it means currentAvatar.id is something unexpected.
-          console.warn(`handleAnalyzeConversation: Unexpected avatar.id "${currentAvatar.id}". Using generic analysis context.`);
-          avatarContext = `Analyze this conversation from a general psychological perspective, focusing on patterns, insights, and opportunities for growth.`;
-      }
-      
-      // Generate analysis prompt with avatar-specific context
-      const prompt = `
-        ${avatarContext}
-        
-        SYSTEM INSTRUCTION: The following text block contains a transcript of a dialogue between a Human user and an AI Assistant. This is plain, unencrypted English text. Your task is to perform a psychological analysis of this dialogue. Do NOT treat this text as encrypted or coded. Analyze it as a standard human-AI conversation.
-        
-        --- BEGIN CONVERSATION TRANSCRIPT ---
-        ${formattedConversation}
-        --- END CONVERSATION TRANSCRIPT ---
-        
-        ${validMessages.some(msg => msg.content === "[Unable to decrypt message]") ? "Note: Some parts of the conversation were unavailable (marked as '[Unable to decrypt message]') and are not included in the transcript above. Please provide your analysis based on the available text." : ""}
-
-        Please provide a comprehensive analysis with the following sections:
-        
-        # Key Themes and Patterns
-        [Identify the main topics, recurring themes, and patterns in the conversation]
-        
-        # Psychological Insights (from ${currentAvatar.name}'s perspective)
-        [Provide deeper psychological insights about the user's thoughts, feelings, and behaviors using ${currentAvatar.name}'s theoretical framework]
-        
-        # Areas for Personal Growth
-        [Suggest potential areas for personal development based on the conversation]
-        
-        # Recommendations (based on ${currentAvatar.name}'s approach)
-        [Offer specific recommendations for further reflection or action that align with ${currentAvatar.name}'s philosophy]
-        
-        Format your response with clear section headings and concise, insightful content.
-        IMPORTANT: Maintain the perspective and theoretical framework of ${currentAvatar.name} throughout the analysis.
-      `;
-      
-      // Check if formattedConversation is empty after filtering
-      if (!formattedConversation.trim()) {
-        setAnalysisContent("I am unable to provide an analysis as the conversation content is not available or could not be decrypted.");
-        setShowAnalysisModal(true);
-        setIsAnalyzing(false); // Ensure loading state is reset
-        return;
-      }
-      
-      // Generate analysis using AI
-      const analysisResult = await generateAIResponse(prompt);
-      const extractedAnalysis = extractResponseContent(analysisResult); // Use existing helper
-      
-      setAnalysisContent(extractedAnalysis);
-      setShowAnalysisModal(true);
-      
-    } catch (error) {
-      console.error('Error analyzing conversation:', error);
-      Alert.alert('Error', 'Failed to analyze conversation. Please try again.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  // Function to handle conversation analysis (REMOVED)
+  // const handleAnalyzeConversation = async () => { ... };
   
-  // Function to handle sharing the analysis
-  const handleShareAnalysis = async () => {
-    if (!analysisContent) return;
-    try {
-      await Share.share({
-        message: analysisContent,
-        title: `Analysis of Conversation: ${conversationTitle}`
-      });
-    } catch (error) {
-      console.error('Error sharing analysis:', error);
-      Alert.alert('Error', 'Failed to share analysis.');
-    }
-  };
+  // Function to handle sharing the analysis (REMOVED)
+  // const handleShareAnalysis = async () => { ... };
   
-  // Function to handle copying the analysis
-  const handleCopyAnalysis = async () => {
-    if (!analysisContent) return;
-    try {
-      await Clipboard.setStringAsync(analysisContent);
-      Alert.alert('Copied!', 'Analysis copied to clipboard.');
-    } catch (error) {
-      console.error('Error copying analysis:', error);
-      Alert.alert('Error', 'Failed to copy analysis.');
-    }
-  };
+  // Function to handle copying the analysis (REMOVED)
+  // const handleCopyAnalysis = async () => { ... };
   
-  // Function to save conversation to history
-  const handleSaveToHistory = async () => {
-    try {
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('Auth error:', authError);
-        Alert.alert('Authentication Error', 'Please log in again');
-        return;
-      }
-      
-      // Check if conversation exists
-      if (!conversationId) {
-        Alert.alert('Error', 'Conversation ID not found');
-        return;
-      }
-      
-      // Check if conversation is already in history
-      const { data: existingHistory, error: historyError } = await supabase
-        .from('conversation_history')
-        .select('id')
-        .eq('conversation_id', conversationId)
-        .eq('user_id', user.id)
-        .single();
-        
-      if (existingHistory) {
-        Alert.alert('Info', 'This conversation is already saved to your history.');
-        return;
-      }
-
-      const historyEntry = {
-        user_id: user.id,
-        conversation_id: conversationId,
-        title: conversationTitle || 'Untitled Conversation', // Ensure title is never null/undefined
-        saved_at: new Date().toISOString()
-      };
-
-      console.log('Attempting to save to history with data:', JSON.stringify(historyEntry, null, 2));
-      
-      // Save conversation to history
-      const { error: insertError } = await supabase
-        .from('conversation_history')
-        .insert(historyEntry);
-        
-      if (insertError) {
-        // Log detailed error information
-        console.error('Error saving to history:', JSON.stringify(insertError, null, 2));
-        Alert.alert(
-          'Error Saving History', 
-          `Failed to save conversation. Code: ${insertError.code}. Message: ${insertError.message}`
-        );
-        return;
-      }
-      
-      console.log('Successfully saved conversation to history.');
-      Alert.alert('Success', 'Conversation saved to history');
-    } catch (error: any) { // Catch specific error type if possible
-      console.error('Error in handleSaveToHistory catch block:', error);
-      Alert.alert('Error', `An unexpected error occurred: ${error.message || 'Unknown error'}`);
-    }
-  };
+  // Function to save conversation to history (REMOVED)
+  // const handleSaveToHistory = async () => { ... };
   
-  // Modal for displaying analysis
-  const renderAnalysisModal = () => (
-    <Modal
-      visible={showAnalysisModal}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setShowAnalysisModal(false)}
-    >
-      <View style={tw`flex-1 bg-white`}>
-        <SafeAreaView style={tw`flex-1`}>
-          {/* Modal Header */}
-          <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
-            <TouchableOpacity 
-              style={tw`p-2`}
-              onPress={() => setShowAnalysisModal(false)}
-            >
-              <X size={24} color="#4A3B78" />
-            </TouchableOpacity>
-            <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`} numberOfLines={1} ellipsizeMode="tail">
-              Conversation Analysis
-            </Text>
-            <View style={tw`w-10`} />{/* Spacer */}
-          </View>
-          
-          {/* Analysis Content */}
-          <ScrollView style={tw`flex-1 p-4`}>
-            {isAnalyzing ? (
-              <View style={tw`items-center justify-center py-10`}>
-                <ActivityIndicator size="large" color="#4A3B78" />
-                <Text style={tw`mt-4 text-jung-purple`}>Analyzing...</Text>
-              </View>
-            ) : (
-              <Text style={tw`text-base leading-6 text-gray-800`}>
-                {analysisContent}
-              </Text>
-            )}
-          </ScrollView>
-
-          {/* Modal Footer Actions */}
-          {!isAnalyzing && (
-            <View style={tw`flex-row justify-around p-4 border-t border-gray-200`}>
-              <TouchableOpacity 
-                style={tw`flex-row items-center bg-gray-100 p-3 rounded-lg`}
-                onPress={handleCopyAnalysis}
-              >
-                <Copy size={20} color="#4A3B78" />
-                <Text style={tw`ml-2 text-jung-purple font-medium`}>Copy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={tw`flex-row items-center bg-gray-100 p-3 rounded-lg`}
-                onPress={handleShareAnalysis}
-              >
-                <ShareNetwork size={20} color="#4A3B78" />
-                <Text style={tw`ml-2 text-jung-purple font-medium`}>Share</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </SafeAreaView>
-      </View>
-    </Modal>
-  );
+  // Modal for displaying analysis (REMOVED)
+  // const renderAnalysisModal = () => ( ... );
 
   return (
     <GradientBackground>
@@ -926,18 +674,26 @@ export const ChatScreen = () => {
           </Text>
           
           <View style={tw`flex-row`}>
-            <TouchableOpacity 
+            {/* Save to History button removed */}
+            {/* <TouchableOpacity 
               style={tw`p-2 mr-1`}
               onPress={handleSaveToHistory}
             >
               <BookOpen size={22} color="#4A3B78" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+            {/* Re-adding Analyze button to chat header */}
             <TouchableOpacity 
               style={tw`p-2`}
-              onPress={handleAnalyzeConversation}
+              onPress={() => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId })}
+              disabled={loading || isTyping} // Disable if loading messages or AI is typing
             >
-              <Brain size={22} color="#4A3B78" />
-            </TouchableOpacity>
+              {/* Wrap icon and text */}
+              <View style={tw`flex-row items-center`}>
+                <Brain size={22} color="#4A3B78" />
+                <Text style={tw`ml-1 text-sm text-jung-purple font-medium`}>Insights</Text>
+              </View>
+            </TouchableOpacity> 
+             {/* <View style={tw`w-10`} /> */} {/* Spacer potentially not needed now */}
           </View>
         </View>
         
@@ -979,6 +735,8 @@ export const ChatScreen = () => {
                 />
               </View>
               
+              {/* Insights Button Above Input REMOVED */}
+
               <View style={tw`p-4 border-t border-gray-200 bg-white`}>
                 <View style={tw`flex-row items-center`}>
                   <TextInput
@@ -1007,7 +765,7 @@ export const ChatScreen = () => {
             </>
           )}
         </KeyboardAvoidingView>
-        {renderAnalysisModal()} 
+        {/* {renderAnalysisModal()}  Removed call to deleted function */}
       </SafeAreaView>
     </GradientBackground>
   );

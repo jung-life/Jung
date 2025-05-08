@@ -184,7 +184,8 @@ export const ConversationHistoryScreen = () => {
   };
 
   const handleViewInsights = (conversationId: string) => {
-    navigation.navigate('ConversationInsightsScreen', { conversationId });
+    // Corrected navigation target
+    navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId });
   };
 
   const renderHistoryItem = ({ item }: { item: ConversationHistory }) => {

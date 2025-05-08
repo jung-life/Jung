@@ -278,22 +278,23 @@ export const ConversationsScreen = () => {
           text: 'Cancel',
           style: 'cancel'
         },
-        {
-          text: 'Read Analysis',
-          onPress: () => showAnalysis(conversationId, title)
-        },
+        // { // Removed Read Analysis
+        //   text: 'Read Analysis',
+        //   onPress: () => showAnalysis(conversationId, title)
+        // },
         {
           text: 'View Insights',
-          onPress: () => navigation.navigate('ConversationInsightsScreen', { conversationId })
+          // Corrected navigation target
+          onPress: () => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId }) 
         },
-        {
-          text: 'Export Analysis',
-          onPress: () => handleExportAnalysis(conversationId)
-        },
-        {
-          text: 'Save Analysis',
-          onPress: () => handleSaveAnalysis(conversationId)
-        }
+        // { // Removed Export Analysis
+        //   text: 'Export Analysis',
+        //   onPress: () => handleExportAnalysis(conversationId)
+        // },
+        // { // Removed Save Analysis
+        //   text: 'Save Analysis',
+        //   onPress: () => handleSaveAnalysis(conversationId)
+        // }
       ]
     );
   };
@@ -1033,13 +1034,8 @@ Return only the title text with no additional explanation or formatting.`;
         
         <View style={tw`flex-row justify-between items-center p-4`}>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
-          {/* Link to the enhanced history screen */}
-          <TouchableOpacity
-            style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
-            onPress={() => navigation.navigate('ConversationHistoryScreen-enhanced')}
-          >
-            <Text style={tw`text-jung-purple font-medium`}>History</Text>
-          </TouchableOpacity>
+          {/* History button removed */}
+          <View style={tw`w-10`} /> {/* Add a spacer to keep title centered */}
         </View>
         
         {loading ? (
@@ -1146,18 +1142,9 @@ Return only the title text with no additional explanation or formatting.`;
                       )}
                     </View>
                   </View>
+                  {/* Analyze button removed from list item (again) */}
                   <View style={tw`flex-row items-center`}>
-                    <TouchableJung
-                      style={tw`p-2 mr-2`}
-                      onPress={() => handleAnalyzeChat(item.id, item.title)}
-                      disabled={analyzing === item.id}
-                    >
-                      {analyzing === item.id ? (
-                        <ActivityIndicator size="small" color="#536878" />
-                      ) : (
-                        <Brain size={20} color="#536878" weight="light" />
-                      )}
-                    </TouchableJung>
+                    {/* <TouchableJung ... /> */}
                     <Text style={tw`text-sm text-gray-500 mr-2`}>
                       {new Date(item.created_at).toLocaleDateString()}
                     </Text>

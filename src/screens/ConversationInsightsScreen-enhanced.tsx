@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { supabaseEnhanced } from '../lib/supabase-enhanced'; // Use enhanced version
+import { supabase } from '../lib/supabase'; // Use standard supabase client
 import { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
@@ -28,6 +28,17 @@ import { availableAvatars, Avatar } from '../components/AvatarSelector';
 
 // Use the enhanced screen name for the route prop type
 type ConversationInsightsScreenRouteProp = RouteProp<RootStackParamList, 'ConversationInsightsScreen-enhanced'>;
+
+// Define a basic type for the message structure from the database
+type DbMessage = {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  content: string | null;
+  is_from_user: boolean;
+  created_at: string;
+  // Add any other relevant fields from your messages table
+};
 
 type Insight = {
   id: string;
@@ -50,24 +61,32 @@ export const ConversationInsightsScreenEnhanced = () => {
   const { conversationId } = route.params || {};
   const [insight, setInsight] = useState<Insight | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
+  // Combine loading and analyzing states
+  const [isBusy, setIsBusy] = useState(true); 
+  const [busyText, setBusyText] = useState('Loading insights...'); // Text for the busy indicator
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthStore();
 
-  const fetchConversationDetails = useCallback(async () => {
-    if (!conversationId) return;
+  const fetchConversationDetails = useCallback(async (): Promise<Conversation | null> => { // Added return type
+    if (!conversationId) return null;
     
     try {
-      const { data, error } = await supabaseEnhanced
+      const { data, error } = await supabase // Use standard client
         .from('conversations')
         .select('id, title, avatar_id')
         .eq('id', conversationId)
         .single();
         
       if (error) {
-        console.error('Error fetching conversation:', error);
-        return;
+        // Handle the specific error where no rows are found gracefully
+        if (error.code === 'PGRST116') {
+          console.warn(`Conversation not found or RLS prevented access for ID: ${conversationId}`);
+          setError('Conversation details not found. It might have been deleted or access is restricted.');
+        } else {
+          console.error('Error fetching conversation:', error);
+          setError('Failed to load conversation details.');
+        }
+        return null; // Return null to indicate failure
       }
       
       if (data) {
@@ -85,53 +104,70 @@ export const ConversationInsightsScreenEnhanced = () => {
           title = 'Untitled Conversation';
         }
         
-        setConversation({
+        const fetchedConversation = {
           ...data,
           title
-        });
+        };
+        setConversation(fetchedConversation);
+        return fetchedConversation; // Return the fetched conversation
       }
+      return null; // Return null if no data
     } catch (error) {
       console.error('Error in fetchConversationDetails:', error);
+      setError('An unexpected error occurred while fetching conversation details.');
+      return null; // Return null on catch
     }
   }, [conversationId]);
 
   // Define generateInsight first to avoid circular dependency
-  const generateInsight = useCallback(async () => {
-    if (!conversationId || !user) return;
+  const generateInsight = useCallback(async (conv: Conversation | null) => { // Accept conversation as argument
+    if (!conversationId || !user || !conv) {
+        setError('Cannot generate insight without conversation details.');
+        setIsBusy(false); // Ensure busy state is reset
+        return;
+    }
     
+    let insightGenerated = false; // Flag to track if insight generation completed
     try {
-      setAnalyzing(true);
+      setBusyText('Analyzing conversation...'); // Update busy text
+      // No need to set isBusy(true) here, it should already be true from fetchInsight
+      setError(null); // Clear previous errors
       
       // Fetch messages for this conversation
-      const { data: messages, error: messagesError } = await supabaseEnhanced
+      const { data, error } = await supabase // Use standard client (Corrected variable names)
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
         
-      if (messagesError) {
-        console.error('Error fetching messages for analysis:', messagesError);
+      if (error) { // Use 'error'
+        console.error('Error fetching messages for analysis:', error); // Use 'error'
         setError('Failed to fetch conversation messages');
-        return;
+        // No return here, finally will handle isBusy
+        throw error; // Throw to prevent further execution in try block
       }
       
-      if (!messages || messages.length === 0) {
-        setError('No messages found in this conversation');
-        return;
+      if (!data || data.length === 0) { // Use 'data'
+        setError('No messages found in this conversation to analyze.');
+        // No return here, finally will handle isBusy
+        throw new Error('No messages found'); // Throw to prevent further execution
       }
       
       // Decrypt messages - using the improved decryptData that doesn't throw errors
-      const decryptedMessages = messages.map(msg => {
+      // Add type annotation for 'msg' and use 'data'
+      const decryptedMessages = data.map((msg: DbMessage) => { 
         let content = msg.content;
         if (content) {
           // decryptData now handles all errors internally and returns a placeholder if needed
           content = decryptData(content);
         }
-        return { ...msg, content };
+        // Return the full message structure expected by later code
+        return { ...msg, content }; 
       });
       
       // Filter out any messages that couldn't be decrypted properly
-      const validMessages = decryptedMessages.filter(msg => 
+      // Add type annotation for 'msg'
+      const validMessages = decryptedMessages.filter((msg: { content: string | null; [key: string]: any }) => 
         msg.content && 
         msg.content !== '[Encrypted Content]' && 
         msg.content !== '[Encrypted Message]'
@@ -140,27 +176,22 @@ export const ConversationInsightsScreenEnhanced = () => {
       // Check if we have enough valid messages to perform analysis
       if (validMessages.length === 0) {
         setError('No readable messages found in this conversation. The messages may be encrypted or corrupted.');
-        setAnalyzing(false);
-        return;
+        // No return here, finally will handle isBusy
+        throw new Error('No readable messages'); // Throw to prevent further execution
       }
       
       // Format messages for analysis - only use validMessages (not decryptedMessages)
       // Use a more explicit format to make it clear this is a human conversation
+      // Add type annotation for 'msg'
       const formattedConversation = validMessages
-        .map(msg => {
+        .map((msg: { is_from_user: boolean; content: string | null; [key: string]: any }) => {
           const role = msg.is_from_user ? 'Human' : 'Assistant';
           return `${role}: ${msg.content}`;
         })
         .join('\n\n');
       
-      // Get the avatar details for the conversation
-      const { data: convData } = await supabaseEnhanced
-        .from('conversations')
-        .select('avatar_id')
-        .eq('id', conversationId)
-        .single();
-        
-      const avatarId = convData?.avatar_id || 'jung';
+      // Use the conversation passed as argument
+      const avatarId = conv.avatar_id || 'jung'; 
       const avatarName = availableAvatars.find(a => a.id === avatarId)?.name || 'Jung';
       
       // Create avatar-specific prompt based on the avatar's philosophy
@@ -171,6 +202,7 @@ export const ConversationInsightsScreenEnhanced = () => {
           Focus on archetypes, the collective unconscious, individuation, and psychological types. 
           Identify potential shadow elements and opportunities for integration of the psyche.`;
           break;
+        // ... (other cases remain the same) ...
         case 'freud':
           avatarContext = `As Sigmund Freud, analyze this conversation through the lens of psychoanalysis. 
           Focus on unconscious motivations, defense mechanisms, psychosexual development, and the dynamics 
@@ -226,7 +258,7 @@ export const ConversationInsightsScreenEnhanced = () => {
         ${formattedConversation}
         --- END CONVERSATION TRANSCRIPT ---
         
-        ${validMessages.some(msg => msg.content === "[Unable to decrypt message]") ? "Note: Some parts of the conversation were unavailable (marked as '[Unable to decrypt message]') and are not included in the transcript above. Please provide your analysis based on the available text." : ""}
+        ${validMessages.some((msg: { content: string | null; [key: string]: any }) => msg.content === "[Unable to decrypt message]") ? "Note: Some parts of the conversation were unavailable (marked as '[Unable to decrypt message]') and are not included in the transcript above. Please provide your analysis based on the available text." : ""}
         
         Please provide a comprehensive analysis with the following sections:
         
@@ -252,13 +284,13 @@ export const ConversationInsightsScreenEnhanced = () => {
       const encryptedAnalysisContent = encryptData(analysisContent);
       
       // Save encrypted analysis to database
-      const { data: insightData, error: insightError } = await supabaseEnhanced
+      const { data: insightData, error: insightError } = await supabase // Use standard client
         .from('conversation_insights')
         .insert({
           conversation_id: conversationId,
           user_id: user.id,
           content: encryptedAnalysisContent,
-          title: conversation?.title ? `Analysis: ${conversation.title}` : 'Conversation Analysis'
+          title: conv?.title ? `Analysis: ${conv.title}` : 'Conversation Analysis' // Use conv argument
         })
         .select()
         .single();
@@ -266,7 +298,8 @@ export const ConversationInsightsScreenEnhanced = () => {
       if (insightError) {
         console.error('Error saving insight:', insightError);
         setError('Failed to save analysis');
-        return;
+        // No return here, finally will handle isBusy
+        throw insightError; // Throw to prevent further execution
       }
       
       // Set the insight with decrypted content
@@ -274,15 +307,16 @@ export const ConversationInsightsScreenEnhanced = () => {
         ...insightData,
         content: analysisContent
       });
+      insightGenerated = true; // Mark success
       
       // Also save to conversation_history if not already saved
       try {
-        const { data: historyData, error: historyError } = await supabaseEnhanced
+        const { data: historyData, error: historyError } = await supabase // Use standard client
           .from('conversation_history')
           .upsert({
             user_id: user.id,
             conversation_id: conversationId,
-            title: conversation?.title || 'Untitled Conversation',
+            title: conv?.title || 'Untitled Conversation', // Use conv argument
             saved_at: new Date().toISOString()
           }, {
             onConflict: 'user_id,conversation_id',
@@ -301,20 +335,31 @@ export const ConversationInsightsScreenEnhanced = () => {
       
     } catch (error) {
       console.error('Error generating insight:', error);
-      setError('Failed to generate insight. Please try again later.');
+      // Set error state only if it hasn't been set already by specific checks
+      // Use optional chaining for error.message check
+      if (!error || (error instanceof Error && !error.message?.includes('Failed to fetch'))) { 
+          setError('Failed to generate insight. Please try again later.');
+      }
+      // Ensure busy is reset even if error happens mid-generation
+      setIsBusy(false); 
+      setBusyText('Loading insights...'); // Reset busy text on error too
     } finally {
-      setAnalyzing(false);
+      // Only set busy to false here, at the very end of the generation process
+      setIsBusy(false); 
+      setBusyText('Loading insights...'); // Reset busy text
     }
-  }, [conversationId, user, conversation]);
+  }, [conversationId, user]); // Removed conversation dependency as it's passed as arg
 
-  const fetchInsight = useCallback(async () => {
+  const fetchInsight = useCallback(async (fetchedConv: Conversation | null) => { // Accept fetched conversation
     if (!conversationId || !user) return;
     
+    let needsGeneration = false; // Flag to track if generation is needed
     try {
-      setLoading(true);
+      // No need to set isBusy(true) here, handled by the calling useEffect
+      setError(null); // Clear previous errors
       
       // Check if we already have an insight for this conversation
-      const { data, error } = await supabaseEnhanced
+      const { data, error } = await supabase // Use standard client
         .from('conversation_insights')
         .select('*')
         .eq('conversation_id', conversationId)
@@ -325,7 +370,8 @@ export const ConversationInsightsScreenEnhanced = () => {
       if (error) {
         console.error('Error fetching insight:', error);
         setError('Failed to load insight. Please try again later.');
-        return;
+        // No return, finally will handle isBusy
+        throw error; // Throw to prevent further execution
       }
       
       if (data && data.length > 0) {
@@ -340,8 +386,8 @@ export const ConversationInsightsScreenEnhanced = () => {
         if (content === '[Encrypted Content]') {
           console.warn('Could not decrypt insight content');
           setError('Unable to decrypt the analysis content. Please try regenerating the analysis.');
-          setLoading(false);
-          return;
+          // No return, finally will handle isBusy
+          throw new Error('Decryption failed'); // Throw to prevent further execution
         }
         
         setInsight({
@@ -349,21 +395,65 @@ export const ConversationInsightsScreenEnhanced = () => {
           content
         });
       } else {
-        // No insight found, we'll need to generate one
-        await generateInsight();
+        // No insight found, mark that we need to generate one
+        if (fetchedConv) { // Check if conversation details are loaded
+           needsGeneration = true;
+        } else {
+           console.warn("fetchInsight: Conversation details not loaded yet, cannot generate insight.");
+           setError("Conversation details needed before generating insight.");
+           // No return, finally will handle isBusy
+           throw new Error('Conversation details missing'); // Throw to prevent further execution
+        }
       }
     } catch (error) {
       console.error('Error in fetchInsight:', error);
-      setError('Failed to load insight. Please try again later.');
+      // Set error state only if it hasn't been set already
+      if (!error) {
+          setError('Failed to load insight. Please try again later.');
+      }
     } finally {
-      setLoading(false);
+      // Only set isBusy to false if we are NOT generating
+      if (!needsGeneration) {
+          setIsBusy(false);
+      }
     }
-  }, [conversationId, user, generateInsight]);
+    // If generation is needed, call generateInsight AFTER finally block
+    if (needsGeneration && fetchedConv) {
+        await generateInsight(fetchedConv); // Pass fetched conversation
+    }
+  }, [conversationId, user, generateInsight]); // Removed conversation dependency
 
+  // Combined useEffect for fetching
   useEffect(() => {
-    fetchConversationDetails();
-    fetchInsight();
-  }, [fetchConversationDetails, fetchInsight]);
+    let isMounted = true; // Flag to prevent state updates if unmounted
+    setIsBusy(true); // Set busy at the start
+    setBusyText('Loading insights...'); // Set initial busy text
+    setError(null); // Clear previous errors
+    setInsight(null); // Clear previous insight
+    setConversation(null); // Clear previous conversation details
+
+    fetchConversationDetails().then((fetchedConv) => {
+      if (isMounted) {
+        // Pass the fetched conversation details to fetchInsight
+        // Only proceed if fetchConversationDetails didn't set an error
+        if (fetchedConv && !error) { 
+            fetchInsight(fetchedConv); 
+        } else if (!error) {
+            // If fetchConversationDetails returned null but didn't set an error explicitly
+            // (e.g., conversationId was missing initially), set busy false.
+            setIsBusy(false);
+        } else {
+            // If fetchConversationDetails set an error, ensure busy is false
+            setIsBusy(false);
+        }
+      }
+    });
+
+    return () => {
+        isMounted = false; // Cleanup function to set flag
+    };
+  }, [conversationId, fetchConversationDetails, fetchInsight]); // conversationId is the key dependency
+
 
   const handleShareInsight = async () => {
     if (!insight) return;
@@ -439,7 +529,15 @@ export const ConversationInsightsScreenEnhanced = () => {
         },
         {
           text: 'Regenerate',
-          onPress: generateInsight
+          // Pass the current conversation state to generateInsight
+          onPress: () => {
+              if (conversation) {
+                  setIsBusy(true); // Set busy before generating
+                  generateInsight(conversation);
+              } else {
+                  Alert.alert("Error", "Cannot regenerate insight without conversation details.");
+              }
+          }
         }
       ]
     );
@@ -461,11 +559,12 @@ export const ConversationInsightsScreenEnhanced = () => {
           <View style={tw`w-10`} />
         </View>
         
-        {loading || analyzing ? (
+        {/* Use the single isBusy state */}
+        {isBusy ? ( 
           <View style={tw`flex-1 justify-center items-center`}>
             <ActivityIndicator size="large" color="#4A3B78" />
             <Text style={tw`mt-4 text-jung-purple`}>
-              {analyzing ? 'Analyzing conversation...' : 'Loading insights...'}
+              {busyText} {/* Show dynamic busy text */}
             </Text>
           </View>
         ) : error ? (
@@ -474,9 +573,22 @@ export const ConversationInsightsScreenEnhanced = () => {
             <Text style={tw`text-center mb-6`}>{error}</Text>
             <TouchableOpacity
               style={tw`mb-4 bg-jung-purple py-3 px-6 rounded-lg`}
-              onPress={() => {
+              onPress={async () => { // Make handler async
                 setError(null);
-                generateInsight();
+                setIsBusy(true); // Set busy before retrying
+                setBusyText('Loading insights...'); // Reset busy text
+                const fetchedConv = await fetchConversationDetails(); // Re-fetch details
+                if (fetchedConv) {
+                  // Decide whether to fetchInsight or generateInsight based on context
+                  if (insight && insight.content === '[Encrypted Content]') {
+                     await generateInsight(fetchedConv); // Pass fetched conversation
+                  } else {
+                     await fetchInsight(fetchedConv); // Pass fetched conversation
+                  }
+                } else {
+                  // If fetching details failed again, error is already set by fetchConversationDetails
+                  setIsBusy(false); // Ensure busy is false if fetch fails
+                }
               }}
             >
               <Text style={tw`text-white font-semibold`}>Try Again</Text>
@@ -569,7 +681,16 @@ export const ConversationInsightsScreenEnhanced = () => {
             </Text>
             <TouchableOpacity 
               style={tw`bg-jung-purple py-3 px-6 rounded-lg shadow-sm`}
-              onPress={generateInsight}
+              // Pass conversation to generateInsight when button is pressed
+              onPress={() => {
+                  if (conversation) {
+                      setIsBusy(true); // Set busy before generating
+                      generateInsight(conversation);
+                  } else {
+                      Alert.alert("Error", "Cannot generate insight without conversation details.");
+                  }
+              }}
+              disabled={!conversation} // Disable if conversation details aren't loaded
             >
               <Text style={tw`text-white font-semibold text-base`}>Generate Insights</Text>
             </TouchableOpacity>
