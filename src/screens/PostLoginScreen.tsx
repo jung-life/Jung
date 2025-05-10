@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal, TextInput, Alert, FlatList } from 'react-native'; // Added FlatList
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
@@ -8,7 +8,9 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, Wind, Sparkle, Bed, FireSimple } from 'phosphor-react-native'; // Added new icons
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import * as secureStore from '../lib/secureStorage';
-// import MoodHistoryDisplay from '../components/MoodHistoryDisplay'; // No longer needed here
+import * as Location from 'expo-location'; // Added Expo Location
+import { supabase } from '../lib/supabase'; // Added Supabase
+import useAuthStore from '../store/useAuthStore'; // Added AuthStore
 
 // Define types for mood tracking
 type MoodOption = 'Happy' | 'Okay' | 'Sad' | 'Anxious' | 'Angry' | 'Calm' | 'Excited' | 'Tired' | 'Stressed'; // Added new moods
@@ -35,13 +37,79 @@ const moodOptions: { name: MoodOption; icon: React.ReactNode; color: string }[] 
 
 const PostLoginScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
+  const { user } = useAuthStore(); // Get user from auth store
   
   // Mood tracker state
   const [moodModalVisible, setMoodModalVisible] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodOption | null>(null);
   const [note, setNote] = useState('');
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // For mood history loading
+
+  // Location fetching logic
+  const requestAndSaveLocation = useCallback(async () => {
+    if (!user) {
+      console.log('User not available for location saving.');
+      return;
+    }
+
+    console.log('Requesting location permission...');
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Location permission is needed to provide some features. You can enable it in settings.');
+      console.log('Location permission denied.');
+      return;
+    }
+
+    console.log('Location permission granted. Fetching current position...');
+    try {
+      // Set a timeout for location fetching
+      const locationPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced, // Balanced accuracy for reasonable power consumption
+      });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Location request timed out')), 15000) // 15 seconds timeout
+      );
+
+      const location = await Promise.race([locationPromise, timeoutPromise]) as Location.LocationObject;
+
+      if (location && location.coords) {
+        console.log('Location fetched:', location.coords);
+        const { latitude, longitude, accuracy, altitude } = location.coords;
+        const timestamp = new Date(location.timestamp).toISOString();
+
+        const { error: dbError } = await supabase
+          .from('user_locations')
+          .insert({
+            user_id: user.id,
+            latitude,
+            longitude,
+            accuracy,
+            altitude,
+            timestamp,
+          });
+
+        if (dbError) {
+          console.error('Error saving location to database:', dbError);
+          // Optionally alert the user, but might be too intrusive for a background task
+          // Alert.alert('Error', 'Could not save location data.');
+        } else {
+          console.log('Location saved successfully to database.');
+        }
+      } else {
+        console.warn('Could not fetch location coordinates.');
+      }
+    } catch (error) {
+      console.error('Error fetching or saving location:', error);
+      // Alert.alert('Location Error', 'Could not get your current location.');
+    }
+  }, [user]); // Add user as dependency
+
+  useEffect(() => {
+    // Request and save location when the component mounts (after login)
+    requestAndSaveLocation();
+  }, [requestAndSaveLocation]); // requestAndSaveLocation is memoized with useCallback
 
   useEffect(() => {
     if (moodModalVisible) {
