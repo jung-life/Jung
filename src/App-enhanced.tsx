@@ -11,7 +11,7 @@ import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking'; // Use useURL hook
 import { AuthUrlHandler } from './components/AuthUrlHandler'; // Keep AuthUrlHandler
 import { navigationRef, processPendingNavigationActions } from './navigation/navigationService';
-// Removed * as NavigationService import as it's not directly used after refactor
+import * as NavigationService from './navigation/navigationService'; // Import for defaultPostLoginOptions
 // Remove AppNavigator import: import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
@@ -84,6 +84,12 @@ const linking = {
 // Default header options for logged-in screens
 const defaultPostLoginOptions = {
   headerShown: true,
+  headerLeft: () => (
+    <TouchableOpacity onPress={() => NavigationService.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
+      <House size={24} color={'#4A3B78'} />
+    </TouchableOpacity>
+  ),
+  headerBackVisible: false,
   headerRight: () => <HamburgerMenu />,
   headerStyle: {
     backgroundColor: '#ffffff', // Example color
@@ -118,7 +124,7 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
    >
     {/* Logged-in Screens */}
     {/* PostLoginScreen will inherit from screenOptions, or can override if needed */}
-    <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home' }} />
+    <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', headerLeft: () => null }} />
     <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
     <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations' }} />
     <Stack.Screen name="ConversationHistoryScreen" component={ConversationHistoryScreen} options={{ title: 'Conversation History' }} />
