@@ -111,45 +111,44 @@ const AuthStackNavigator = () => (
 // Define Main App Stack Navigator
 // Pass isNewUser as a prop
 const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
-   <Stack.Navigator 
+   <Stack.Navigator
      initialRouteName={isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen'}
-     screenOptions={{ headerShown: false }}
+     // Default to showing headers for screens in this navigator
+     screenOptions={{ ...defaultPostLoginOptions }} // Apply default options here
    >
     {/* Logged-in Screens */}
-    <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="ConversationHistoryScreen" component={ConversationHistoryScreen} options={{ title: 'Conversation History', ...defaultPostLoginOptions }} />
+    {/* PostLoginScreen will inherit from screenOptions, or can override if needed */}
+    <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home' }} />
+    <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+    <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations' }} />
+    <Stack.Screen name="ConversationHistoryScreen" component={ConversationHistoryScreen} options={{ title: 'Conversation History' }} />
     {/* Use the correct component name and screen name from types.ts */}
-    <Stack.Screen name="ConversationInsightsScreen-enhanced" component={ConversationInsightsScreenEnhanced} options={{ title: 'Conversation Insights', ...defaultPostLoginOptions }} /> 
-    <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="ConversationInsightsScreen-enhanced" component={ConversationInsightsScreenEnhanced} options={{ title: 'Conversation Insights' }} />
+    <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+    <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings' }} />
+    <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation' }} />
+    <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment' }} />
+    <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources' }} />
     <Stack.Screen
       name="MoodTrackerScreen"
       component={MoodTrackerScreen}
-      options={({ navigation }) => ({
+      options={({ navigation }) => ({ // These options will merge with/override screenOptions
         title: 'Mood Tracker',
-        headerShown: true, // Explicitly set headerShown
+        // headerShown: true, // Already true from screenOptions
         headerBackVisible: false,
         headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
-            <House size={24} color={defaultPostLoginOptions.headerTintColor} />
+          <TouchableOpacity onPress={() => navigation.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
+            <House size={24} color={'#4A3B78'} />
           </TouchableOpacity>
         ),
-        headerRight: () => <HamburgerMenu />, // Explicitly set headerRight
-        headerStyle: defaultPostLoginOptions.headerStyle,
-        headerTintColor: defaultPostLoginOptions.headerTintColor,
-        headerTitleStyle: defaultPostLoginOptions.headerTitleStyle,
+        // headerRight: () => <HamburgerMenu />, // Already set from screenOptions
       })}
     />
-    <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal' }} />
     {/* Common screens also accessible when logged in */}
-    <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
+    <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
+    <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service' }} />
+    <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer' }} />
      {/* Loading screen might not be needed here if handled outside */}
      {/* <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} /> */}
   </Stack.Navigator>

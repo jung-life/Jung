@@ -332,9 +332,9 @@ const PostLoginScreen = () => {
           </TouchableOpacity>
 
           {/* Mood Tracker Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={tw`bg-indigo-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Example color
-            onPress={() => setMoodModalVisible(true)}
+            onPress={() => navigation.navigate('MoodTrackerScreen')} // Navigate to MoodTrackerScreen
             >
             {/* Wrap icon in a View */}
             <View>
