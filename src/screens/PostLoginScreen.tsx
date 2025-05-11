@@ -5,7 +5,7 @@ import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
-import { ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, Wind, Sparkle, Bed, FireSimple } from 'phosphor-react-native'; // Added new icons
+import { ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, Wind, Sparkle, Bed, FireSimple, House } from 'phosphor-react-native'; // Added House, removed unused User
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import * as secureStore from '../lib/secureStorage';
 import * as Location from 'expo-location'; // Added Expo Location
@@ -368,20 +368,9 @@ const PostLoginScreen = () => {
             <SafeAreaView style={tw`flex-1`}>
               <SymbolicBackground opacity={0.05} />
 
-              {/* Header */}
-              <View style={tw`p-4 border-b border-gray-200/30 flex-row items-center`}>
-                <TouchableOpacity
-                  style={tw`p-2 mr-2`}
-                  onPress={closeMoodModal}
-                >
-                  <View>
-                    <ArrowLeft size={20} color="#4A3B78" />
-                  </View>
-                </TouchableOpacity>
-                <Text style={tw`text-xl font-bold text-center text-jung-deep flex-1`}>
-                  How are you feeling?
-                </Text>
-                <View style={tw`w-10`} />{/* Spacer */}
+              {/* Header for Modal - DIAGNOSTIC */}
+              <View style={{ padding: 10, backgroundColor: 'lime', height: 60, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: 'black', fontSize: 16 }}>DIAGNOSTIC HEADER FOR MOOD MODAL</Text>
               </View>
 
               {/* Use FlatList as the main container */}

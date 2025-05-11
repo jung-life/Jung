@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react'; // Added useEffect
 import { TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import * as Notifications from 'expo-notifications'; // Added Notifications
-import { House } from 'phosphor-react-native'; // Added House icon
+import HomeButton from '../components/HomeButton'; // Import HomeButton component
 import { AccountScreen } from '../screens/AccountScreen';
 import LandingScreen from '../screens/LandingScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
@@ -130,17 +130,13 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen // Add MoodTrackerScreen
       name="MoodTrackerScreen"
       component={MoodTrackerScreen}
-      options={({ navigation }) => ({ 
+      options={{ 
         headerShown: true, 
         title: 'Mood Tracker',
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
-            <House size={24} color="#4A3B78" />
-          </TouchableOpacity>
-        ),
+        headerLeft: () => <HomeButton destination="Home" />,
         headerRight: () => <HamburgerMenu />, // Explicitly set headerRight
         headerBackVisible: false,
-      })}
+      }}
     />
     <Stack.Screen // Add JournalingScreen
       name="JournalingScreen"
