@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackNavigationProp } from '../navigation/types'; // Assuming this type exists
+import { RootStackNavigationProp } from '../navigation/types';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import tw from '../lib/tailwind';
-import { Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk } from 'phosphor-react-native'; // Removed ArrowLeft
-import * as secureStore from '../lib/secureStorage'; // Assuming secureStorage exports save/get functions
-import MoodHistoryDisplay from '../components/MoodHistoryDisplay'; // Reverted: Removed .tsx extension
-// HomeButton and HamburgerMenu imports removed as header is handled by navigator
+import { Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk } from 'phosphor-react-native';
+import * as secureStore from '../lib/secureStorage';
+import MoodHistoryDisplay from '../components/MoodHistoryDisplay';
 
 type MoodOption = 'Happy' | 'Okay' | 'Sad' | 'Anxious' | 'Angry';
 type MoodEntry = {

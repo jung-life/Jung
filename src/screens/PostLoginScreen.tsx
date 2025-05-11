@@ -368,11 +368,6 @@ const PostLoginScreen = () => {
             <SafeAreaView style={tw`flex-1`}>
               <SymbolicBackground opacity={0.05} />
 
-              {/* Header for Modal - DIAGNOSTIC */}
-              <View style={{ padding: 10, backgroundColor: 'lime', height: 60, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: 'black', fontSize: 16 }}>DIAGNOSTIC HEADER FOR MOOD MODAL</Text>
-              </View>
-
               {/* Use FlatList as the main container */}
               <FlatList
                 data={moodHistory}
