@@ -100,7 +100,8 @@ const SelfHelpResourcesScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.05} />
         
-        {/* Header */}
+        {/* Custom header removed, will rely on AppNavigator's header options */}
+        {/*
         <View style={tw`p-4 border-b border-gray-200/30 flex-row items-center`}>
           <TouchableOpacity 
             style={tw`p-2 mr-2`}
@@ -111,8 +112,9 @@ const SelfHelpResourcesScreen = () => {
           <Text style={tw`text-xl font-bold text-center text-jung-deep flex-1`}>
             Self-Help Resources
           </Text>
-          <View style={tw`w-10`} />{/* Spacer */}
+          <View style={tw`w-10`} />
         </View>
+        */}
         
         <ScrollView style={tw`flex-1 px-4 pt-4`}>
           <Text style={tw`text-lg text-gray-700 mb-6 px-2`}>

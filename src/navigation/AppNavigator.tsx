@@ -1,6 +1,8 @@
 // In AppNavigator.tsx
 import React, { useEffect } from 'react'; // Added useEffect
+import { TouchableOpacity } from 'react-native'; // Added TouchableOpacity
 import * as Notifications from 'expo-notifications'; // Added Notifications
+import { House } from 'phosphor-react-native'; // Added House icon
 import { AccountScreen } from '../screens/AccountScreen';
 import LandingScreen from '../screens/LandingScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
@@ -113,7 +115,7 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen
       name="DailyMotivationScreen"
       component={DailyMotivationScreen}
-      options={{ headerShown: true, title: 'Daily Motivation' }}
+      options={{ headerShown: true, title: 'Daily Motivation', headerLeft: () => null, headerBackVisible: false }}
     />
     <Stack.Screen
       name="EmotionalAssessmentScreen"
@@ -123,17 +125,27 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen
       name="SelfHelpResourcesScreen"
       component={SelfHelpResourcesScreen}
-      options={{ headerShown: true, title: 'Self-Help Resources' }}
+      options={{ headerShown: true, title: 'Self-Help Resources', headerLeft: () => null, headerBackVisible: false }}
     />
     <Stack.Screen // Add MoodTrackerScreen
       name="MoodTrackerScreen"
       component={MoodTrackerScreen}
-      options={{ headerShown: true, title: 'Mood Tracker' }}
+      options={({ navigation }) => ({ 
+        headerShown: true, 
+        title: 'Mood Tracker',
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
+            <House size={24} color="#4A3B78" />
+          </TouchableOpacity>
+        ),
+        headerRight: () => <HamburgerMenu />, // Explicitly set headerRight
+        headerBackVisible: false,
+      })}
     />
     <Stack.Screen // Add JournalingScreen
       name="JournalingScreen"
       component={JournalingScreen}
-      options={{ headerShown: true, title: 'Journal' }}
+      options={{ headerShown: true, title: 'Journal', headerLeft: () => null, headerBackVisible: false }}
     />
     <Stack.Screen
       name="ConversationHistoryScreen"

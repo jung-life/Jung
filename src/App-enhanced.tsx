@@ -38,6 +38,8 @@ import JournalingScreen from './screens/JournalingScreen'; // Import JournalingS
 import { LoadingScreen } from './screens/LoadingScreen';
 import TestAvatarScreen from './screens/TestAvatarScreen'; // Import TestAvatarScreen
 import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
+import { TouchableOpacity } from 'react-native'; // Added for headerLeft
+import { House } from 'phosphor-react-native'; // Added for headerLeft icon
 import { ConversationHistoryScreen } from './screens/ConversationHistoryScreen-enhanced'; // Import enhanced version
 import { ConversationInsightsScreenEnhanced } from './screens/ConversationInsightsScreen-enhanced'; // Import enhanced version (Corrected import name)
 
@@ -125,7 +127,20 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
     <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
     <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
-    <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
+    <Stack.Screen 
+      name="MoodTrackerScreen" 
+      component={MoodTrackerScreen} 
+      options={({ navigation }) => ({ 
+        title: 'Mood Tracker', 
+        ...defaultPostLoginOptions,
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
+            <House size={24} color={defaultPostLoginOptions.headerTintColor} />
+          </TouchableOpacity>
+        ),
+        headerBackVisible: false, 
+      })} 
+    />
     <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal', ...defaultPostLoginOptions }} />
     {/* Common screens also accessible when logged in */}
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />

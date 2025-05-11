@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -153,19 +154,20 @@ const JournalingScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        {/* Header */}
+        {/* Header is now managed by AppNavigator.tsx options.
+            The title is set there. The HamburgerMenu is on the right.
+            The custom back button here is removed.
+            If the "New Entry" button is still desired in the header, it should be moved to headerRight
+            in AppNavigator's options for this screen, potentially replacing or alongside HamburgerMenu.
+            For now, removing the entire custom header View from here.
+        */}
+        {/*
         <View style={tw`p-4 border-b border-gray-200/30 flex-row items-center`}>
-          <TouchableOpacity
-            style={tw`p-2 mr-2`}
-            onPress={() => navigation.goBack()}
-          >
-            <View>
-              <ArrowLeft size={20} color="#4A3B78" />
-            </View>
-          </TouchableOpacity>
+          // Removed custom back button
           <Text style={tw`text-xl font-bold text-center text-jung-deep flex-1`}>
-            {isEditing ? 'Edit Journal Entry' : 'Journal Your Thoughts'}
+            {isEditing ? 'Edit Journal Entry' : 'Journal Your Thoughts'} 
           </Text>
+          // This button might need to be moved to headerRight if still needed
           <TouchableOpacity
             style={tw`p-2`}
             onPress={handleNewEntry}
@@ -176,8 +178,15 @@ const JournalingScreen = () => {
             </View>
           </TouchableOpacity>
         </View>
+        */}
+        
+        <View style={tw`pt-4 pb-2 px-4 items-center`}> 
+          <Text style={tw`text-2xl font-bold text-jung-deep`}>
+            {isEditing ? 'Edit Journal Entry' : 'Journal Your Thoughts'}
+          </Text>
+        </View>
 
-        <ScrollView style={tw`flex-1 px-4 pt-4`}>
+        <ScrollView style={tw`flex-1 px-4`}>
           {/* Title Input */}
           <Text style={tw`text-base text-gray-600 mb-2`}>Title:</Text>
           <TextInput

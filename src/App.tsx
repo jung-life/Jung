@@ -35,6 +35,8 @@ import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
 import MoodTrackerScreen from './screens/MoodTrackerScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
 import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
+import { TouchableOpacity } from 'react-native'; // Added for headerLeft
+import { House } from 'phosphor-react-native'; // Added for headerLeft icon
 
 // Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
@@ -173,7 +175,20 @@ const AppContent = () => {
             <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
             <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
             <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="MoodTrackerScreen" component={MoodTrackerScreen} options={{ title: 'Mood Tracker', ...defaultPostLoginOptions }} />
+            <Stack.Screen 
+              name="MoodTrackerScreen" 
+              component={MoodTrackerScreen} 
+              options={({ navigation }) => ({ 
+                title: 'Mood Tracker', 
+                ...defaultPostLoginOptions,
+                headerLeft: () => (
+                  <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
+                    <House size={24} color={defaultPostLoginOptions.headerTintColor} />
+                  </TouchableOpacity>
+                ),
+                headerBackVisible: false, 
+              })} 
+            />
             {/* Add Landing/Login/Register here ONLY if you want logged-in users to access them */}
             {/* <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} /> */}
             {/* <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} /> */}

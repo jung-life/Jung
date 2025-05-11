@@ -221,6 +221,8 @@ export default function DailyMotivationScreen() {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.07} variant="motivation" />
         
+        {/* Custom header removed, will rely on AppNavigator's header options */}
+        {/*
         <View style={tw`p-4 border-b border-soothing-green/30 flex-row items-center`}>
           <TouchableOpacity 
             style={tw`p-2`}
@@ -232,6 +234,7 @@ export default function DailyMotivationScreen() {
             Daily Motivation
           </Text>
         </View>
+        */}
         
         {renderContent()}
 

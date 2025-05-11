@@ -6,9 +6,10 @@ import { RootStackNavigationProp } from '../navigation/types'; // Assuming this 
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import tw from '../lib/tailwind';
-import { ArrowLeft, Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk } from 'phosphor-react-native';
+import { Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk } from 'phosphor-react-native'; // Removed ArrowLeft
 import * as secureStore from '../lib/secureStorage'; // Assuming secureStorage exports save/get functions
 import MoodHistoryDisplay from '../components/MoodHistoryDisplay'; // Reverted: Removed .tsx extension
+// HomeButton and HamburgerMenu imports removed as header is handled by navigator
 
 type MoodOption = 'Happy' | 'Okay' | 'Sad' | 'Anxious' | 'Angry';
 type MoodEntry = {
@@ -87,19 +88,21 @@ const MoodTrackerScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.05} />
 
-        {/* Header */}
+        {/* Custom header removed, will rely on AppNavigator's header options */}
+        {/*
         <View style={tw`p-4 border-b border-gray-200/30 flex-row items-center`}>
           <TouchableOpacity
             style={tw`p-2 mr-2`}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.goBack()} // This would need ArrowLeft if re-enabled
           >
-            <ArrowLeft size={20} color="#4A3B78" />
+            // <ArrowLeft size={20} color="#4A3B78" /> // ArrowLeft import would be needed
           </TouchableOpacity>
           <Text style={tw`text-xl font-bold text-center text-jung-deep flex-1`}>
             How are you feeling?
           </Text>
-          <View style={tw`w-10`} />{/* Spacer */}
+          <View style={tw`w-10`} />
         </View>
+        */}
 
         <ScrollView style={tw`flex-1 px-4 pt-4`} keyboardShouldPersistTaps="handled">
           <Text style={tw`text-lg text-gray-700 mb-4 text-center`}>
