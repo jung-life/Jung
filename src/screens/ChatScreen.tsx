@@ -14,6 +14,9 @@ import {
   Share       // Add Share
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard'; // Import Clipboard
+import * as Speech from 'expo-speech';
+import Voice from '@react-native-voice/voice';
+import { Audio } from 'expo-av';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
@@ -22,7 +25,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen } from 'phosphor-react-native'; // Import phosphor icons
+import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen, Microphone, SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'; // Import phosphor icons
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -60,8 +63,13 @@ export const ChatScreen = () => {
   const [conversationTitle, setConversationTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [voiceModeActive, setVoiceModeActive] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognizedText, setRecognizedText] = useState('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+  const [hasPermissions, setHasPermissions] = useState(false);
   // Removed analysis-related state
   // const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   // const [analysisContent, setAnalysisContent] = useState('');
@@ -74,6 +82,54 @@ export const ChatScreen = () => {
   useEffect(() => {
     console.log('Chat screen received avatarId:', avatarId);
   }, [avatarId]);
+
+  // Permissions and Voice setup
+  useEffect(() => {
+    const requestPermissions = async () => {
+      if (Platform.OS === 'android') {
+        const micPermission = await Audio.requestPermissionsAsync();
+        if (micPermission.status !== 'granted') {
+          Alert.alert('Permissions required', 'Microphone permission is needed for voice input.');
+          setHasPermissions(false);
+          return;
+        }
+      }
+      // For iOS, permissions are typically requested when the feature is first used.
+      // However, configuring the audio session is good practice.
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+        setHasPermissions(true);
+      } catch (e) {
+        console.error('Failed to set audio mode', e);
+        Alert.alert('Audio Error', 'Could not configure audio session.');
+        setHasPermissions(false);
+      }
+    };
+
+    requestPermissions();
+
+    // Voice listeners
+    Voice.onSpeechStart = () => setIsRecording(true);
+    Voice.onSpeechEnd = () => setIsRecording(false);
+    Voice.onSpeechError = (e) => {
+      console.error('Speech recognition error', e);
+      Alert.alert('Speech Error', e.error?.message || 'Could not recognize speech.');
+      setIsRecording(false);
+    };
+    Voice.onSpeechResults = (e) => {
+      if (e.value && e.value.length > 0) {
+        setRecognizedText(e.value[0]);
+        setInputText(e.value[0]); // Populate input field with recognized text
+      }
+    };
+
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
   
   // Fetch conversation details including the avatar_id and title
   const fetchConversation = useCallback(async () => {
@@ -517,6 +573,9 @@ export const ChatScreen = () => {
       };
       
       setMessages([...updatedMessages, aiMessage]);
+      if (voiceModeActive) {
+        speak(responseContent);
+      }
       
       // Encrypt AI message before saving to database
       const encryptedAIContent = encryptData(aiMessage.content);
@@ -558,6 +617,48 @@ export const ChatScreen = () => {
   const extractResponseContent = (response: string): string => {
     const match = response.match(/<response>(.*?)<\/response>/s);
     return match ? match[1].trim() : response;
+  };
+
+  // Text-to-Speech function
+  const speak = (text: string) => {
+    if (!voiceModeActive) return;
+    setIsSpeaking(true);
+    Speech.speak(text, {
+      onDone: () => setIsSpeaking(false),
+      onError: (e) => {
+        console.error('Speech synthesis error', e);
+        Alert.alert('Speech Error', 'Could not play voice response.');
+        setIsSpeaking(false);
+      },
+    });
+  };
+
+  // Speech-to-Text functions
+  const startRecording = async () => {
+    if (!hasPermissions) {
+      Alert.alert('Permissions required', 'Microphone permission is needed. Please grant it in settings.');
+      return;
+    }
+    if (isRecording) return;
+    setRecognizedText('');
+    try {
+      await Voice.start('en-US');
+    } catch (e) {
+      console.error('Failed to start recording', e);
+      Alert.alert('Recording Error', 'Could not start voice recording.');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!isRecording) return;
+    try {
+      await Voice.stop();
+    } catch (e) {
+      console.error('Failed to stop recording', e);
+      // Alert.alert('Recording Error', 'Could not stop voice recording.');
+    } finally {
+      setIsRecording(false);
+    }
   };
   
   const renderMessage = ({ item }: { item: Message }) => {
@@ -737,6 +838,12 @@ export const ChatScreen = () => {
 
               <View style={tw`p-4 border-t border-gray-200 bg-white`}>
                 <View style={tw`flex-row items-center`}>
+                  <TouchableOpacity
+                    style={tw`p-2 mr-2`}
+                    onPress={() => setVoiceModeActive(!voiceModeActive)}
+                  >
+                    {voiceModeActive ? <SpeakerHigh size={24} color={tw.color('jung-purple')} /> : <SpeakerSlash size={24} color={tw.color('gray-500')} />}
+                  </TouchableOpacity>
                   <TextInput
                     ref={inputRef}
                     style={tw`flex-1 bg-gray-100 rounded-full px-4 py-2 mr-2`}
@@ -746,14 +853,20 @@ export const ChatScreen = () => {
                     multiline
                     maxLength={1000}
                   />
-                  
                   <TouchableOpacity
-                    style={tw`bg-jung-purple w-12 h-12 rounded-full items-center justify-center`}
+                    style={tw`p-2 ml-2 mr-1 ${isRecording ? 'bg-red-500' : 'bg-gray-200'} rounded-full`}
+                    onPress={isRecording ? stopRecording : startRecording}
+                    disabled={isSpeaking}
+                  >
+                    <Microphone size={24} color={isRecording ? "white" : tw.color('jung-purple')} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={tw`bg-jung-purple w-10 h-10 rounded-full items-center justify-center`}
                     onPress={handleSendMessage}
-                    disabled={!inputText.trim() || isTyping}
+                    disabled={(!inputText.trim() && !recognizedText.trim()) || isTyping || isRecording}
                   >
                     {isTyping && <ActivityIndicator size="small" color="white" />}
-                    {!isTyping && <PaperPlaneRight size={24} color="white" weight="fill" />}
+                    {!isTyping && <PaperPlaneRight size={20} color="white" weight="fill" />}
                   </TouchableOpacity>
                 </View>
               </View>

@@ -40,10 +40,20 @@ export default ({ config }) => {
 
   // You can keep the existing extra config if needed for other purposes
   config.extra = {
-    ...config.extra,
+    ...config.extra, // Spread existing extra config from app.json
     // You might want a general Google Client ID here too, perhaps for web?
-    // googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID, 
+    // googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   };
+
+  // Ensure EAS projectId from app.json is preserved if not overridden
+  if (config.extra?.eas?.projectId && !process.env.EAS_PROJECT_ID) {
+    // If app.json has a projectId and it's not being set by an env var, keep it.
+  } else if (process.env.EAS_PROJECT_ID) {
+    // If an env var for EAS_PROJECT_ID is set, use that.
+    config.extra.eas = config.extra.eas || {};
+    config.extra.eas.projectId = process.env.EAS_PROJECT_ID;
+  }
+  // If neither, it will rely on what's in app.json or what EAS CLI infers.
 
   return config; // Return the modified config object
 };

@@ -65,7 +65,7 @@
     "scheme": "jung",
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "REPLACE_WITH_YOUR_ACTUAL_PROJECT_ID"
       }
     },
     "owner": "infinitydata.ai",
