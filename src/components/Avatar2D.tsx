@@ -11,7 +11,7 @@ const AVATAR_IMAGES = {
   horney: require('../assets/avtars/horney.jpeg'),
   morpheus: require('../assets/avtars/awakener.png'),
   oracle: require('../assets/avtars/sage.png'),
-  user: require('../assets/avtars/user.webp'),
+  user: require('../assets/avtars/user.png'),
   // Use jung as default if others aren't available
   default: require('../assets/avtars/jung.png'),
 } as const;

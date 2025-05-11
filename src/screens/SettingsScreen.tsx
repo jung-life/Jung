@@ -137,7 +137,7 @@ const SettingsScreen = () => {
     // This is a placeholder. A real app would use a modal with a time picker.
     // For now, let's just cycle through a few preset times for demonstration.
     const presetTimes = [
-      { hour: 0, minute: 8 },   // 12:08 AM (for your current test)
+      { hour: 0, minute: 10 },   // 12:08 AM (for your current test)
       { hour: 9, minute: 0 },   // 9:00 AM
       { hour: 12, minute: 30 }, // 12:30 PM
       { hour: 17, minute: 0 },  // 5:00 PM

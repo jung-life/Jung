@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 // Import icons from phosphor-react-native
