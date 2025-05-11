@@ -6,12 +6,13 @@ import {
   StyleSheet, 
   Alert, 
   ActivityIndicator,
-  Image
+  Image,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, User, ArrowLeft } from 'phosphor-react-native';
+import { Camera, User, ArrowLeft, Gear } from 'phosphor-react-native'; // Added Gear
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
@@ -39,7 +40,7 @@ export const ProfileScreen = () => {
       
       if (!user) {
         Alert.alert('Error', 'You must be logged in to view your profile');
-        navigation.navigate('Landing');
+        navigation.navigate('LandingScreen'); // Corrected from 'Landing'
         return;
       }
       
@@ -217,22 +218,30 @@ export const ProfileScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        <View style={tw`flex-row items-center px-5 py-4 border-b border-gray-200/50`}>
+        <View style={tw`flex-row items-center justify-between px-5 py-4 border-b border-gray-200/50`}>
+          <View style={tw`flex-row items-center`}>
+            <TouchableJung
+              onPress={() => navigation.goBack()}
+              style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-gold`}
+            >
+              <ArrowLeft size={24} color="#D4AF37" weight="light" />
+            </TouchableJung>
+            <Typography variant="title" style={tw`ml-4`}>Your Profile</Typography>
+          </View>
+          {/* Settings Icon Button in Header */}
           <TouchableJung
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('SettingsScreen')}
             style={tw`w-12 h-12 rounded-full bg-transparent flex items-center justify-center border-2 border-jung-gold`}
           >
-            <ArrowLeft size={24} color="#D4AF37" weight="light" />
+            <Gear size={24} color="#D4AF37" weight="light" />
           </TouchableJung>
-          
-          <Typography variant="title" style={tw`ml-4`}>Your Profile</Typography>
         </View>
         
-        <View style={tw`flex-1 p-6 items-center`}>
+        <ScrollView contentContainerStyle={tw`p-6 items-center`}>
           {loading ? (
             <ActivityIndicator size="large" color="#8A2BE2" />
           ) : (
-            <>
+            <View style={tw`w-full items-center`}>
               <View style={tw`mb-8 items-center`}>
                 <View style={tw`relative`}>
                   {avatarUrl ? (
@@ -280,11 +289,26 @@ export const ProfileScreen = () => {
                     {uploading ? 'Uploading...' : 'Take a Photo'}
                   </Text>
                 </TouchableOpacity>
+
+                {/* Separator */}
+                <View style={tw`h-px bg-gray-200 w-full my-6`} />
+
+                {/* Settings Button Option */}
+                <TouchableOpacity 
+                  style={tw`bg-gray-100 border border-gray-300 py-3 px-6 rounded-lg shadow-sm w-full flex-row items-center justify-center`}
+                  onPress={() => navigation.navigate('SettingsScreen')}
+                >
+                  <Gear size={20} color={tw.color('jung-purple')} style={tw`mr-2`} />
+                  <Text style={tw`text-jung-purple font-semibold text-center`}>
+                    App Settings
+                  </Text>
+                </TouchableOpacity>
+
               </View>
-            </>
+            </View>
           )}
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </GradientBackground>
   );
-}; 
+};

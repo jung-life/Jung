@@ -685,19 +685,17 @@ export const ChatScreen = () => {
             <TouchableOpacity 
               style={tw`p-2`}
               onPress={() => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId })}
-              disabled={loading || isTyping} // Disable if loading messages or AI is typing
+              disabled={loading || isTyping}
             >
-              {/* Wrap icon and text */}
               <View style={tw`flex-row items-center`}>
                 <Brain size={22} color="#4A3B78" />
                 <Text style={tw`ml-1 text-sm text-jung-purple font-medium`}>Insights</Text>
               </View>
-            </TouchableOpacity> 
-             {/* <View style={tw`w-10`} /> */} {/* Spacer potentially not needed now */}
+            </TouchableOpacity>
           </View>
         </View>
         
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={tw`flex-1`}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -754,11 +752,8 @@ export const ChatScreen = () => {
                     onPress={handleSendMessage}
                     disabled={!inputText.trim() || isTyping}
                   >
-                    {isTyping ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
-                      <PaperPlaneRight size={24} color="white" weight="fill" />
-                    )}
+                    {isTyping && <ActivityIndicator size="small" color="white" />}
+                    {!isTyping && <PaperPlaneRight size={24} color="white" weight="fill" />}
                   </TouchableOpacity>
                 </View>
               </View>

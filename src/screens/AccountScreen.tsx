@@ -404,11 +404,14 @@ export const AccountScreen = () => {
       // Update the profile with the new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id, // Use user_id (UUID) instead of id
-          avatar_url: filePath,
-          updated_at: new Date().toISOString()
-        });
+        .upsert(
+          {
+            user_id: user.id, // Use user_id (UUID)
+            avatar_url: filePath,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id' } // Specify conflict target
+        );
         
       if (updateError) {
         throw updateError;
@@ -465,12 +468,16 @@ export const AccountScreen = () => {
       // Update the profile using upsert
       const { data: upsertData, error: upsertError } = await supabase // Renamed error variable
         .from('profiles')
-        .upsert(profileDataToSave)
+        .upsert(profileDataToSave, { onConflict: 'user_id' }) // Specify conflict target
         .select() // Select the updated/inserted row
         .single(); // Expect a single row back
 
       if (upsertError) { // Use the renamed error variable
         console.error('[AccountScreen] Error saving profile:', upsertError);
+        // Check if the error is the specific duplicate key error, which shouldn't happen with onConflict
+        if (upsertError.code === '23505') {
+            Alert.alert('Save Error', 'A conflict occurred while saving your profile. Please try again or contact support if this persists.');
+        }
         throw upsertError; // Throw the renamed error variable
       }
 

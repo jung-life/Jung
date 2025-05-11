@@ -120,7 +120,7 @@ export const DisclaimerScreen = () => {
           {/* Header with logo */}
           <View style={tw`items-center mb-4`}>
             <Image 
-              source={require('../../assets/JungAppLogo.webp')} 
+              source={{ uri: supabase.storage.from('assets').getPublicUrl('logo/jung-logo.png').data.publicUrl }}
               style={tw`w-16 h-16 mb-2`}
               resizeMode="contain"
             />

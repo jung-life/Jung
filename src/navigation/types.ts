@@ -27,6 +27,7 @@ export type RootStackParamList = {
   MoodTrackerScreen: undefined; // Add Mood Tracker screen
   LoadingScreen: undefined; // Add LoadingScreen
   JournalingScreen: undefined; // Add Journaling screen
+  SettingsScreen: undefined; // Add Settings screen
 };
 
 // Add these types for navigation

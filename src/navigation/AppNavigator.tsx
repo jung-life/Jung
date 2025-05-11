@@ -1,5 +1,6 @@
 // In AppNavigator.tsx
-import React from 'react';
+import React, { useEffect } from 'react'; // Added useEffect
+import * as Notifications from 'expo-notifications'; // Added Notifications
 import { AccountScreen } from '../screens/AccountScreen';
 import LandingScreen from '../screens/LandingScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
@@ -25,6 +26,7 @@ import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen'
 import { ConversationInsightsScreen } from '../screens/ConversationInsightsScreen';
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
+import SettingsScreen from '../screens/SettingsScreen'; // Import SettingsScreen
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -143,6 +145,11 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       component={ConversationInsightsScreen}
       options={{ headerShown: true, title: 'Conversation Insights' }}
     />
+    <Stack.Screen
+      name="SettingsScreen"
+      component={SettingsScreen}
+      options={{ headerShown: true, title: 'Settings' }}
+    />
   </Stack.Navigator>
 );
 
@@ -150,6 +157,48 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
 const AppNavigator = () => {
   const { session, isNewUser, loading } = useAuth();
   const user = session?.user;
+
+  useEffect(() => {
+    // Listener for when a user taps on a notification (app is in foreground, background, or killed)
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response received:', response);
+      const navigateTo = response.notification.request.content.data?.navigateTo;
+      console.log('Navigate to data:', navigateTo);
+
+      if (navigateTo && navigationRef.isReady()) {
+        // Ensure navigationRef is ready before attempting to navigate
+        // Type assertion might be needed if navigateTo values are not strictly in RootStackParamList
+        if (navigateTo === 'Home') {
+          navigationRef.navigate('Home' as any); 
+        }
+        // Add other navigation targets if needed
+        // else if (navigateTo === 'SomeOtherScreen') {
+        //   navigationRef.navigate('SomeOtherScreen' as any, { someParam: 'value' });
+        // }
+      }
+    });
+
+    // Check if the app was opened by a notification
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) {
+        console.log('App opened by notification (getLastNotificationResponseAsync):', response);
+        const navigateTo = response.notification.request.content.data?.navigateTo;
+        if (navigateTo && navigationRef.isReady()) {
+          if (navigateTo === 'Home') {
+            navigationRef.navigate('Home' as any);
+          }
+        } else if (navigateTo) {
+          // Handle case where navigator is not ready yet (e.g. queue action)
+          // For simplicity, this example assumes it will be ready soon or relies on listener above.
+          console.warn('Navigator not ready when app opened by notification, navigation might be missed.');
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // Show loading screen while checking auth state
   if (loading) {
