@@ -39,21 +39,27 @@ export default ({ config }) => {
 
 
   // You can keep the existing extra config if needed for other purposes
+  const originalExtra = { ...config.extra }; // Preserve original extra from app.json
+
   config.extra = {
-    ...config.extra, // Spread existing extra config from app.json
-    // You might want a general Google Client ID here too, perhaps for web?
-    // googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    ...originalExtra, // Start with original extra
+    // Add or override other dynamic extra properties here if needed
+    // e.g., googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
   };
 
-  // Ensure EAS projectId from app.json is preserved if not overridden
-  if (config.extra?.eas?.projectId && !process.env.EAS_PROJECT_ID) {
-    // If app.json has a projectId and it's not being set by an env var, keep it.
-  } else if (process.env.EAS_PROJECT_ID) {
-    // If an env var for EAS_PROJECT_ID is set, use that.
-    config.extra.eas = config.extra.eas || {};
-    config.extra.eas.projectId = process.env.EAS_PROJECT_ID;
+  // Ensure EAS projectId from app.json (via originalExtra) is correctly set
+  if (originalExtra?.eas?.projectId) {
+    config.extra.eas = {
+      ...config.extra.eas, // Spread any other dynamic EAS config
+      projectId: originalExtra.eas.projectId, // Explicitly set projectId from original
+    };
   }
-  // If neither, it will rely on what's in app.json or what EAS CLI infers.
+  
+  // If you have an environment variable to override projectId, you can do it here:
+  // if (process.env.EAS_PROJECT_ID) {
+  //   config.extra.eas = config.extra.eas || {};
+  //   config.extra.eas.projectId = process.env.EAS_PROJECT_ID;
+  // }
 
   return config; // Return the modified config object
 };

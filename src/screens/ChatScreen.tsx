@@ -114,12 +114,12 @@ export const ChatScreen = () => {
     // Voice listeners
     Voice.onSpeechStart = () => setIsRecording(true);
     Voice.onSpeechEnd = () => setIsRecording(false);
-    Voice.onSpeechError = (e) => {
-      console.error('Speech recognition error', e);
+    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
+      console.error('Speech recognition error', e.error);
       Alert.alert('Speech Error', e.error?.message || 'Could not recognize speech.');
       setIsRecording(false);
     };
-    Voice.onSpeechResults = (e) => {
+    Voice.onSpeechResults = (e: { value?: string[] }) => {
       if (e.value && e.value.length > 0) {
         setRecognizedText(e.value[0]);
         setInputText(e.value[0]); // Populate input field with recognized text
@@ -625,9 +625,9 @@ export const ChatScreen = () => {
     setIsSpeaking(true);
     Speech.speak(text, {
       onDone: () => setIsSpeaking(false),
-      onError: (e) => {
-        console.error('Speech synthesis error', e);
-        Alert.alert('Speech Error', 'Could not play voice response.');
+      onError: (e: { error: string }) => {
+        console.error('Speech synthesis error', e.error);
+        Alert.alert('Speech Error', `Could not play voice response: ${e.error}`);
         setIsSpeaking(false);
       },
     });
