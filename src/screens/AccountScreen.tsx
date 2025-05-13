@@ -355,7 +355,12 @@ export const AccountScreen = () => {
       });
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadAvatar(result.assets[0].uri);
+        const selectedImage = result.assets[0];
+        if (selectedImage.mimeType === 'image/webp' || (selectedImage.fileName && selectedImage.fileName.toLowerCase().endsWith('.webp'))) {
+          Alert.alert('Unsupported Format', 'WebP images are not supported. Please choose a different image format (e.g., PNG or JPEG).');
+          return;
+        }
+        await uploadAvatar(selectedImage.uri);
       }
     } catch (error) {
       console.error('Error picking image:', error);

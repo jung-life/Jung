@@ -103,6 +103,10 @@ export const ProfileScreen = () => {
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
+        if (selectedImage.mimeType === 'image/webp' || (selectedImage.fileName && selectedImage.fileName.toLowerCase().endsWith('.webp'))) {
+          Alert.alert('Unsupported Format', 'WebP images are not supported. Please choose a different image format (e.g., PNG or JPEG).');
+          return;
+        }
         await uploadAvatar(selectedImage.uri);
       }
     } catch (error) {
@@ -130,6 +134,10 @@ export const ProfileScreen = () => {
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
+        if (selectedImage.mimeType === 'image/webp' || (selectedImage.fileName && selectedImage.fileName.toLowerCase().endsWith('.webp'))) {
+          Alert.alert('Unsupported Format', 'WebP images are not supported. Please choose a different image format (e.g., PNG or JPEG).');
+          return;
+        }
         await uploadAvatar(selectedImage.uri);
       }
     } catch (error) {

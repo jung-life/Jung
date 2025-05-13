@@ -15,9 +15,10 @@ try {
 }
 
 // Use the appropriate Image component based on platform and availability
-const Image = (Platform.OS === 'ios' && parseInt(Platform.Version, 10) < 14 && ExpoImage) 
-  ? ExpoImage 
-  : RNImage;
+// const Image = (Platform.OS === 'ios' && parseInt(Platform.Version, 10) < 14 && ExpoImage) 
+//   ? ExpoImage 
+//   : RNImage;
+const Image = RNImage; // Force RNImage for diagnostics
 
 // Define available avatars with their details - metadata only
 export const availableAvatars = [

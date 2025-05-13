@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.jungai",
+      "bundleIdentifier": "com.yourcompany.jung",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
