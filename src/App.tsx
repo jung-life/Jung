@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase, storeAuthData, checkSession } from './lib/supabase';
+import { initAnalytics } from './lib/analytics'; // Import initAnalytics
 
 // Import Screens directly
 import LandingScreen from './screens/LandingScreen';
@@ -49,14 +50,18 @@ try {
   } else {
     console.warn('Mixpanel module found but init method is missing');
   }
+  // Initialize our analytics module with the instance
+  initAnalytics(mixpanelInstance); 
 } catch (error) {
   console.error('Failed to import or initialize Mixpanel:', error);
-  mixpanelInstance = {
+  const mockMixpanel = {
     track: (eventName: string, props?: Record<string, any>) => console.log('Mixpanel track (mock):', eventName, props),
     init: () => console.log('Mixpanel init (mock)'),
   };
+  // Initialize analytics with mock if real one failed
+  initAnalytics(mockMixpanel); 
 }
-export const mixpanel = mixpanelInstance;
+// export const mixpanel = mixpanelInstance; // REMOVE THIS EXPORT
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

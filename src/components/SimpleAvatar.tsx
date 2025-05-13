@@ -123,7 +123,6 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
   // For AI avatars, find the avatar metadata
   const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
   const avatarUrl = getAvatarUrl(avatar.filename);
-  const fallbackUrl = avatarUrl.replace('.webp', '.png');
   
   return (
     <View 
@@ -147,19 +146,14 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
         </View>
       ) : (
         <Image
-          source={{ uri: usingFallback ? fallbackUrl : avatarUrl }}
+          source={{ uri: avatarUrl }}
           style={styles.image}
           onLoadStart={() => setLoading(true)}
           onLoad={() => setLoading(false)}
           onError={() => {
-            if (!usingFallback) {
-              console.log(`Trying fallback image: ${fallbackUrl}`);
-              setUsingFallback(true);
-            } else {
-              setLoading(false);
-              setError(true);
-              console.error(`Failed to load both WebP and fallback images for ${avatar.id}`);
-            }
+            setLoading(false);
+            setError(true);
+            console.error(`Failed to load image for ${avatar.id}: ${avatarUrl}`);
           }}
         />
       )}
