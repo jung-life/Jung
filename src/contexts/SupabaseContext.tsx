@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import * as SecureStore from 'expo-secure-store';
-import { View, Text } from 'react-native';
 
 type SupabaseContextProps = {
   isLoggedIn: boolean;
@@ -25,15 +24,6 @@ const SupabaseContext = createContext<SupabaseContextProps>({
 });
 
 export const useSupabase = () => useContext(SupabaseContext);
-
-// Create a safe wrapper component to catch any text that might be rendered
-const SafeWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  return (
-    <View style={{ flex: 1 }}>
-      {children}
-    </View>
-  );
-};
 
 export const SupabaseProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -126,19 +116,17 @@ export const SupabaseProvider: React.FC<{children: React.ReactNode}> = ({ childr
   };
 
   return (
-    <SafeWrapper>
-      <SupabaseContext.Provider
-        value={{
-          isLoggedIn,
-          loading,
-          login,
-          logout,
-          getGoogleOAuthUrl,
-          setOAuthSession
-        }}
-      >
-        {children}
-      </SupabaseContext.Provider>
-    </SafeWrapper>
+    <SupabaseContext.Provider
+      value={{
+        isLoggedIn,
+        loading,
+        login,
+        logout,
+        getGoogleOAuthUrl,
+        setOAuthSession
+      }}
+    >
+      {children}
+    </SupabaseContext.Provider>
   );
 };
