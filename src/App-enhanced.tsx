@@ -43,15 +43,6 @@ import { House } from 'phosphor-react-native'; // Added for headerLeft icon
 import { ConversationHistoryScreen } from './screens/ConversationHistoryScreen-enhanced'; // Import enhanced version
 import { ConversationInsightsScreenEnhanced } from './screens/ConversationInsightsScreen-enhanced'; // Import enhanced version (Corrected import name)
 
-// Create a wrapper component to handle any text rendering issues
-const TextSafeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  return (
-    <View style={{ flex: 1 }}>
-      {children}
-    </View>
-  );
-};
-
 // Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
 try {
@@ -269,17 +260,15 @@ export default function EnhancedApp() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <TextSafeProvider>
-          <SupabaseProvider>
-            <AuthProvider>
-              <ThemeProvider>
-                <AuthUrlHandler />
-                <AppContentEnhanced />
-                <StatusBar style="auto" />
-              </ThemeProvider>
-            </AuthProvider>
-          </SupabaseProvider>
-        </TextSafeProvider>
+        <SupabaseProvider> {/* Ensure SupabaseProvider uses supabaseEnhanced if needed */}
+          <AuthProvider> {/* Ensure AuthProvider uses supabaseEnhanced if needed */}
+            <ThemeProvider>
+              <AuthUrlHandler /> {/* Add AuthUrlHandler here, outside NavigationContainer */}
+              <AppContentEnhanced /> {/* Render the component containing hooks and navigator */}
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </AuthProvider>
+        </SupabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
