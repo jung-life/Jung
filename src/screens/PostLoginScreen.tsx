@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal, TextInput, Alert, FlatList } from 'react-native'; // Added FlatList
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Modal, TextInput, Alert, FlatList, TouchableOpacity } from 'react-native'; // Added FlatList
+import { SafeTouchableOpacity } from '../components/SafeTouchableOpacity';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackNavigationProp } from '../navigation/types';
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
-import { ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, Wind, Sparkle, Bed, FireSimple, House } from 'phosphor-react-native'; // Added House, removed unused User
 import { HamburgerMenu } from '../components/HamburgerMenu';
+import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 import * as secureStore from '../lib/secureStorage';
 import * as Location from 'expo-location'; // Added Expo Location
 import { supabase } from '../lib/supabase'; // Added Supabase
@@ -24,15 +25,15 @@ type MoodEntry = {
 const MOOD_STORAGE_KEY = 'moodEntries';
 
 const moodOptions: { name: MoodOption; icon: React.ReactNode; color: string }[] = [
-  { name: 'Happy', icon: <Smiley size={32} weight="light" />, color: 'text-green-500' },
-  { name: 'Excited', icon: <Sparkle size={32} weight="light" />, color: 'text-orange-500' },
-  { name: 'Calm', icon: <Wind size={32} weight="light" />, color: 'text-cyan-500' },
-  { name: 'Okay', icon: <SmileyMeh size={32} weight="light" />, color: 'text-yellow-500' },
-  { name: 'Sad', icon: <SmileySad size={32} weight="light" />, color: 'text-blue-500' },
-  { name: 'Anxious', icon: <CloudLightning size={32} weight="light" />, color: 'text-purple-500' },
-  { name: 'Stressed', icon: <FireSimple size={32} weight="light" />, color: 'text-pink-500' },
-  { name: 'Angry', icon: <SmileyXEyes size={32} weight="light" />, color: 'text-red-500' },
-  { name: 'Tired', icon: <Bed size={32} weight="light" />, color: 'text-slate-500' },
+  { name: 'Happy', icon: <SafePhosphorIcon iconType="Smiley" size={32} weight="light" />, color: 'text-green-500' },
+  { name: 'Excited', icon: <SafePhosphorIcon iconType="Sparkle" size={32} weight="light" />, color: 'text-orange-500' },
+  { name: 'Calm', icon: <SafePhosphorIcon iconType="Wind" size={32} weight="light" />, color: 'text-cyan-500' },
+  { name: 'Okay', icon: <SafePhosphorIcon iconType="SmileyMeh" size={32} weight="light" />, color: 'text-yellow-500' },
+  { name: 'Sad', icon: <SafePhosphorIcon iconType="SmileySad" size={32} weight="light" />, color: 'text-blue-500' },
+  { name: 'Anxious', icon: <SafePhosphorIcon iconType="CloudLightning" size={32} weight="light" />, color: 'text-purple-500' },
+  { name: 'Stressed', icon: <SafePhosphorIcon iconType="FireSimple" size={32} weight="light" />, color: 'text-pink-500' },
+  { name: 'Angry', icon: <SafePhosphorIcon iconType="SmileyXEyes" size={32} weight="light" />, color: 'text-red-500' },
+  { name: 'Tired', icon: <SafePhosphorIcon iconType="Bed" size={32} weight="light" />, color: 'text-slate-500' },
 ];
 
 const PostLoginScreen = () => {
@@ -169,15 +170,15 @@ const PostLoginScreen = () => {
   // Helper to get icon and color based on mood for rendering items
   const getMoodDetails = (mood: MoodOption) => {
     switch (mood) {
-      case 'Happy': return { icon: <Smiley size={20} weight="light" />, color: 'text-green-500' };
-      case 'Okay': return { icon: <SmileyMeh size={20} weight="light" />, color: 'text-yellow-500' };
-      case 'Sad': return { icon: <SmileySad size={20} weight="light" />, color: 'text-blue-500' };
-      case 'Anxious': return { icon: <CloudLightning size={20} weight="light" />, color: 'text-purple-500' };
-      case 'Angry': return { icon: <SmileyXEyes size={20} weight="light" />, color: 'text-red-500' };
-      case 'Calm': return { icon: <Wind size={20} weight="light" />, color: 'text-cyan-500' };
-      case 'Excited': return { icon: <Sparkle size={20} weight="light" />, color: 'text-orange-500' };
-      case 'Tired': return { icon: <Bed size={20} weight="light" />, color: 'text-slate-500' };
-      case 'Stressed': return { icon: <FireSimple size={20} weight="light" />, color: 'text-pink-500' };
+      case 'Happy': return { icon: <SafePhosphorIcon iconType="Smiley" size={20} weight="light" />, color: 'text-green-500' };
+      case 'Okay': return { icon: <SafePhosphorIcon iconType="SmileyMeh" size={20} weight="light" />, color: 'text-yellow-500' };
+      case 'Sad': return { icon: <SafePhosphorIcon iconType="SmileySad" size={20} weight="light" />, color: 'text-blue-500' };
+      case 'Anxious': return { icon: <SafePhosphorIcon iconType="CloudLightning" size={20} weight="light" />, color: 'text-purple-500' };
+      case 'Angry': return { icon: <SafePhosphorIcon iconType="SmileyXEyes" size={20} weight="light" />, color: 'text-red-500' };
+      case 'Calm': return { icon: <SafePhosphorIcon iconType="Wind" size={20} weight="light" />, color: 'text-cyan-500' };
+      case 'Excited': return { icon: <SafePhosphorIcon iconType="Sparkle" size={20} weight="light" />, color: 'text-orange-500' };
+      case 'Tired': return { icon: <SafePhosphorIcon iconType="Bed" size={20} weight="light" />, color: 'text-slate-500' };
+      case 'Stressed': return { icon: <SafePhosphorIcon iconType="FireSimple" size={20} weight="light" />, color: 'text-pink-500' };
       default: return { icon: null, color: 'text-gray-500' };
     }
   };
@@ -248,9 +249,7 @@ const PostLoginScreen = () => {
         onPress={handleSaveMood}
         disabled={!selectedMood}
       >
-        <View>
-          <FloppyDisk size={20} color="white" weight="bold" style={tw`mr-2`} />
-        </View>
+        <SafePhosphorIcon iconType="FloppyDisk" size={20} color="white" weight="bold" style={tw`mr-2`} />
         <Text style={tw`text-white text-lg font-bold`}>Log Mood</Text>
       </TouchableOpacity>
 
@@ -284,76 +283,58 @@ const PostLoginScreen = () => {
           </View>
           
           {/* Conversations Button */}
-          <TouchableOpacity
+          <SafeTouchableOpacity
             style={tw`bg-conversation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use conversation color
             onPress={() => navigation.navigate('ConversationsScreen', { refresh: true })}
           >
-            {/* Wrap icon in a View */}
-            <View>
-              <ChatCircleDots size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            </View>
+            <SafePhosphorIcon iconType="ChatCircleDots" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversations</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
           
           {/* Journaling Button */}
-          <TouchableOpacity
+          <SafeTouchableOpacity
             style={tw`bg-purple-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use purple color for journaling
             onPress={() => navigation.navigate('JournalingScreen')}
           >
-            {/* Wrap icon in a View */}
-            <View>
-              <BookOpen size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            </View>
+            <SafePhosphorIcon iconType="BookOpen" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Journal</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
           
           {/* Daily Motivation Button */}
-          <TouchableOpacity 
+          <SafeTouchableOpacity 
             style={tw`bg-motivation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use motivation color
             onPress={() => navigation.navigate('DailyMotivationScreen')}
           >
-            {/* Wrap icon in a View */}
-            <View>
-              <Brain size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            </View>
+            <SafePhosphorIcon iconType="Brain" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Daily Motivation</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
           
           {/* Emotional Assessment Button */}
-          <TouchableOpacity 
+          <SafeTouchableOpacity 
             style={tw`bg-emotional rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use emotional color
             onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
           >
-            {/* Wrap icon in a View */}
-            <View> 
-              <Heart size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            </View>
+            <SafePhosphorIcon iconType="Heart" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
 
           {/* Mood Tracker Button */}
-          <TouchableOpacity
+          <SafeTouchableOpacity
             style={tw`bg-indigo-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Example color
             onPress={() => navigation.navigate('MoodTrackerScreen')} // Navigate to MoodTrackerScreen
             >
-            {/* Wrap icon in a View */}
-            <View>
-              <Smiley size={28} color="#2D2B55" weight="fill" />
-            </View>
+            <SafePhosphorIcon iconType="Smiley" size={28} color="#2D2B55" weight="fill" />
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Mood Tracker</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
 
           {/* Self-Help Resources Button */}
-          <TouchableOpacity 
+          <SafeTouchableOpacity 
             style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
             onPress={() => navigation.navigate('SelfHelpResourcesScreen')}
             >
-            {/* Wrap icon in a View */}
-            <View>
-              <BookOpen size={28} color="#2D2B55" weight="fill" />
-            </View>
+            <SafePhosphorIcon iconType="BookOpen" size={28} color="#2D2B55" weight="fill" />
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
-          </TouchableOpacity>
+          </SafeTouchableOpacity>
 
         </ScrollView>
 

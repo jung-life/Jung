@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
 import { AuthProvider, useAuth } from './contexts/AuthContext'; // Import useAuth
-import { SupabaseProvider } from './contexts/SupabaseContext';
+import { SupabaseProvider } from './contexts/SafeSupabaseProvider'; // Import from SafeSupabaseProvider
 import { ThemeProvider } from './contexts/ThemeContext';
 import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking'; // Use useURL hook
@@ -86,7 +86,11 @@ const defaultPostLoginOptions = {
   headerShown: true,
   headerLeft: () => (
     <TouchableOpacity onPress={() => NavigationService.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
-      <House size={24} color={'#4A3B78'} />
+      <Text style={{ fontSize: 0 }}>
+        <View>
+          <House size={24} color={'#4A3B78'} />
+        </View>
+      </Text>
     </TouchableOpacity>
   ),
   headerBackVisible: false,
@@ -144,7 +148,11 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
         headerBackVisible: false,
         headerLeft: () => (
           <TouchableOpacity onPress={() => navigation.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
-            <House size={24} color={'#4A3B78'} />
+            <Text style={{ fontSize: 0 }}>
+              <View>
+                <House size={24} color={'#4A3B78'} />
+              </View>
+            </Text>
           </TouchableOpacity>
         ),
         // headerRight: () => <HamburgerMenu />, // Already set from screenOptions
@@ -260,11 +268,11 @@ export default function EnhancedApp() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <SupabaseProvider> {/* Ensure SupabaseProvider uses supabaseEnhanced if needed */}
-          <AuthProvider> {/* Ensure AuthProvider uses supabaseEnhanced if needed */}
+        <SupabaseProvider>
+          <AuthProvider>
             <ThemeProvider>
-              <AuthUrlHandler /> {/* Add AuthUrlHandler here, outside NavigationContainer */}
-              <AppContentEnhanced /> {/* Render the component containing hooks and navigator */}
+              <AuthUrlHandler />
+              <AppContentEnhanced />
               <StatusBar style="auto" />
             </ThemeProvider>
           </AuthProvider>
