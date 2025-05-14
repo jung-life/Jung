@@ -19,7 +19,7 @@ import { decryptData } from '../lib/security';
 import { generateAIResponse } from '../lib/api';
 import { useFocusEffect } from '@react-navigation/native';
 // Add House icon import
-import { ArrowRight, ArrowLeft, Sparkle, Leaf, Plant, SmileyWink, House } from 'phosphor-react-native'; 
+import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 import { quotes } from '../data/quotes';
 
 export default function DailyMotivationScreen() {
@@ -55,8 +55,24 @@ export default function DailyMotivationScreen() {
           // If we have emotional data, try to decrypt and use it
           if (emotionalStates && emotionalStates.length > 0) {
             try {
+              // Make sure we properly await the async decryptData function
               const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
+              
+              // Add additional validation before parsing
+              if (!decryptedData || typeof decryptedData !== 'string' || decryptedData.trim() === '') {
+                throw new Error('Decrypted data is empty or invalid');
+              }
+              
               const profile = JSON.parse(decryptedData);
+              
+              // Validate the profile structure before using it
+              if (!profile || typeof profile !== 'object' || 
+                  !profile.primary_emotion || 
+                  !Array.isArray(profile.secondary_emotions) || 
+                  !Array.isArray(profile.needs)) {
+                throw new Error('Decrypted profile has invalid structure');
+              }
+              
               setEmotionalProfile(profile);
               // Generate personalized quote only if decryption is successful
               await generatePersonalizedQuote(profile);
@@ -144,7 +160,7 @@ export default function DailyMotivationScreen() {
         {personalizedQuote ? (
           <View style={tw`mb-10`}>
             <View style={tw`flex-row mb-2 items-center`}>
-              <SmileyWink size={22} color="#97C1A9" weight="fill" />
+              <SafePhosphorIcon iconType="Smiley" size={22} color="#97C1A9" weight="fill" />
               <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
             </View>
             <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30`}>
@@ -175,7 +191,7 @@ export default function DailyMotivationScreen() {
         {currentQuote ? (
           <View style={tw`mb-8`}> {/* Added mb-8 for spacing */}
             <View style={tw`flex-row mb-2 items-center`}>
-              <Leaf size={20} color="#97C1A9" weight="fill" />
+              <SafePhosphorIcon iconType="Sparkle" size={20} color="#97C1A9" weight="fill" />
               <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
             </View>
             <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
@@ -196,7 +212,7 @@ export default function DailyMotivationScreen() {
           onPress={selectRandomQuote}
         >
           <View style={tw`flex-row items-center`}>
-            <Plant size={20} color="white" weight="fill" style={tw`mr-2`} />
+            <SafePhosphorIcon iconType="Sparkle" size={20} color="white" weight="fill" style={tw`mr-2`} />
             <Text style={tw`text-white font-medium`}>
               Refresh Your Inspiration
             </Text>
@@ -208,7 +224,7 @@ export default function DailyMotivationScreen() {
           onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
         >
           <Text style={tw`text-gray-600 mr-2 font-medium`}>Update Your Emotional Profile</Text>
-          <ArrowRight size={16} color="#97C1A9" />
+          <SafePhosphorIcon iconType="ArrowLeft" size={16} color="#97C1A9" />
         </TouchableOpacity>
         {/* End Buttons Section */}
 
@@ -244,7 +260,7 @@ export default function DailyMotivationScreen() {
             style={tw`p-3 bg-jung-purple-light rounded-full`}
             onPress={() => navigation.navigate('PostLoginScreen')}
           >
-            <House size={28} color="#4A3B78" weight="fill" />
+            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
           </TouchableOpacity>
         </View>
         

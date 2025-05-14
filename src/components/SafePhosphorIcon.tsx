@@ -3,15 +3,15 @@ import { View, Text } from 'react-native';
 import { 
   ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, 
   SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, 
-  Wind, Sparkle, Bed, FireSimple, House 
+  Wind, Sparkle, Bed, FireSimple, House, X, Plus, ArrowRight
 } from 'phosphor-react-native';
 
 // Define the icon types we're using
 type IconType = 
   | 'ChatCircleDots' | 'Brain' | 'BookOpen' | 'Heart' | 'User' 
   | 'Smiley' | 'SmileyMeh' | 'SmileySad' | 'SmileyXEyes' 
-  | 'CloudLightning' | 'FloppyDisk' | 'ArrowLeft' | 'Wind' 
-  | 'Sparkle' | 'Bed' | 'FireSimple' | 'House';
+  | 'CloudLightning' | 'FloppyDisk' | 'ArrowLeft' | 'ArrowRight' | 'Wind' 
+  | 'Sparkle' | 'Bed' | 'FireSimple' | 'House' | 'X' | 'Plus';
 
 interface SafePhosphorIconProps {
   iconType: IconType;
@@ -68,6 +68,12 @@ export const SafePhosphorIcon: React.FC<SafePhosphorIconProps> = ({
         return <FireSimple size={size} color={color} weight={weight} />;
       case 'House':
         return <House size={size} color={color} weight={weight} />;
+      case 'X':
+        return <X size={size} color={color} weight={weight} />;
+      case 'Plus':
+        return <Plus size={size} color={color} weight={weight} />;
+      case 'ArrowRight':
+        return <ArrowRight size={size} color={color} weight={weight} />;
       default:
         console.warn(`Icon "${iconType}" not supported`);
         return null;

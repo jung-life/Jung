@@ -33,9 +33,11 @@ export default ({ config }) => {
 
   // For iOS:
   config.ios.infoPlist.NSLocationWhenInUseUsageDescription = 
-    "This app uses your location to provide relevant features and enhance your experience. For example, location data may be used to personalize content or features based on your general area.";
-  // You can also add NSLocationAlwaysAndWhenInUseUsageDescription if background location is needed:
-  // config.ios.infoPlist.NSLocationAlwaysAndWhenInUseUsageDescription = "Your message for always and when in use location permission";
+    "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.";
+  config.ios.infoPlist.NSLocationAlwaysAndWhenInUseUsageDescription = 
+    "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.";
+  config.ios.infoPlist.NSLocationAlwaysUsageDescription = 
+    "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.";
 
 
   // You can keep the existing extra config if needed for other purposes
