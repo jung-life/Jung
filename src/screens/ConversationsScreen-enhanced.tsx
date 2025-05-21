@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, 
@@ -24,7 +25,7 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SensualContainer } from '../components/SensualContainer';
 import { Typography } from '../components/Typography';
 import TouchableJung from '../components/TouchableJung';
-import { SignOut, Plus, Sparkle, Brain, ArrowRight, ChatCircle, Play, X, NotePencil, Notebook, PencilLine, CheckCircle, XCircle, Feather, BookOpen, Lightbulb, FlowerLotus, Leaf, User, ArrowLeft, List, House } from 'phosphor-react-native';
+import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { generateAIResponse } from '../lib/api';
@@ -568,7 +569,7 @@ export const ConversationsScreen = () => {
                 style={tw`p-2`}
                 onPress={() => setShowAnalysisModal(false)}
               >
-                <X size={24} color="#4A3B78" />
+                <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" />
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 Analysis: {currentConversationTitle}
@@ -883,7 +884,7 @@ Return only the title text with no additional explanation or formatting.`;
                 }}
                 activeOpacity={0.7}
               >
-                <X size={24} color="#4A3B78" weight="bold" />
+                <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" weight="bold" />
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
@@ -1034,8 +1035,7 @@ Return only the title text with no additional explanation or formatting.`;
         
         <View style={tw`flex-row justify-between items-center p-4`}>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
-          {/* History button removed */}
-          <View style={tw`w-10`} /> {/* Add a spacer to keep title centered */}
+          <View style={tw`w-10`} />
         </View>
         
         {loading ? (
@@ -1161,7 +1161,7 @@ Return only the title text with no additional explanation or formatting.`;
             style={tw`p-3 bg-jung-purple-light rounded-full`}
             onPress={() => navigation.navigate('PostLoginScreen')}
           >
-            <House size={28} color="#4A3B78" weight="fill" />
+            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}
@@ -1169,7 +1169,7 @@ Return only the title text with no additional explanation or formatting.`;
           style={tw`absolute bottom-20 right-6 bg-jung-purple w-14 h-14 rounded-full justify-center items-center shadow-lg`}
           onPress={handleNewConversation}
         >
-          <Plus size={28} color="white" />
+          <SafePhosphorIcon iconType="Plus" size={28} color="white" />
         </TouchableOpacity>
       </SafeAreaView>
     </GradientBackground>

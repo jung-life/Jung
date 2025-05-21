@@ -156,7 +156,6 @@ export default function DailyMotivationScreen() {
     return (
       <ScrollView style={tw`flex-1 p-6`}>
         
-        {/* Personalized Section */}
         {personalizedQuote ? (
           <View style={tw`mb-10`}>
             <View style={tw`flex-row mb-2 items-center`}>
@@ -185,9 +184,7 @@ export default function DailyMotivationScreen() {
             )}
           </View>
         ) : null} 
-        {/* End Personalized Section */}
 
-        {/* Daily Wisdom Section */}
         {currentQuote ? (
           <View style={tw`mb-8`}> {/* Added mb-8 for spacing */}
             <View style={tw`flex-row mb-2 items-center`}>
@@ -204,9 +201,7 @@ export default function DailyMotivationScreen() {
             </View>
           </View>
         ) : null}
-        {/* End Daily Wisdom Section */}
 
-        {/* Buttons Section */}
         <TouchableOpacity
           style={tw`bg-jung-purple rounded-xl py-4 items-center shadow-sm`} // Removed mt-8 as spacing is handled by Daily Wisdom section margin
           onPress={selectRandomQuote}
@@ -226,7 +221,6 @@ export default function DailyMotivationScreen() {
           <Text style={tw`text-gray-600 mr-2 font-medium`}>Update Your Emotional Profile</Text>
           <SafePhosphorIcon iconType="ArrowLeft" size={16} color="#97C1A9" />
         </TouchableOpacity>
-        {/* End Buttons Section */}
 
       </ScrollView> // Closing ScrollView tag was missing/misplaced before
     );
@@ -237,24 +231,9 @@ export default function DailyMotivationScreen() {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.07} variant="motivation" />
         
-        {/* Custom header removed, will rely on AppNavigator's header options */}
-        {/*
-        <View style={tw`p-4 border-b border-soothing-green/30 flex-row items-center`}>
-          <TouchableOpacity 
-            style={tw`p-2`}
-            onPress={() => navigation.goBack()}
-          >
-            <ArrowLeft size={20} color="#4A3B78" />
-          </TouchableOpacity>
-          <Text style={tw`text-xl font-bold text-center text-gray-700 flex-1 mr-8`}>
-            Daily Motivation
-          </Text>
-        </View>
-        */}
         
         {renderContent()}
 
-        {/* Add Home Button */}
         <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white/80 border-t border-gray-200`}>
           <TouchableOpacity 
             style={tw`p-3 bg-jung-purple-light rounded-full`}

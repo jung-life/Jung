@@ -64,7 +64,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           <TouchableOpacity
             key={avatar.id}
             style={tw`items-center mr-4 ${isSelected ? 'opacity-100' : 'opacity-70'}`}
-            onPress={() => isAvailable && onSelectAvatar(avatar.id)}
+            onPress={() => isAvailable ? onSelectAvatar(avatar.id) : null}
             disabled={!isAvailable}
           >
             <View style={tw`relative`}>

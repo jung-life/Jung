@@ -218,7 +218,7 @@ export const RegisterScreen = () => {
                       tw`w-5 h-5 border border-gray-400 rounded`,
                       hasConsented && tw`bg-blue-500 border-blue-500`
                     ]}>
-                      {hasConsented && <Check size={16} color="white" weight="bold" />}
+                      {hasConsented ? <Check size={16} color="white" weight="bold" /> : null}
                     </View>
                   </TouchableOpacity>
                   <Text style={tw`text-sm text-gray-700 flex-1`}>
