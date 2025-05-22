@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -29,12 +29,14 @@ export default function DailyMotivationScreen() {
   const [currentAuthor, setCurrentAuthor] = useState('');
   const [emotionalProfile, setEmotionalProfile] = useState<any>(null);
   const [personalizedQuote, setPersonalizedQuote] = useState('');
+  const isMounted = useRef(true);
 
   useFocusEffect(
     React.useCallback(() => {
+      isMounted.current = true;
       const fetchData = async () => {
         try {
-          setLoading(true);
+          if (isMounted.current) setLoading(true);
           
           // Get user
           const { data: { user } } = await supabase.auth.getUser();
@@ -73,38 +75,48 @@ export default function DailyMotivationScreen() {
                 throw new Error('Decrypted profile has invalid structure');
               }
               
-              setEmotionalProfile(profile);
+              if (isMounted.current) setEmotionalProfile(profile);
               // Generate personalized quote only if decryption is successful
               await generatePersonalizedQuote(profile);
             } catch (decryptError) {
               console.error('Error decrypting emotional data:', decryptError);
               // Clear potentially bad data and fall back to random quote
-              setEmotionalProfile(null);
-              setPersonalizedQuote('');
-              selectRandomQuote();
+              if (isMounted.current) {
+                setEmotionalProfile(null);
+                setPersonalizedQuote('');
+                selectRandomQuote();
+              }
             }
           } else {
             // No emotional data, use random quote
-            setEmotionalProfile(null); // Ensure profile is null if no data
-            setPersonalizedQuote(''); // Ensure personalized quote is empty
-            selectRandomQuote();
+            if (isMounted.current) {
+              setEmotionalProfile(null); // Ensure profile is null if no data
+              setPersonalizedQuote(''); // Ensure personalized quote is empty
+              selectRandomQuote();
+            }
           }
         } catch (error) {
           console.error('Error in DailyMotivationScreen:', error);
-          selectRandomQuote();
+          if (isMounted.current) selectRandomQuote();
         } finally {
-          setLoading(false);
+          if (isMounted.current) setLoading(false);
         }
       };
       
       fetchData();
+
+      return () => {
+        isMounted.current = false; // Cleanup on unmount
+      };
     }, [])
   );
 
   const selectRandomQuote = () => {
     const randomIndex = Math.floor(Math.random() * quotes.length);
-    setCurrentQuote(quotes[randomIndex].text);
-    setCurrentAuthor(quotes[randomIndex].author);
+    if (isMounted.current) {
+      setCurrentQuote(quotes[randomIndex].text);
+      setCurrentAuthor(quotes[randomIndex].author);
+    }
   };
 
   const generatePersonalizedQuote = async (profile: any) => {
@@ -131,14 +143,14 @@ export default function DailyMotivationScreen() {
       
       // Generate quote
       const aiResponse = await generateAIResponse(prompt);
-      setPersonalizedQuote(aiResponse.trim());
+      if (isMounted.current) setPersonalizedQuote(aiResponse.trim());
       
       // Also set a fallback quote
-      selectRandomQuote();
+      if (isMounted.current) selectRandomQuote();
       
     } catch (error) {
       console.error('Error generating personalized quote:', error);
-      selectRandomQuote();
+      if (isMounted.current) selectRandomQuote();
     }
   };
 
@@ -152,7 +164,6 @@ export default function DailyMotivationScreen() {
       );
     }
     
-    // Corrected renderContent structure
     return (
       <ScrollView style={tw`flex-1 p-6`}>
         
@@ -167,7 +178,7 @@ export default function DailyMotivationScreen() {
                 "{personalizedQuote}"
               </Text>
             </View>
-            {emotionalProfile && (
+            {emotionalProfile ? (
               <View style={tw`bg-soothing-green/10 rounded-lg p-4 border border-soothing-green/20`}>
                 <Text style={tw`text-sm text-gray-600 mb-2 font-medium`}>Based on your emotional profile:</Text>
                 <View style={tw`flex-row flex-wrap`}>
@@ -181,12 +192,12 @@ export default function DailyMotivationScreen() {
                   ))}
                 </View>
               </View>
-            )}
+            ) : null}
           </View>
-        ) : null} 
+        ) : null}
 
         {currentQuote ? (
-          <View style={tw`mb-8`}> {/* Added mb-8 for spacing */}
+          <View style={tw`mb-8`}>
             <View style={tw`flex-row mb-2 items-center`}>
               <SafePhosphorIcon iconType="Sparkle" size={20} color="#97C1A9" weight="fill" />
               <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
@@ -195,15 +206,15 @@ export default function DailyMotivationScreen() {
               <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
                 "{currentQuote}"
               </Text>
-              {currentAuthor && (
+              {currentAuthor ? (
                 <Text style={tw`text-right text-gray-500`}>— {currentAuthor}</Text>
-              )}
+              ) : null}
             </View>
           </View>
         ) : null}
 
         <TouchableOpacity
-          style={tw`bg-jung-purple rounded-xl py-4 items-center shadow-sm`} // Removed mt-8 as spacing is handled by Daily Wisdom section margin
+          style={tw`bg-jung-purple rounded-xl py-4 items-center shadow-sm`}
           onPress={selectRandomQuote}
         >
           <View style={tw`flex-row items-center`}>
@@ -222,18 +233,15 @@ export default function DailyMotivationScreen() {
           <SafePhosphorIcon iconType="ArrowLeft" size={16} color="#97C1A9" />
         </TouchableOpacity>
 
-      </ScrollView> // Closing ScrollView tag was missing/misplaced before
+      </ScrollView>
     );
   };
 
-  return ( // This return was correct
+  return (
     <GradientBackground variant="motivation">
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.07} variant="motivation" />
-        
-        
         {renderContent()}
-
         <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white/80 border-t border-gray-200`}>
           <TouchableOpacity 
             style={tw`p-3 bg-jung-purple-light rounded-full`}
@@ -242,7 +250,6 @@ export default function DailyMotivationScreen() {
             <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
           </TouchableOpacity>
         </View>
-        
       </SafeAreaView>
     </GradientBackground>
   );
