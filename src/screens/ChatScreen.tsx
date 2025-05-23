@@ -25,7 +25,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen, Microphone, SpeakerHigh, SpeakerSlash } from 'phosphor-react-native'; // Import phosphor icons
+import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen, Microphone, SpeakerHigh, SpeakerSlash, House } from 'phosphor-react-native'; // Import phosphor icons
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -882,6 +882,16 @@ export const ChatScreen = () => {
             </>
           )}
         </KeyboardAvoidingView>
+        {/* Home Button at the bottom */}
+        <View style={tw`bg-white border-t border-gray-200 p-2`}>
+          <TouchableOpacity
+            style={tw`flex-row items-center justify-center py-2`}
+            onPress={() => navigation.navigate('PostLoginScreen')}
+          >
+            <House size={24} color={tw.color('jung-purple')} />
+            <Text style={tw`ml-2 text-jung-purple font-semibold text-base`}>Home</Text>
+          </TouchableOpacity>
+        </View>
         {/* {renderAnalysisModal()}  Removed call to deleted function */}
       </SafeAreaView>
     </GradientBackground>
