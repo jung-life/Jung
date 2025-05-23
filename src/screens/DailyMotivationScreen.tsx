@@ -57,29 +57,47 @@ export default function DailyMotivationScreen() {
           // If we have emotional data, try to decrypt and use it
           if (emotionalStates && emotionalStates.length > 0) {
             try {
-              // Make sure we properly await the async decryptData function
               const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
-              
-              // Add additional validation before parsing
-              if (!decryptedData || typeof decryptedData !== 'string' || decryptedData.trim() === '') {
-                throw new Error('Decrypted data is empty or invalid');
+              console.log('Raw decrypted data:', decryptedData);
+
+              let profile;
+              if (typeof decryptedData === 'string') {
+                const cleanedData = decryptedData.trim();
+                try {
+                  profile = JSON.parse(cleanedData);
+                } catch (firstError) {
+                  // If direct parse fails, try to extract JSON object
+                  const jsonMatch = cleanedData.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    profile = JSON.parse(jsonMatch[0]);
+                  } else {
+                    throw new Error('No valid JSON found in decrypted data');
+                  }
+                }
+              } else if (typeof decryptedData === 'object' && decryptedData !== null) {
+                profile = decryptedData;
+              } else {
+                throw new Error('Invalid data format');
               }
-              
-              const profile = JSON.parse(decryptedData);
-              
-              // Validate the profile structure before using it
-              if (!profile || typeof profile !== 'object' || 
-                  !profile.primary_emotion || 
-                  !Array.isArray(profile.secondary_emotions) || 
-                  !Array.isArray(profile.needs)) {
-                throw new Error('Decrypted profile has invalid structure');
+
+              // Validate and set defaults
+              const validatedProfile = {
+                primary_emotion: profile?.primary_emotion || 'neutral',
+                secondary_emotions: Array.isArray(profile?.secondary_emotions) 
+                  ? profile.secondary_emotions 
+                  : ['calm'],
+                intensity: profile?.intensity || 5,
+                needs: Array.isArray(profile?.needs) 
+                  ? profile.needs 
+                  : ['balance'],
+              };
+
+              if (isMounted.current) {
+                setEmotionalProfile(validatedProfile);
+                await generatePersonalizedQuote(validatedProfile);
               }
-              
-              if (isMounted.current) setEmotionalProfile(profile);
-              // Generate personalized quote only if decryption is successful
-              await generatePersonalizedQuote(profile);
             } catch (decryptError) {
-              console.error('Error decrypting emotional data:', decryptError);
+              console.error('Error processing emotional data:', decryptError);
               // Clear potentially bad data and fall back to random quote
               if (isMounted.current) {
                 setEmotionalProfile(null);
@@ -173,7 +191,7 @@ export default function DailyMotivationScreen() {
               <SafePhosphorIcon iconType="Smiley" size={22} color="#97C1A9" weight="fill" />
               <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
             </View>
-            <View style={tw`bg-white/90 rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30`}>
+            <View style={tw`bg-white rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30 overflow-hidden`}>
               <Text style={tw`text-lg text-gray-700 italic leading-relaxed`}>
                 "{personalizedQuote}"
               </Text>
@@ -202,7 +220,7 @@ export default function DailyMotivationScreen() {
               <SafePhosphorIcon iconType="Sparkle" size={20} color="#97C1A9" weight="fill" />
               <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Daily Wisdom</Text>
             </View>
-            <View style={tw`bg-white/90 rounded-xl p-6 shadow-md border border-soothing-green/30`}>
+            <View style={tw`bg-white rounded-xl p-6 shadow-md border border-soothing-green/30 overflow-hidden`}>
               <Text style={tw`text-lg text-gray-700 italic mb-4 leading-relaxed`}>
                 "{currentQuote}"
               </Text>

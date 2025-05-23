@@ -111,23 +111,28 @@ export const ChatScreen = () => {
 
     requestPermissions();
 
-    // Voice listeners
-    Voice.onSpeechStart = () => setIsRecording(true);
-    Voice.onSpeechEnd = () => setIsRecording(false);
-    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
+    // Use addListener instead of direct assignment
+    const onSpeechStart = () => setIsRecording(true);
+    const onSpeechEnd = () => setIsRecording(false);
+    const onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
       console.error('Speech recognition error', e.error);
       Alert.alert('Speech Error', e.error?.message || 'Could not recognize speech.');
       setIsRecording(false);
     };
-    Voice.onSpeechResults = (e: { value?: string[] }) => {
+    const onSpeechResults = (e: { value?: string[] }) => {
       if (e.value && e.value.length > 0) {
         setRecognizedText(e.value[0]);
-        setInputText(e.value[0]); // Populate input field with recognized text
+        setInputText(e.value[0]);
       }
     };
 
+    Voice.addListener('onSpeechStart', onSpeechStart);
+    Voice.addListener('onSpeechEnd', onSpeechEnd);
+    Voice.addListener('onSpeechError', onSpeechError);
+    Voice.addListener('onSpeechResults', onSpeechResults);
+
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      Voice.removeAllListeners();
     };
   }, []);
   
@@ -642,10 +647,14 @@ export const ChatScreen = () => {
     if (isRecording) return;
     setRecognizedText('');
     try {
+      // DO NOT re-initialize or remove listeners here
+      console.log('Starting voice recognition...');
       await Voice.start('en-US');
+      console.log('Voice recognition started successfully');
     } catch (e) {
       console.error('Failed to start recording', e);
-      Alert.alert('Recording Error', 'Could not start voice recording.');
+      Alert.alert('Recording Error', 'Could not start voice recording. Please try again.');
+      setIsRecording(false);
     }
   };
 
@@ -865,8 +874,8 @@ export const ChatScreen = () => {
                     onPress={handleSendMessage}
                     disabled={(!inputText.trim() && !recognizedText.trim()) || isTyping || isRecording}
                   >
-                    {isTyping && <ActivityIndicator size="small" color="white" />}
-                    {!isTyping && <PaperPlaneRight size={20} color="white" weight="fill" />}
+                    {isTyping ? <ActivityIndicator size="small" color="white" /> : null}
+                    {!isTyping ? <PaperPlaneRight size={20} color="white" weight="fill" /> : null}
                   </TouchableOpacity>
                 </View>
               </View>
