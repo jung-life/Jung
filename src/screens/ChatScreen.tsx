@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard'; // Import Clipboard
 import * as Speech from 'expo-speech';
-import Voice from '@react-native-voice/voice';
+// Voice module will be imported dynamically to prevent launch crashes
+let Voice: any = null;
 import { Audio } from 'expo-av';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -86,49 +87,96 @@ export const ChatScreen = () => {
   // Permissions and Voice setup
   useEffect(() => {
     const requestPermissions = async () => {
-      if (Platform.OS === 'android') {
-        const micPermission = await Audio.requestPermissionsAsync();
-        if (micPermission.status !== 'granted') {
+      try {
+        // Request microphone permissions
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
           Alert.alert('Permissions required', 'Microphone permission is needed for voice input.');
           setHasPermissions(false);
           return;
         }
-      }
-      // For iOS, permissions are typically requested when the feature is first used.
-      // However, configuring the audio session is good practice.
-      try {
+
+        // Configure audio session properly
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
         });
+        
         setHasPermissions(true);
-      } catch (e) {
-        console.error('Failed to set audio mode', e);
-        Alert.alert('Audio Error', 'Could not configure audio session.');
+      } catch (error) {
+        console.error('Failed to request permissions or set audio mode:', error);
+        Alert.alert('Setup Error', 'Could not initialize audio system.');
         setHasPermissions(false);
       }
     };
 
-    requestPermissions();
-
-    // Use correct Voice event handler assignment
-    Voice.onSpeechStart = () => setIsRecording(true);
-    Voice.onSpeechEnd = () => setIsRecording(false);
-    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
-      console.error('Speech recognition error', e.error);
-      Alert.alert('Speech Error', e.error?.message || 'Could not recognize speech.');
-      setIsRecording(false);
-    };
-    Voice.onSpeechResults = (e: { value?: string[] }) => {
-      if (e.value && e.value.length > 0) {
-        setRecognizedText(e.value[0]);
-        setInputText(e.value[0]);
+    const setupVoice = async () => {
+      try {
+        // Dynamically import Voice module using require
+        if (!Voice) {
+          Voice = require('@react-native-voice/voice').default;
+        }
+        
+        // Remove any existing listeners first
+        if (Voice && Voice.removeAllListeners) {
+          Voice.removeAllListeners();
+        }
+        
+        // Set up event listeners with proper error handling
+        if (Voice) {
+          Voice.onSpeechStart = () => {
+            console.log('Speech recognition started');
+            setIsRecording(true);
+          };
+          
+          Voice.onSpeechEnd = () => {
+            console.log('Speech recognition ended');
+            setIsRecording(false);
+          };
+          
+          Voice.onSpeechError = (event: any) => {
+            console.error('Speech recognition error:', event);
+            setIsRecording(false);
+            if (event.error && event.error.message !== 'Speech recognition cancelled') {
+              Alert.alert('Speech Error', 'Could not recognize speech. Please try again.');
+            }
+          };
+          
+          Voice.onSpeechResults = (event: any) => {
+            console.log('Speech results:', event.value);
+            if (event.value && event.value.length > 0) {
+              const recognizedText = event.value[0];
+              setRecognizedText(recognizedText);
+              setInputText(recognizedText);
+            }
+          };
+          
+          Voice.onSpeechPartialResults = (event: any) => {
+            if (event.value && event.value.length > 0) {
+              setRecognizedText(event.value[0]);
+            }
+          };
+        }
+        
+      } catch (error) {
+        console.error('Failed to setup voice recognition:', error);
       }
     };
 
+    requestPermissions();
+    setupVoice();
+
     return () => {
-      // Proper cleanup for react-native-voice
-      Voice.destroy();
+      // Proper cleanup
+      if (Voice && Voice.removeAllListeners) {
+        Voice.removeAllListeners();
+      }
+      if (Voice && Voice.destroy) {
+        Voice.destroy().catch(console.error);
+      }
     };
   }, []);
   
@@ -640,27 +688,47 @@ export const ChatScreen = () => {
       Alert.alert('Permissions required', 'Microphone permission is needed. Please grant it in settings.');
       return;
     }
-    if (isRecording) return;
-    setRecognizedText('');
+    
+    if (isRecording) {
+      console.log('Already recording, ignoring start request');
+      return;
+    }
+
     try {
-      // DO NOT re-initialize or remove listeners here
-      console.log('Starting voice recognition...');
-      await Voice.start('en-US');
-      console.log('Voice recognition started successfully');
-    } catch (e) {
-      console.error('Failed to start recording', e);
-      Alert.alert('Recording Error', 'Could not start voice recording. Please try again.');
+      // Stop any existing recording first
+      await Voice.stop();
+      setRecognizedText('');
+      
+      // Small delay to ensure clean state
+      setTimeout(async () => {
+        try {
+          await Voice.start('en-US');
+          console.log('Voice recognition started successfully');
+        } catch (startError) {
+          console.error('Failed to start voice recognition:', startError);
+          setIsRecording(false);
+          Alert.alert('Recording Error', 'Could not start voice recording. Please try again.');
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to prepare for recording:', error);
       setIsRecording(false);
+      Alert.alert('Recording Error', 'Could not initialize voice recording.');
     }
   };
 
   const stopRecording = async () => {
-    if (!isRecording) return;
+    if (!isRecording) {
+      console.log('Not recording, ignoring stop request');
+      return;
+    }
+    
     try {
       await Voice.stop();
-    } catch (e) {
-      console.error('Failed to stop recording', e);
-      // Alert.alert('Recording Error', 'Could not stop voice recording.');
+      console.log('Voice recognition stopped');
+    } catch (error) {
+      console.error('Failed to stop recording', error);
     } finally {
       setIsRecording(false);
     }
