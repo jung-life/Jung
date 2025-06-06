@@ -53,7 +53,13 @@
 	<string>Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Jung needs access to your microphone for voice input and speech recognition features.</string>
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>Jung needs access to speech recognition to convert your voice input to text.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Jung may access your photo library to allow you to share images or select profile pictures for enhanced user experience.</string>
 </dict>
 </plist>

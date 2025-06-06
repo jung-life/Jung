@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -18,6 +17,7 @@ import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { FloppyDisk, ArrowLeft, BookOpen, Calendar } from 'phosphor-react-native';
 import * as secureStore from '../lib/secureStorage';
+import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 
 // Define types for journal entries
 type JournalEntry = {
@@ -241,6 +241,14 @@ const JournalingScreen = () => {
             </React.Fragment>
           ))}
         </ScrollView>
+        <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white/80 border-t border-gray-200`}>
+          <TouchableOpacity 
+            style={tw`p-3 bg-jung-purple-light rounded-full`}
+            onPress={() => navigation.navigate('PostLoginScreen')}
+          >
+            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     </GradientBackground>
   );

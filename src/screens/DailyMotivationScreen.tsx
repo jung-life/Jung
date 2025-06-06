@@ -64,19 +64,27 @@ export default function DailyMotivationScreen() {
               if (typeof decryptedData === 'string') {
                 const cleanedData = decryptedData.trim();
                 try {
+                  // Try direct JSON parse
                   profile = JSON.parse(cleanedData);
                 } catch (firstError) {
-                  // If direct parse fails, try to extract JSON object
+                  // Try to extract JSON object with regex
                   const jsonMatch = cleanedData.match(/\{[\s\S]*\}/);
                   if (jsonMatch) {
-                    profile = JSON.parse(jsonMatch[0]);
+                    try {
+                      profile = JSON.parse(jsonMatch[0]);
+                    } catch (secondError) {
+                      console.error('Failed to parse extracted JSON:', secondError, 'Extracted:', jsonMatch[0]);
+                      throw new Error('No valid JSON found in decrypted data');
+                    }
                   } else {
+                    console.error('No JSON object found in decrypted data:', cleanedData);
                     throw new Error('No valid JSON found in decrypted data');
                   }
                 }
               } else if (typeof decryptedData === 'object' && decryptedData !== null) {
                 profile = decryptedData;
               } else {
+                console.error('Decrypted data is not a string or object:', decryptedData);
                 throw new Error('Invalid data format');
               }
 
@@ -97,10 +105,15 @@ export default function DailyMotivationScreen() {
                 await generatePersonalizedQuote(validatedProfile);
               }
             } catch (decryptError) {
-              console.error('Error processing emotional data:', decryptError);
+              console.error('Error processing emotional data:', decryptError, emotionalStates[0]?.encrypted_data);
               // Clear potentially bad data and fall back to random quote
               if (isMounted.current) {
-                setEmotionalProfile(null);
+                setEmotionalProfile({
+                  primary_emotion: 'neutral',
+                  secondary_emotions: ['calm'],
+                  intensity: 5,
+                  needs: ['balance'],
+                });
                 setPersonalizedQuote('');
                 selectRandomQuote();
               }

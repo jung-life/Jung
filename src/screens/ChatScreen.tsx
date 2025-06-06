@@ -111,28 +111,24 @@ export const ChatScreen = () => {
 
     requestPermissions();
 
-    // Use addListener instead of direct assignment
-    const onSpeechStart = () => setIsRecording(true);
-    const onSpeechEnd = () => setIsRecording(false);
-    const onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
+    // Use correct Voice event handler assignment
+    Voice.onSpeechStart = () => setIsRecording(true);
+    Voice.onSpeechEnd = () => setIsRecording(false);
+    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
       console.error('Speech recognition error', e.error);
       Alert.alert('Speech Error', e.error?.message || 'Could not recognize speech.');
       setIsRecording(false);
     };
-    const onSpeechResults = (e: { value?: string[] }) => {
+    Voice.onSpeechResults = (e: { value?: string[] }) => {
       if (e.value && e.value.length > 0) {
         setRecognizedText(e.value[0]);
         setInputText(e.value[0]);
       }
     };
 
-    Voice.addListener('onSpeechStart', onSpeechStart);
-    Voice.addListener('onSpeechEnd', onSpeechEnd);
-    Voice.addListener('onSpeechError', onSpeechError);
-    Voice.addListener('onSpeechResults', onSpeechResults);
-
     return () => {
-      Voice.removeAllListeners();
+      // Proper cleanup for react-native-voice
+      Voice.destroy();
     };
   }, []);
   
@@ -882,16 +878,6 @@ export const ChatScreen = () => {
             </>
           )}
         </KeyboardAvoidingView>
-        {/* Home Button at the bottom */}
-        <View style={tw`bg-white border-t border-gray-200 p-2`}>
-          <TouchableOpacity
-            style={tw`flex-row items-center justify-center py-2`}
-            onPress={() => navigation.navigate('PostLoginScreen')}
-          >
-            <House size={24} color={tw.color('jung-purple')} />
-            <Text style={tw`ml-2 text-jung-purple font-semibold text-base`}>Home</Text>
-          </TouchableOpacity>
-        </View>
         {/* {renderAnalysisModal()}  Removed call to deleted function */}
       </SafeAreaView>
     </GradientBackground>
