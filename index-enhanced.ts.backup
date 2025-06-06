@@ -1,0 +1,29 @@
+import { AppRegistry, LogBox } from 'react-native';
+import CrashSafeApp from './src/App-crash-safe';
+import { name as appName } from './app.json';
+
+// Suppress non-critical warnings that might cause crashes
+LogBox.ignoreLogs([
+  'Require cycle:',
+  'Remote debugger',
+  'Warning: componentWillReceiveProps',
+  'Warning: componentWillMount',
+  'Module RCTImageLoader',
+  'VirtualizedLists should never be nested',
+]);
+
+// Add global error handler
+const originalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  console.log('Global error caught:', error, 'Fatal:', isFatal);
+  
+  // Call original handler but don't let it crash the app in production
+  if (__DEV__) {
+    originalHandler(error, isFatal);
+  } else {
+    // In production, log but don't crash
+    console.error('Production error suppressed:', error);
+  }
+});
+
+AppRegistry.registerComponent(appName, () => CrashSafeApp);

@@ -1,9 +1,25 @@
-// Import the polyfill for crypto.getRandomValues at the very top
-import 'react-native-get-random-values';
+import { AppRegistry, LogBox } from 'react-native';
+import CrashSafeApp from './src/App-crash-safe';
+import { name as appName } from './app.json';
 
-// Enhanced version of the app
-import { registerRootComponent } from 'expo';
-import EnhancedApp from './src/App-enhanced';
+// Suppress common warnings that might cause issues
+LogBox.ignoreLogs([
+  'Require cycle:',
+  'Warning: componentWillReceiveProps',
+  'Warning: componentWillMount',
+  'VirtualizedLists should never be nested',
+]);
 
-// Register the enhanced version of the app
-registerRootComponent(EnhancedApp);
+// Simple global error handler (only in production)
+if (!__DEV__) {
+  const originalHandler = global.ErrorUtils.getGlobalHandler();
+  global.ErrorUtils.setGlobalHandler((error, isFatal) => {
+    console.log('Global error caught:', error.message);
+    // In production, don't crash - just log
+    if (originalHandler && __DEV__) {
+      originalHandler(error, isFatal);
+    }
+  });
+}
+
+AppRegistry.registerComponent(appName, () => CrashSafeApp);

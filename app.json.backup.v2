@@ -14,8 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.name.jung",
-      "buildNumber": "9999",
+      "bundleIdentifier": "your.bundle.identifier",
+      "buildNumber": "6640",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
@@ -28,15 +28,7 @@
         "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library.",
         "NSLocationWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
-        "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": false,
-          "NSAllowsArbitraryLoadsInWebContent": false
-        },
-        "UIRequiredDeviceCapabilities": [
-          "arm64"
-        ],
-        "LSRequiresIPhoneOS": true
+        "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background."
       },
       "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./src/assets/logo/jung-app-icon-1024.png"

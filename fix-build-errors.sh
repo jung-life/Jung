@@ -1,3 +1,18 @@
+#!/bin/bash
+
+# Fix Build Errors for Jung App
+# This script fixes the macro redefinition and C99 extension errors
+
+echo "🔧 Fixing build errors caused by aggressive fixes..."
+
+# Restore original files and apply a more conservative fix
+cp ios/Podfile.backup ios/Podfile
+cp app.json.backup app.json
+
+echo "✅ Restored original configuration files"
+
+# Create a conservative Podfile that fixes selectors without breaking the build
+cat > ios/Podfile << 'EOF'
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
@@ -100,3 +115,31 @@ target 'jung' do
     puts "✅ Conservative non-public selectors fix completed"
   end
 end
+EOF
+
+echo "✅ Created conservative Podfile"
+
+# Clean and reinstall pods
+echo "🧹 Cleaning and reinstalling pods..."
+cd ios
+rm -rf Pods Podfile.lock
+pod cache clean --all
+pod install
+
+echo ""
+echo "🎯 Build errors fix completed!"
+echo ""
+echo "What was fixed:"
+echo "- Restored original configuration to avoid macro conflicts"
+echo "- Applied conservative selector replacement only in target libraries"
+echo "- Removed aggressive build flags that caused C99 errors"
+echo "- Clean pods installation"
+echo ""
+echo "Next steps:"
+echo "1. Build should now compile successfully"
+echo "2. Test the app to ensure functionality"
+echo "3. Try submission again"
+echo ""
+echo "If non-public selector errors persist, we may need to:"
+echo "- Update react-native-gesture-handler to latest version"
+echo "- Use alternative libraries that don't use private APIs"

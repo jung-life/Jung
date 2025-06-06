@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "9999",
+      "buildNumber": "8024",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],

@@ -62,41 +62,5 @@ target 'jung' do
         end
       end
     end
-
-    # CONSERVATIVE FIX: Only target specific problematic files
-    puts "🔧 Applying conservative non-public selectors fix..."
-    
-    # Only modify RNGestureHandler files which are the likely source
-    gesture_handler_files = Dir.glob('ios/Pods/RNGestureHandler/**/*.{h,m,mm}')
-    reanimated_files = Dir.glob('ios/Pods/RNReanimated/**/*.{h,m,mm}')
-    
-    (gesture_handler_files + reanimated_files).each do |file|
-      next unless File.exist?(file)
-      
-      begin
-        content = File.read(file)
-        original_content = content.dup
-        
-        # Only replace the exact problematic selectors
-        content.gsub!(/\b_isKeyDown\b/, 'keyDown')
-        content.gsub!(/\b_modifiedInput\b/, 'modifiedInput')
-        content.gsub!(/\b_modifierFlags\b/, 'modifierFlags')
-        
-        # Also handle @selector usage
-        content.gsub!(/@selector\(\s*_isKeyDown\s*\)/, '@selector(keyDown)')
-        content.gsub!(/@selector\(\s*_modifiedInput\s*\)/, '@selector(modifiedInput)')
-        content.gsub!(/@selector\(\s*_modifierFlags\s*\)/, '@selector(modifierFlags)')
-        
-        # Write back if changed
-        if content != original_content
-          File.write(file, content)
-          puts "✅ Fixed selectors in: #{file}"
-        end
-      rescue => e
-        puts "⚠️  Could not process #{file}: #{e.message}"
-      end
-    end
-    
-    puts "✅ Conservative non-public selectors fix completed"
   end
 end
