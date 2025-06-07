@@ -77,7 +77,11 @@ export default function DailyMotivationScreen() {
                       throw new Error('No valid JSON found in decrypted data');
                     }
                   } else {
-                    console.error('No JSON object found in decrypted data:', cleanedData);
+                    // Show a preview of the decrypted data for debugging
+                    console.error(
+                      'No JSON object found in decrypted data (preview):',
+                      cleanedData.slice(0, 100)
+                    );
                     throw new Error('No valid JSON found in decrypted data');
                   }
                 }

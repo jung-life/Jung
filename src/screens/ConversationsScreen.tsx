@@ -37,8 +37,6 @@ import i18n from '../lib/i18n';
 import { trackEvent } from '../lib/analytics';
 import useAuthStore from '../store/useAuthStore';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
-// Removed duplicate import
-import { Audio } from 'expo-av';
 
 type Conversation = {
   id: string;
@@ -701,9 +699,6 @@ Return only the title text with no additional explanation or formatting.`;
    console.log('Conversations:', conversations);
  }, []);
  
- // Removed redundant useEffect for checking authentication status on mount.
- // fetchConversations handles getting the user when the screen focuses.
- 
  // Add this function to test Supabase connection
   const testSupabaseConnection = async () => {
     try {
@@ -745,50 +740,7 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
-  // Add state for voice input
-  const [isRecording, setIsRecording] = useState(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-
-  // Add this function to handle microphone permission and start recording
-  const handleMicrophonePress = async () => {
-    try {
-      // Request permission
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Microphone permission is required to use voice input.');
-        return;
-      }
-      setIsRecording(true);
-      const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-      await rec.startAsync();
-      setRecording(rec);
-    } catch (error) {
-      setIsRecording(false);
-      setRecording(null);
-      console.error('Microphone error:', error);
-      Alert.alert('Error', 'Could not start recording. Please try again.');
-    }
-  };
-
-  // Add this function to stop recording
-  const handleStopRecording = async () => {
-    try {
-      if (!recording) return;
-      await recording.stopAndUnloadAsync();
-      setIsRecording(false);
-      setRecording(null);
-      // TODO: Process the recorded audio or send to speech-to-text
-      Alert.alert('Voice Input', 'Recording stopped. (Speech-to-text not implemented)');
-    } catch (error) {
-      setIsRecording(false);
-      setRecording(null);
-      console.error('Stop recording error:', error);
-      Alert.alert('Error', 'Could not stop recording.');
-    }
-  };
-
-  // Then update the renderNewChatModal function to include the Generate Title button
+  // Render new chat modal without voice functionality
   const renderNewChatModal = () => {
     return (
       <Modal
@@ -823,20 +775,12 @@ Return only the title text with no additional explanation or formatting.`;
               
               <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>
               
-              <View style={tw`flex-row items-center mb-2`}>
-                <TextInput
-                  style={tw`flex-1 border border-gray-300 rounded-lg p-3`}
-                  placeholder="Enter a title (optional)"
-                  value={newConversationTitle}
-                  onChangeText={setNewConversationTitle}
-                />
-                <TouchableOpacity
-                  style={tw`ml-2 p-2 bg-jung-purple-light rounded-full`}
-                  onPress={isRecording ? handleStopRecording : handleMicrophonePress}
-                >
-                  <AntDesign name="sound" size={24} color={isRecording ? "#E53E3E" : "#4A3B78"} />
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={tw`border border-gray-300 rounded-lg p-3 mb-2`}
+                placeholder="Enter a title (optional)"
+                value={newConversationTitle}
+                onChangeText={setNewConversationTitle}
+              />
               
               <TouchableOpacity
                 style={tw`bg-jung-purple-light py-2 px-4 rounded-lg self-start mb-4`}

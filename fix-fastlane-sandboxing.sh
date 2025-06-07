@@ -1,4 +1,4 @@
-#!/bin/bash
+10471852-2f5d-4134-9b31-d0577e5964a4#!/bin/bash
 
 # Fix Fastlane Sandboxing Issue in Jung App
 # This script disables ENABLE_USER_SCRIPT_SANDBOXING in both Debug and Release configurations

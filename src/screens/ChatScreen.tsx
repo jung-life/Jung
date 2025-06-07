@@ -8,16 +8,9 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  Alert,
-  Modal,      // Add Modal
-  ScrollView, // Add ScrollView
-  Share       // Add Share
+  Alert
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard'; // Import Clipboard
-import * as Speech from 'expo-speech';
-// Voice module will be imported dynamically to prevent launch crashes
-let Voice: any = null;
-import { Audio } from 'expo-av';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
@@ -26,7 +19,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, PaperPlaneTilt, User, Lightbulb, Sparkle, Brain, FlowerLotus, Leaf, PaperPlaneRight, X, ShareNetwork, Copy, BookOpen, Microphone, SpeakerHigh, SpeakerSlash, House } from 'phosphor-react-native'; // Import phosphor icons
+import { ArrowLeft, User, Brain, PaperPlaneRight } from 'phosphor-react-native'; // Import phosphor icons
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,17 +57,8 @@ export const ChatScreen = () => {
   const [conversationTitle, setConversationTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [voiceModeActive, setVoiceModeActive] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recognizedText, setRecognizedText] = useState('');
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const [hasPermissions, setHasPermissions] = useState(false);
-  // Removed analysis-related state
-  // const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  // const [analysisContent, setAnalysisContent] = useState('');
-  // const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // Use the avatarId in your chat interface
   const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
@@ -83,108 +67,11 @@ export const ChatScreen = () => {
   useEffect(() => {
     console.log('Chat screen received avatarId:', avatarId);
   }, [avatarId]);
-
-  // Permissions and Voice setup
-  useEffect(() => {
-    const requestPermissions = async () => {
-      try {
-        // Request microphone permissions
-        const { status } = await Audio.requestPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permissions required', 'Microphone permission is needed for voice input.');
-          setHasPermissions(false);
-          return;
-        }
-
-        // Configure audio session properly
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: false,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
-        });
-        
-        setHasPermissions(true);
-      } catch (error) {
-        console.error('Failed to request permissions or set audio mode:', error);
-        Alert.alert('Setup Error', 'Could not initialize audio system.');
-        setHasPermissions(false);
-      }
-    };
-
-    const setupVoice = async () => {
-      try {
-        // Dynamically import Voice module using require
-        if (!Voice) {
-          Voice = require('@react-native-voice/voice').default;
-        }
-        
-        // Remove any existing listeners first
-        if (Voice && Voice.removeAllListeners) {
-          Voice.removeAllListeners();
-        }
-        
-        // Set up event listeners with proper error handling
-        if (Voice) {
-          Voice.onSpeechStart = () => {
-            console.log('Speech recognition started');
-            setIsRecording(true);
-          };
-          
-          Voice.onSpeechEnd = () => {
-            console.log('Speech recognition ended');
-            setIsRecording(false);
-          };
-          
-          Voice.onSpeechError = (event: any) => {
-            console.error('Speech recognition error:', event);
-            setIsRecording(false);
-            if (event.error && event.error.message !== 'Speech recognition cancelled') {
-              Alert.alert('Speech Error', 'Could not recognize speech. Please try again.');
-            }
-          };
-          
-          Voice.onSpeechResults = (event: any) => {
-            console.log('Speech results:', event.value);
-            if (event.value && event.value.length > 0) {
-              const recognizedText = event.value[0];
-              setRecognizedText(recognizedText);
-              setInputText(recognizedText);
-            }
-          };
-          
-          Voice.onSpeechPartialResults = (event: any) => {
-            if (event.value && event.value.length > 0) {
-              setRecognizedText(event.value[0]);
-            }
-          };
-        }
-        
-      } catch (error) {
-        console.error('Failed to setup voice recognition:', error);
-      }
-    };
-
-    requestPermissions();
-    setupVoice();
-
-    return () => {
-      // Proper cleanup
-      if (Voice && Voice.removeAllListeners) {
-        Voice.removeAllListeners();
-      }
-      if (Voice && Voice.destroy) {
-        Voice.destroy().catch(console.error);
-      }
-    };
-  }, []);
   
   // Fetch conversation details including the avatar_id and title
   const fetchConversation = useCallback(async () => {
     if (!conversationId) {
       console.error('fetchConversation called without a conversationId.');
-      // Alert.alert('Error', 'Cannot load conversation details: Conversation ID is missing.');
       return;
     }
     try {
@@ -212,8 +99,6 @@ export const ChatScreen = () => {
       console.error('fetchMessages called without a conversationId.');
       Alert.alert('Error', 'Cannot load messages: Conversation ID is missing.');
       setLoading(false);
-      // Optionally navigate back or show an error state
-      // navigation.goBack(); 
       return; 
     }
     console.log(`fetchMessages: Called for conversationId: ${conversationId}`); // Diagnostic log
@@ -350,9 +235,6 @@ export const ChatScreen = () => {
         fetchMessages().catch(err => console.error("Error in fetchMessages on focus:", err));
       } else {
         console.warn("ChatScreen focused without a conversationId.");
-        // Potentially clear messages or show an error state if appropriate
-        // setMessages([]); 
-        // setLoading(false);
       }
 
       // Ensure conversationId is available before subscribing
@@ -578,8 +460,6 @@ export const ChatScreen = () => {
         // Display a more specific error and stop further execution in this block
         Alert.alert('Error', `Failed to save your message: ${userInsertError.message}`);
         setIsTyping(false); // Reset typing indicator
-        // Optionally, remove the optimistically added message from local state if save fails
-        // setMessages(prevMessages => prevMessages.filter(msg => msg.id !== userMessage.id));
         return; // Stop if user message failed to save
       } else {
         console.log('handleSendMessage: Successfully inserted user message:', userInsertData);
@@ -622,9 +502,6 @@ export const ChatScreen = () => {
       };
       
       setMessages([...updatedMessages, aiMessage]);
-      if (voiceModeActive) {
-        speak(responseContent);
-      }
       
       // Encrypt AI message before saving to database
       const encryptedAIContent = encryptData(aiMessage.content);
@@ -647,8 +524,6 @@ export const ChatScreen = () => {
       if (aiInsertError) {
         console.error('handleSendMessage: Error inserting AI message:', aiInsertError, 'Data:', aiMsgToInsert);
         Alert.alert('Error', `Failed to save AI response: ${aiInsertError.message}`);
-        // Optionally, handle the UI for the AI message if its save fails
-        // e.g., remove it or mark it as unsaved
       } else {
         console.log('handleSendMessage: Successfully inserted AI message:', aiInsertData);
       }
@@ -666,72 +541,6 @@ export const ChatScreen = () => {
   const extractResponseContent = (response: string): string => {
     const match = response.match(/<response>(.*?)<\/response>/s);
     return match ? match[1].trim() : response;
-  };
-
-  // Text-to-Speech function
-  const speak = (text: string) => {
-    if (!voiceModeActive) return;
-    setIsSpeaking(true);
-    Speech.speak(text, {
-      onDone: () => setIsSpeaking(false),
-      onError: (e: { error: string }) => {
-        console.error('Speech synthesis error', e.error);
-        Alert.alert('Speech Error', `Could not play voice response: ${e.error}`);
-        setIsSpeaking(false);
-      },
-    });
-  };
-
-  // Speech-to-Text functions
-  const startRecording = async () => {
-    if (!hasPermissions) {
-      Alert.alert('Permissions required', 'Microphone permission is needed. Please grant it in settings.');
-      return;
-    }
-    
-    if (isRecording) {
-      console.log('Already recording, ignoring start request');
-      return;
-    }
-
-    try {
-      // Stop any existing recording first
-      await Voice.stop();
-      setRecognizedText('');
-      
-      // Small delay to ensure clean state
-      setTimeout(async () => {
-        try {
-          await Voice.start('en-US');
-          console.log('Voice recognition started successfully');
-        } catch (startError) {
-          console.error('Failed to start voice recognition:', startError);
-          setIsRecording(false);
-          Alert.alert('Recording Error', 'Could not start voice recording. Please try again.');
-        }
-      }, 100);
-      
-    } catch (error) {
-      console.error('Failed to prepare for recording:', error);
-      setIsRecording(false);
-      Alert.alert('Recording Error', 'Could not initialize voice recording.');
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!isRecording) {
-      console.log('Not recording, ignoring stop request');
-      return;
-    }
-    
-    try {
-      await Voice.stop();
-      console.log('Voice recognition stopped');
-    } catch (error) {
-      console.error('Failed to stop recording', error);
-    } finally {
-      setIsRecording(false);
-    }
   };
   
   const renderMessage = ({ item }: { item: Message }) => {
@@ -814,21 +623,6 @@ export const ChatScreen = () => {
       </View>
     );
   };
-  
-  // Function to handle conversation analysis (REMOVED)
-  // const handleAnalyzeConversation = async () => { ... };
-  
-  // Function to handle sharing the analysis (REMOVED)
-  // const handleShareAnalysis = async () => { ... };
-  
-  // Function to handle copying the analysis (REMOVED)
-  // const handleCopyAnalysis = async () => { ... };
-  
-  // Function to save conversation to history (REMOVED)
-  // const handleSaveToHistory = async () => { ... };
-  
-  // Modal for displaying analysis (REMOVED)
-  // const renderAnalysisModal = () => ( ... );
 
   return (
     <GradientBackground>
@@ -848,14 +642,6 @@ export const ChatScreen = () => {
           </Text>
           
           <View style={tw`flex-row`}>
-            {/* Save to History button removed */}
-            {/* <TouchableOpacity 
-              style={tw`p-2 mr-1`}
-              onPress={handleSaveToHistory}
-            >
-              <BookOpen size={22} color="#4A3B78" />
-            </TouchableOpacity> */}
-            {/* Re-adding Analyze button to chat header */}
             <TouchableOpacity 
               style={tw`p-2`}
               onPress={() => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId })}
@@ -906,17 +692,9 @@ export const ChatScreen = () => {
                   }}
                 />
               </View>
-              
-              {/* Insights Button Above Input REMOVED */}
 
               <View style={tw`p-4 border-t border-gray-200 bg-white`}>
                 <View style={tw`flex-row items-center`}>
-                  <TouchableOpacity
-                    style={tw`p-2 mr-2`}
-                    onPress={() => setVoiceModeActive(!voiceModeActive)}
-                  >
-                    {voiceModeActive ? <SpeakerHigh size={24} color={tw.color('jung-purple')} /> : <SpeakerSlash size={24} color={tw.color('gray-500')} />}
-                  </TouchableOpacity>
                   <TextInput
                     ref={inputRef}
                     style={tw`flex-1 bg-gray-100 rounded-full px-4 py-2 mr-2`}
@@ -927,16 +705,9 @@ export const ChatScreen = () => {
                     maxLength={1000}
                   />
                   <TouchableOpacity
-                    style={tw`p-2 ml-2 mr-1 ${isRecording ? 'bg-red-500' : 'bg-gray-200'} rounded-full`}
-                    onPress={isRecording ? stopRecording : startRecording}
-                    disabled={isSpeaking}
-                  >
-                    <Microphone size={24} color={isRecording ? "white" : tw.color('jung-purple')} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
                     style={tw`bg-jung-purple w-10 h-10 rounded-full items-center justify-center`}
                     onPress={handleSendMessage}
-                    disabled={(!inputText.trim() && !recognizedText.trim()) || isTyping || isRecording}
+                    disabled={!inputText.trim() || isTyping}
                   >
                     {isTyping ? <ActivityIndicator size="small" color="white" /> : null}
                     {!isTyping ? <PaperPlaneRight size={20} color="white" weight="fill" /> : null}
@@ -946,7 +717,6 @@ export const ChatScreen = () => {
             </>
           )}
         </KeyboardAvoidingView>
-        {/* {renderAnalysisModal()}  Removed call to deleted function */}
       </SafeAreaView>
     </GradientBackground>
   );
