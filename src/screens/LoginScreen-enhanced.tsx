@@ -21,7 +21,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
+import { makeRedirectUri } from 'expo-auth-session';
 import tw from '../lib/tailwind';
 
 // Import both Supabase clients and functions
@@ -128,7 +128,7 @@ export const LoginScreenEnhanced = () => {
       console.log('Starting Google login flow with standard client...');
       
       // Get the redirect URI - explicitly set scheme to match app.json
-      const redirectUri = AuthSession.makeRedirectUri({
+      const redirectUri = makeRedirectUri({
         scheme: 'jung',
         preferLocalhost: true
       });
