@@ -18,7 +18,7 @@ import { SimpleAvatar } from '../components/SimpleAvatar';
 import tw from '../lib/tailwind';
 import { generateAIResponse } from '../lib/api';
 import { availableAvatars } from '../components/AvatarSelector';
-import { ArrowLeft, User, Brain, PaperPlaneRight } from 'phosphor-react-native'; // Import phosphor icons
+import { ArrowLeft, User, Brain, PaperPlaneRight, Shield } from 'phosphor-react-native'; // Import phosphor icons
 import { GradientBackground } from '../components/GradientBackground';
 import { getAvatarUrl } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,6 +26,7 @@ import { Message } from '../components/Message';
 import { generatePromptForAvatar } from '../lib/avatarPrompts';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
+import { PrivacyConsentDialog } from '../components/PrivacyConsentDialog';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -498,8 +499,17 @@ export const ChatScreen = () => {
       
       console.log('Using prompt for avatar:', currentAvatarId);
       
-      // Generate AI response
-      const aiResponse = await generateAIResponse(prompt);
+      // Generate AI response with privacy protection
+      const aiResponse = await generateAIResponse(
+        inputText, // Use the raw user input instead of the formatted prompt
+        updatedMessages.slice(0, -1), // Previous messages excluding the one we just added
+        currentAvatarId,
+        {
+          userConsent: true, // For now, auto-consent. Later we'll add a consent dialog
+          privacyLevel: 'BASIC',
+          provider: 'claude' // Default to Claude 3.5 Sonnet for better therapy responses
+        }
+      );
       
       // Extract the response content from the tags if needed
       const responseContent = extractResponseContent(aiResponse);
