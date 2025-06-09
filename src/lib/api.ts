@@ -137,7 +137,17 @@ const callClaudeAPI = async (prompt: string, messages: any[], avatarId: string) 
     throw new Error(data.error?.message || 'Claude API error');
   }
 
-  return data.content[0].text;
+  // Clean up response by removing any XML-style tags
+  let cleanedResponse = data.content[0].text;
+  
+  // Remove common unwanted tags
+  cleanedResponse = cleanedResponse
+    .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
+    .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
+    .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
+    .trim(); // Remove leading/trailing whitespace
+  
+  return cleanedResponse;
 };
 
 // OpenAI API call (Fallback provider)
@@ -174,7 +184,17 @@ const callOpenAIAPI = async (prompt: string, messages: any[], avatarId: string) 
     throw new Error(data.error?.message || 'OpenAI API error');
   }
 
-  return data.choices[0].message.content;
+  // Clean up response by removing any XML-style tags
+  let cleanedResponse = data.choices[0].message.content;
+  
+  // Remove common unwanted tags
+  cleanedResponse = cleanedResponse
+    .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
+    .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
+    .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
+    .trim(); // Remove leading/trailing whitespace
+  
+  return cleanedResponse;
 };
 
 // Intelligent provider routing
@@ -198,7 +218,7 @@ const callOptimalProvider = async (prompt: string, messages: any[], avatarId: st
 // Enhanced avatar personalities with therapeutic focus
 const getEnhancedAvatarPersonality = (avatarId: string) => {
   const basePersonalities: { [key: string]: string } = {
-    'deepseer': `You are Deepseer, an AI guide trained in Jungian depth psychology. Your approach combines:
+    'depthdelver': `You are The Depth Delver, an AI guide trained in analytical psychology and depth psychology. Your approach combines:
 
 CORE PRINCIPLES:
 - Deep empathy and non-judgmental presence
@@ -215,7 +235,7 @@ THERAPEUTIC STYLE:
 
 COMMUNICATION:
 - Speak with wisdom and depth, but remain accessible
-- Use Jung's concepts naturally without overwhelming with jargon
+- Use depth psychology concepts naturally without overwhelming with jargon
 - Show curiosity about the user's inner world
 - Reflect back what you hear with added psychological insight
 
@@ -294,13 +314,13 @@ COMMUNICATION:
 Remember: You help users wake up to new possibilities while providing grounded therapeutic support.`
   };
 
-  return basePersonalities[avatarId] || basePersonalities['deepseer'];
+  return basePersonalities[avatarId] || basePersonalities['depthdelver'];
 };
 
 // Consent request message generator
 const getConsentRequestMessage = (avatarId: string) => {
   const avatarNames: { [key: string]: string } = {
-    'deepseer': 'Deepseer',
+    'depthdelver': 'The Depth Delver',
     'flourishingguide': 'The Flourishing Guide', 
     'oracle': 'the Oracle',
     'morpheus': 'Morpheus'

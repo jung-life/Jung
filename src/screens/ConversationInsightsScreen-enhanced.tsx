@@ -17,7 +17,7 @@ import { RootStackNavigationProp, RootStackParamList } from '../navigation/types
 import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
-import { ArrowLeft, Brain, ShareNetwork, Copy, Download, House, FileText } from 'phosphor-react-native';
+import { ArrowLeft, Brain, ShareNetwork, Copy, Download, House, FileText, Lightbulb, TrendUp, Target, Star, CheckCircle } from 'phosphor-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
@@ -190,48 +190,22 @@ export const ConversationInsightsScreenEnhanced = () => {
         })
         .join('\n\n');
       
-      // Use the conversation passed as argument
-      const avatarId = conv.avatar_id || 'jung'; 
-      const avatarName = availableAvatars.find(a => a.id === avatarId)?.name || 'Jung';
+      // Use the conversation passed as argument, default to depthdelver
+      const avatarId = conv.avatar_id || 'depthdelver'; 
+      const avatarName = availableAvatars.find(a => a.id === avatarId)?.name || 'The Depth Delver';
       
       // Create avatar-specific prompt based on the avatar's philosophy
       let avatarContext = '';
       switch (avatarId) {
-        case 'jung':
-          avatarContext = `As Carl Jung, analyze this conversation through the lens of analytical psychology. 
-          Focus on archetypes, the collective unconscious, individuation, and psychological types. 
-          Identify potential shadow elements and opportunities for integration of the psyche.`;
+        case 'depthdelver':
+          avatarContext = `As The Depth Delver, analyze this conversation through the lens of analytical psychology and depth psychology. 
+          Focus on uncovering unconscious patterns, archetypal themes, symbolic meanings, and the individuation process. 
+          Explore the depths of the psyche, dreams, and shadow elements that seek integration.`;
           break;
-        // ... (other cases remain the same) ...
-        case 'freud':
-          avatarContext = `As Sigmund Freud, analyze this conversation through the lens of psychoanalysis. 
-          Focus on unconscious motivations, defense mechanisms, psychosexual development, and the dynamics 
-          of id, ego, and superego. Look for repressed desires and childhood influences.`;
-          break;
-        case 'adler':
-          avatarContext = `As Alfred Adler, analyze this conversation through the lens of individual psychology. 
-          Focus on striving for superiority, social interest, inferiority feelings, and lifestyle. 
-          Consider birth order, family dynamics, and life tasks.`;
-          break;
-        case 'rogers':
-          avatarContext = `As Carl Rogers, analyze this conversation through the lens of person-centered therapy. 
-          Focus on unconditional positive regard, empathy, congruence, and the actualizing tendency. 
-          Consider the person's movement toward self-actualization and authentic self-expression.`;
-          break;
-        case 'frankl':
-          avatarContext = `As Viktor Frankl, analyze this conversation through the lens of logotherapy. 
-          Focus on the search for meaning, existential frustration, and the will to meaning. 
-          Consider how suffering can be transformed through finding purpose.`;
-          break;
-        case 'maslow':
-          avatarContext = `As Abraham Maslow, analyze this conversation through the lens of humanistic psychology. 
-          Focus on the hierarchy of needs, self-actualization, peak experiences, and human potential. 
-          Consider which needs are being met or unmet.`;
-          break;
-        case 'horney':
-          avatarContext = `As Karen Horney, analyze this conversation through the lens of neo-Freudian psychology. 
-          Focus on cultural and social influences, neurotic needs, and coping strategies. 
-          Consider the person's movement toward, against, or away from others.`;
+        case 'flourishingguide':
+          avatarContext = `As The Flourishing Guide, analyze this conversation through the lens of humanistic and positive psychology. 
+          Focus on strengths, resilience, meaning-making, self-actualization, and holistic well-being. 
+          Consider empathy, cultural influences, community connections, and the person's journey toward authentic self-realization.`;
           break;
         case 'oracle':
           avatarContext = `As the Oracle, analyze this conversation through a lens of mystical wisdom and pattern recognition. 
@@ -243,9 +217,23 @@ export const ConversationInsightsScreenEnhanced = () => {
           Focus on breaking free from mental constraints, awakening to deeper truths, and realizing potential. 
           Challenge assumptions and offer perspectives that expand consciousness.`;
           break;
+        // Legacy avatar IDs for backward compatibility
+        case 'jung':
+        case 'freud':
+        case 'adler':
+          avatarContext = `As The Depth Delver, analyze this conversation through the lens of analytical psychology and depth psychology. 
+          Focus on uncovering unconscious patterns, archetypal themes, symbolic meanings, and the individuation process.`;
+          break;
+        case 'rogers':
+        case 'frankl':
+        case 'maslow':
+        case 'horney':
+          avatarContext = `As The Flourishing Guide, analyze this conversation through the lens of humanistic and positive psychology. 
+          Focus on strengths, resilience, meaning-making, self-actualization, and holistic well-being.`;
+          break;
         default:
-          avatarContext = `Analyze this conversation from a psychological perspective, focusing on patterns, 
-          insights, and opportunities for growth.`;
+          avatarContext = `As The Depth Delver, analyze this conversation from a psychological perspective, focusing on patterns, 
+          insights, and opportunities for growth through understanding the unconscious.`;
       }
       
       // Generate analysis using AI with avatar-specific context
@@ -278,7 +266,20 @@ export const ConversationInsightsScreenEnhanced = () => {
         IMPORTANT: Maintain the perspective and theoretical framework of ${avatarName} throughout the analysis.
       `;
       
-      const analysisContent = await generateAIResponse(prompt);
+      // Pass proper options to ensure consent is granted for analysis generation
+      let analysisContent = await generateAIResponse(prompt, [], avatarId, {
+        userConsent: true,
+        privacyLevel: 'BASIC',
+        provider: 'claude'
+      });
+      
+      // Additional cleaning to remove any remaining XML-style tags
+      analysisContent = analysisContent
+        .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
+        .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
+        .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
+        .replace(/<\/?\w+>/gi, '')       // Remove any other XML-style tags
+        .trim(); // Remove leading/trailing whitespace
       
       // Encrypt the analysis content before saving
       const encryptedAnalysisContent = encryptData(analysisContent);
@@ -543,6 +544,133 @@ export const ConversationInsightsScreenEnhanced = () => {
     );
   };
 
+  // Function to render formatted insight with icons and visual styling
+  const renderFormattedInsight = (content: string) => {
+    // Additional cleaning at render time to ensure no XML tags are displayed
+    const cleanedContent = content
+      .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
+      .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
+      .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
+      .replace(/<\/?\w+>/gi, '')       // Remove any other XML-style tags
+      .trim();
+    
+    const sections = cleanedContent.split('#').filter(section => section.trim());
+    
+    return (
+      <View style={tw`p-4`}>
+        {sections.map((section, index) => {
+          const lines = section.trim().split('\n');
+          const title = lines[0]?.trim();
+          const body = lines.slice(1).join('\n').trim();
+          
+          // Determine icon and colors based on section title
+          let icon = <Lightbulb size={20} color="#4A3B78" weight="duotone" />;
+          let bgColor = 'bg-blue-50';
+          let borderColor = 'border-blue-200';
+          let titleColor = 'text-blue-900';
+          
+          if (title.toLowerCase().includes('theme') || title.toLowerCase().includes('pattern')) {
+            icon = <Star size={20} color="#7C3AED" weight="duotone" />;
+            bgColor = 'bg-purple-50';
+            borderColor = 'border-purple-200';
+            titleColor = 'text-purple-900';
+          } else if (title.toLowerCase().includes('insight')) {
+            icon = <Brain size={20} color="#059669" weight="duotone" />;
+            bgColor = 'bg-emerald-50';
+            borderColor = 'border-emerald-200';
+            titleColor = 'text-emerald-900';
+          } else if (title.toLowerCase().includes('growth')) {
+            icon = <TrendUp size={20} color="#DC2626" weight="duotone" />;
+            bgColor = 'bg-red-50';
+            borderColor = 'border-red-200';
+            titleColor = 'text-red-900';
+          } else if (title.toLowerCase().includes('recommendation')) {
+            icon = <Target size={20} color="#EA580C" weight="duotone" />;
+            bgColor = 'bg-orange-50';
+            borderColor = 'border-orange-200';
+            titleColor = 'text-orange-900';
+          }
+          
+          return (
+            <View key={index} style={tw`mb-6`}>
+              {/* Section Header with Icon */}
+              <View style={tw`flex-row items-center mb-3 ${bgColor} ${borderColor} border-l-4 p-3 rounded-r-lg`}>
+                {icon}
+                <Text style={tw`ml-3 text-lg font-bold ${titleColor}`}>
+                  {title}
+                </Text>
+              </View>
+              
+              {/* Section Content */}
+              <View style={tw`pl-4`}>
+                {body.split('\n').map((line, lineIndex) => {
+                  const trimmedLine = line.trim();
+                  if (!trimmedLine) return null;
+                  
+                  // Handle bullet points
+                  if (trimmedLine.startsWith('-') || trimmedLine.startsWith('•')) {
+                    const bulletText = trimmedLine.substring(1).trim();
+                    return (
+                      <View key={lineIndex} style={tw`flex-row items-start mb-2`}>
+                        <View style={tw`w-2 h-2 bg-jung-purple rounded-full mt-2 mr-3`} />
+                        <Text style={tw`flex-1 text-gray-700 leading-6`}>
+                          {bulletText}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  
+                  // Handle numbered list items
+                  if (/^\d+\./.test(trimmedLine)) {
+                    const match = trimmedLine.match(/^(\d+)\.\s*(.*)$/);
+                    if (match) {
+                      const [, number, text] = match;
+                      return (
+                        <View key={lineIndex} style={tw`flex-row items-start mb-3`}>
+                          <View style={tw`bg-jung-purple w-6 h-6 rounded-full items-center justify-center mr-3 mt-0.5`}>
+                            <Text style={tw`text-white text-xs font-bold`}>{number}</Text>
+                          </View>
+                          <Text style={tw`flex-1 text-gray-700 leading-6`}>
+                            {text}
+                          </Text>
+                        </View>
+                      );
+                    }
+                  }
+                  
+                  // Handle regular paragraphs
+                  if (trimmedLine.length > 0) {
+                    return (
+                      <Text key={lineIndex} style={tw`text-gray-700 leading-6 mb-2`}>
+                        {trimmedLine}
+                      </Text>
+                    );
+                  }
+                  
+                  return null;
+                })}
+              </View>
+            </View>
+          );
+        })}
+        
+        {/* Footer message */}
+        <View style={tw`mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200`}>
+          <View style={tw`flex-row items-center mb-2`}>
+            <CheckCircle size={18} color="#059669" weight="duotone" />
+            <Text style={tw`ml-2 text-sm font-semibold text-gray-800`}>
+              Analysis Complete
+            </Text>
+          </View>
+          <Text style={tw`text-xs text-gray-600 leading-4`}>
+            This analysis is generated by AI and is meant to provide insights for reflection. 
+            It is not a substitute for professional psychological or therapeutic advice.
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <GradientBackground>
       <SafeAreaView style={tw`flex-1`}>
@@ -612,10 +740,8 @@ export const ConversationInsightsScreenEnhanced = () => {
                 </Text>
               </View>
               
-              <View style={tw`bg-white rounded-lg p-4 shadow-sm mb-4`}>
-                <Text style={tw`text-base leading-6 text-gray-800`}>
-                  {insight.content}
-                </Text>
+              <View style={tw`bg-white rounded-lg p-1 shadow-sm mb-4`}>
+                {renderFormattedInsight(insight.content)}
               </View>
               
               <View style={tw`h-20`} />

@@ -13,8 +13,8 @@ export type Avatar = {
 // Define all available avatars without premium restrictions
 export const availableAvatars: Avatar[] = [
   {
-    id: 'deepseer', // Renamed ID
-    name: 'Deepseer', // Renamed Name
+    id: 'depthdelver', // Match database ID
+    name: 'The Depth Delver', // Match database name
     description: 'An AI guide into the profound depths of the psyche, illuminating the landscapes of the unconscious, interpreting dreams, and revealing the power of archetypes and symbols to unlock self-understanding.',
     isPremium: false,
   },
