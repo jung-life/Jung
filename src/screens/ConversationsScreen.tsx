@@ -760,7 +760,31 @@ Return only the title text with no additional explanation or formatting.`;
       }
       setIsRecording(true);
       const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+      await rec.prepareToRecordAsync({
+        android: {
+          extension: '.m4a',
+          outputFormat: 2, // MPEG_4
+          audioEncoder: 3, // AAC
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: 0, // MPEG4AAC
+          audioQuality: 1, // HIGH
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm',
+          bitsPerSecond: 128000,
+        },
+      });
       await rec.startAsync();
       setRecording(rec);
     } catch (error) {
@@ -789,27 +813,39 @@ Return only the title text with no additional explanation or formatting.`;
   };
 
   // Then update the renderNewChatModal function to include the Generate Title button
+  const handleCancelNewChat = () => {
+    // Reset state when canceling
+    setSelectedAvatar('jung');
+    setNewConversationTitle('New Reflection');
+    setShowNewChatModal(false);
+  };
+
   const renderNewChatModal = () => {
     return (
       <Modal
         visible={showNewChatModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowNewChatModal(false)}
+        onRequestClose={handleCancelNewChat}
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-2`}
-                onPress={() => setShowNewChatModal(false)}
+                onPress={handleCancelNewChat}
               >
                 <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" />
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
               </Text>
-              <View style={tw`w-10`} />
+              <TouchableOpacity 
+                style={tw`p-2`}
+                onPress={handleCancelNewChat}
+              >
+                <Text style={tw`text-jung-purple font-medium`}>Cancel</Text>
+              </TouchableOpacity>
             </View>
             
             <ScrollView style={tw`flex-1 p-4`}>
@@ -818,7 +854,6 @@ Return only the title text with no additional explanation or formatting.`;
               <AvatarSelector 
                 selectedAvatar={selectedAvatar}
                 onSelectAvatar={setSelectedAvatar}
-                hasPremiumAccess={true}
               />
               
               <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>

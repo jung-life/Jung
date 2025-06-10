@@ -8,6 +8,7 @@ export type RootStackParamList = {
   PostLoginScreen: undefined;
   Home: undefined;
   ConversationsScreen: { refresh?: boolean };
+  Subscription: undefined;
   ConversationHistoryScreen: undefined;
   ConversationInsightsScreen: { conversationId?: string };
   'ConversationHistoryScreen-enhanced': undefined; // Add enhanced history screen (quoted)

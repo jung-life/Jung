@@ -42,6 +42,7 @@ import { TouchableOpacity } from 'react-native'; // Added for headerLeft
 import { House } from 'phosphor-react-native'; // Added for headerLeft icon
 import { ConversationHistoryScreen } from './screens/ConversationHistoryScreen-enhanced'; // Import enhanced version
 import { ConversationInsightsScreenEnhanced } from './screens/ConversationInsightsScreen-enhanced'; // Import enhanced version (Corrected import name)
+import SubscriptionScreen from './screens/SubscriptionScreen'; // Import SubscriptionScreen
 
 // Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
@@ -159,6 +160,7 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
       })}
     />
     <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal' }} />
+    <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ headerShown: false }} />
     {/* Common screens also accessible when logged in */}
     <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
     <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service' }} />

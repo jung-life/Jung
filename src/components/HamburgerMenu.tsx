@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 // Remove useNavigation import
-import { List, SignOut, Shield, FileText, Info } from 'phosphor-react-native'; // Removed Smiley
+import { List, SignOut, Shield, FileText, Info, Crown } from 'phosphor-react-native'; // Added Crown icon
 // Remove direct supabase import
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 // Remove RootStackNavigationProp import if no longer needed directly
 import * as NavigationService from '../navigation/navigationService'; // Import the navigation service
+import { useSubscription } from '../hooks/useSubscription';
 import tw from '../lib/tailwind';
 
 interface HamburgerMenuProps {
@@ -23,6 +24,7 @@ type MenuItem = {
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const { signOut } = useAuth(); // Use the signOut method from AuthContext
+  const { isPremiumUser } = useSubscription();
 
   const handleLogout = async () => {
     try {
@@ -40,6 +42,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
   };
 
   const menuItems: MenuItem[] = [ // Apply the MenuItem type here
+    {
+      title: isPremiumUser ? 'Premium Active' : 'Upgrade to Premium',
+      icon: <Crown size={20} color={isPremiumUser ? "#FFD700" : "#7C3AED"} />,
+      onPress: () => {
+        setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to Subscription screen');
+        NavigationService.navigate('Subscription'); // Use service
+      },
+      textStyle: { color: isPremiumUser ? "#FFD700" : "#7C3AED", fontWeight: '600' },
+    },
     {
       title: 'Account Settings',
       icon: <Shield size={20} color="#4A3B78" />,
