@@ -864,40 +864,53 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
-  // Then update the renderNewChatModal function to include the Generate Title button
+  // Clear function to reset form without closing modal
+  const handleClearNewChat = () => {
+    // Reset state when clearing
+    setSelectedAvatar('jung');
+    setNewConversationTitle('New Reflection');
+  };
+
+  // Cancel function to close modal
+  const handleCancelNewChat = () => {
+    setShowNewChatModal(false);
+  };
+
   const renderNewChatModal = () => {
     return (
       <Modal
         visible={showNewChatModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowNewChatModal(false)}
+        onRequestClose={handleCancelNewChat}
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
-            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
+            <View style={tw`flex-row justify-between items-center px-4 pt-12 pb-6 border-b border-gray-200`}>
               <TouchableOpacity 
-                style={tw`p-2`}
+                style={tw`p-4`}
                 onPress={() => {
-                  console.log('Cancel button pressed');
-                  setShowNewChatModal(false);
+                  console.log('Clear button pressed - resetting form');
+                  handleClearNewChat();
                 }}
                 activeOpacity={0.7}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               >
-                <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" weight="bold" />
+                <Text style={tw`text-jung-purple font-semibold text-base`}>Clear</Text>
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
               </Text>
               <TouchableOpacity 
-                style={tw`p-2`}
+                style={tw`p-4`}
                 onPress={() => {
-                  console.log('Cancel button (right) pressed');
-                  setShowNewChatModal(false);
+                  console.log('Cancel button pressed - closing modal');
+                  handleCancelNewChat();
                 }}
                 activeOpacity={0.7}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               >
-                <Text style={tw`text-jung-purple`}>Cancel</Text>
+                <Text style={tw`text-jung-purple font-semibold text-base`}>Cancel</Text>
               </TouchableOpacity>
             </View>
             
@@ -907,7 +920,6 @@ Return only the title text with no additional explanation or formatting.`;
               <AvatarSelector 
                 selectedAvatar={selectedAvatar}
                 onSelectAvatar={setSelectedAvatar}
-                hasPremiumAccess={true}
               />
               
               <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>

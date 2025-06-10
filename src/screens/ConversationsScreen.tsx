@@ -508,17 +508,19 @@ export const ConversationsScreen = () => {
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
-            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
+            <View style={tw`flex-row justify-between items-center px-4 pt-6 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
-                style={tw`p-2`}
+                style={tw`p-3`}
                 onPress={() => setShowAnalysisModal(false)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" />
               </TouchableOpacity>
-              <Text style={tw`text-xl font-bold text-jung-deep`}>
+              <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`}>
                 Analysis: {currentConversationTitle}
               </Text>
-              <View style={tw`w-10`} />
+              <View style={tw`w-12`} />
             </View>
             
             <ScrollView style={tw`flex-1 p-4`}>
@@ -531,6 +533,7 @@ export const ConversationsScreen = () => {
               <TouchableOpacity
                 style={tw`bg-jung-purple py-3 rounded-lg`}
                 onPress={() => setShowAnalysisModal(false)}
+                activeOpacity={0.7}
               >
                 <Text style={tw`text-white text-center font-semibold`}>Close</Text>
               </TouchableOpacity>
@@ -812,11 +815,15 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
-  // Then update the renderNewChatModal function to include the Generate Title button
-  const handleCancelNewChat = () => {
-    // Reset state when canceling
+  // Clear function to reset form without closing modal
+  const handleClearNewChat = () => {
+    // Reset state when clearing
     setSelectedAvatar('jung');
     setNewConversationTitle('New Reflection');
+  };
+
+  // Cancel function to close modal
+  const handleCancelNewChat = () => {
     setShowNewChatModal(false);
   };
 
@@ -830,19 +837,23 @@ Return only the title text with no additional explanation or formatting.`;
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
-            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-200`}>
+            <View style={tw`flex-row justify-between items-center px-4 pt-6 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
-                style={tw`p-2`}
-                onPress={handleCancelNewChat}
+                style={tw`p-3`}
+                onPress={handleClearNewChat}
+                activeOpacity={0.7}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" />
+                <Text style={tw`text-jung-purple font-medium`}>Clear</Text>
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
               </Text>
               <TouchableOpacity 
-                style={tw`p-2`}
+                style={tw`p-3`}
                 onPress={handleCancelNewChat}
+                activeOpacity={0.7}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <Text style={tw`text-jung-purple font-medium`}>Cancel</Text>
               </TouchableOpacity>
