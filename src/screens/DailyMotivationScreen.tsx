@@ -15,7 +15,7 @@ import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { Typography } from '../components/Typography';
 import tw from '../lib/tailwind';
-import { decryptData } from '../lib/security';
+import { decryptData } from '../lib/encryptionUtils';
 import { generateAIResponse } from '../lib/api';
 import { useFocusEffect } from '@react-navigation/native';
 // Add House icon import
@@ -57,12 +57,25 @@ export default function DailyMotivationScreen() {
           // If we have emotional data, try to decrypt and use it
           if (emotionalStates && emotionalStates.length > 0) {
             try {
-              const decryptedData = await decryptData(emotionalStates[0].encrypted_data);
+              const decryptedData = decryptData(emotionalStates[0].encrypted_data);
               console.log('Raw decrypted data:', decryptedData);
+
+              // Check if decryption failed (encryptionUtils returns "[Encrypted Content]" on failure)
+              if (decryptedData === "[Encrypted Content]" || !decryptedData) {
+                console.warn('Decryption failed, falling back to random quote');
+                throw new Error('Decryption failed');
+              }
 
               let profile;
               if (typeof decryptedData === 'string') {
                 const cleanedData = decryptedData.trim();
+                
+                // Skip processing if it's clearly not valid JSON
+                if (cleanedData.length < 2 || (!cleanedData.startsWith('{') && !cleanedData.includes('{'))) {
+                  console.warn('Decrypted data does not appear to be JSON:', cleanedData);
+                  throw new Error('Decrypted data is not valid JSON format');
+                }
+                
                 try {
                   // Try direct JSON parse
                   profile = JSON.parse(cleanedData);
@@ -88,13 +101,19 @@ export default function DailyMotivationScreen() {
                 throw new Error('Invalid data format');
               }
 
+              // Validate that we have a valid profile structure
+              if (!profile || typeof profile !== 'object') {
+                console.error('Profile is not a valid object:', profile);
+                throw new Error('Invalid profile structure');
+              }
+
               // Validate and set defaults
               const validatedProfile = {
                 primary_emotion: profile?.primary_emotion || 'neutral',
                 secondary_emotions: Array.isArray(profile?.secondary_emotions) 
                   ? profile.secondary_emotions 
                   : ['calm'],
-                intensity: profile?.intensity || 5,
+                intensity: typeof profile?.intensity === 'number' ? profile.intensity : 5,
                 needs: Array.isArray(profile?.needs) 
                   ? profile.needs 
                   : ['balance'],
@@ -105,15 +124,10 @@ export default function DailyMotivationScreen() {
                 await generatePersonalizedQuote(validatedProfile);
               }
             } catch (decryptError) {
-              console.error('Error processing emotional data:', decryptError, emotionalStates[0]?.encrypted_data);
+              console.error('Error processing emotional data:', decryptError);
               // Clear potentially bad data and fall back to random quote
               if (isMounted.current) {
-                setEmotionalProfile({
-                  primary_emotion: 'neutral',
-                  secondary_emotions: ['calm'],
-                  intensity: 5,
-                  needs: ['balance'],
-                });
+                setEmotionalProfile(null);
                 setPersonalizedQuote('');
                 selectRandomQuote();
               }
