@@ -27,6 +27,9 @@ import { generatePromptForAvatar } from '../lib/avatarPrompts';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
 import { PrivacyConsentDialog } from '../components/PrivacyConsentDialog';
+import { CreditDisplay } from '../components/CreditDisplay';
+import { useCredits } from '../hooks/useCredits';
+import { creditService } from '../lib/creditService';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -59,6 +62,7 @@ export const ChatScreen = () => {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+  const { hasCredits, spendCredits } = useCredits();
   // Removed analysis-related state
   // const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   // const [analysisContent, setAnalysisContent] = useState('');
@@ -433,6 +437,19 @@ export const ChatScreen = () => {
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
     
+    // Check if user has credits before sending message
+    if (!hasCredits(1)) {
+      Alert.alert(
+        'No Credits Available',
+        'You need credits to send messages. Would you like to purchase more credits or upgrade your plan?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Buy Credits', onPress: () => navigation.navigate('Subscription') }
+        ]
+      );
+      return;
+    }
+    
     try {
       // Add user message to the chat
       const userMessage: Message = {
@@ -550,6 +567,33 @@ export const ChatScreen = () => {
         // e.g., remove it or mark it as unsaved
       } else {
         console.log('handleSendMessage: Successfully inserted AI message:', aiInsertData);
+        
+        // Deduct credit after successful message exchange
+        const creditSpent = await spendCredits(1, `Chat with ${availableAvatars.find(a => a.id === currentAvatarId)?.name || 'AI'}`);
+        if (!creditSpent) {
+          console.warn('Failed to deduct credit, but message was sent successfully');
+        }
+        
+        // Record message cost for analytics
+        try {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser) {
+            await creditService.recordMessageCost(
+              aiMessage.id,
+              currentUser.id,
+              conversationId,
+              currentAvatarId,
+              0, // input tokens (we don't track this yet)
+              0, // output tokens (we don't track this yet)  
+              1, // credits charged
+              0, // api cost in cents (we don't track this yet)
+              'claude',
+              'claude-3-5-sonnet'
+            );
+          }
+        } catch (analyticsError) {
+          console.warn('Failed to record message cost for analytics:', analyticsError);
+        }
       }
       
     } catch (error) {
@@ -681,17 +725,13 @@ export const ChatScreen = () => {
             {conversationTitle || 'Conversation'}
           </Text>
           
-          <View style={tw`flex-row`}>
-            {/* Save to History button removed */}
-            {/* <TouchableOpacity 
-              style={tw`p-2 mr-1`}
-              onPress={handleSaveToHistory}
-            >
-              <BookOpen size={22} color="#4A3B78" />
-            </TouchableOpacity> */}
+          <View style={tw`flex-row items-center`}>
+            {/* Credit Display in header */}
+            <CreditDisplay variant="header" showUpgradeButton={true} />
+            
             {/* Re-adding Analyze button to chat header */}
             <TouchableOpacity 
-              style={tw`p-2`}
+              style={tw`p-2 ml-2`}
               onPress={() => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId })}
               disabled={loading || isTyping}
             >

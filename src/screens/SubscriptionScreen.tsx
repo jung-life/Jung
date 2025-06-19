@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { inAppPurchaseService, SUBSCRIPTION_PRODUCTS, SubscriptionStatus } from '../lib/inAppPurchaseService';
+import { CreditDisplay } from '../components/CreditDisplay';
+import { useCredits } from '../hooks/useCredits';
 
 // Use our own interface instead of importing from react-native-iap
 interface IAPSubscription {
@@ -280,6 +282,11 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
+          {/* Current Credit Status */}
+          <View style={styles.creditSection}>
+            <CreditDisplay variant="detailed" showUpgradeButton={false} />
+          </View>
+
           {/* Header */}
           <View style={styles.introSection}>
             <LinearGradient
@@ -289,10 +296,10 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               <Text style={styles.crownIcon}>👑</Text>
             </LinearGradient>
             <Text style={styles.mainTitle}>
-              Unlock Premium Features
+              Credit-Based Subscriptions
             </Text>
             <Text style={styles.subtitle}>
-              Get unlimited access to all premium avatars, advanced features, and personalized insights
+              Choose a monthly plan to get credits automatically, or buy credit packages as needed
             </Text>
           </View>
 
@@ -384,6 +391,9 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
+  },
+  creditSection: {
+    marginBottom: 24,
   },
   introSection: {
     alignItems: 'center',
