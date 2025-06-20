@@ -451,66 +451,115 @@ DECLARE
   users_migrated INTEGER := 0;
 BEGIN
   -- Migrate users based on their current subscription status
-  FOR user_record IN
-    SELECT DISTINCT user_id
-    FROM auth.users
-    WHERE id NOT IN (SELECT user_id FROM user_credits)
-  LOOP
-    -- Check if user has an active subscription
-    SELECT * INTO subscription_record
-    FROM user_subscriptions
-    WHERE user_id = user_record.user_id
-      AND is_active = true
-      AND (expires_at IS NULL OR expires_at > NOW())
-    ORDER BY created_at DESC
-    LIMIT 1;
-    
-    IF subscription_record.product_id IS NOT NULL THEN
-      -- Determine tier and credits based on product_id
-      CASE
-        WHEN subscription_record.product_id LIKE '%yearly%' THEN
-          tier_id := 'premium';
-          credits_to_grant := 400; -- Premium tier monthly credits
-        WHEN subscription_record.product_id LIKE '%monthly%' THEN
-          tier_id := 'basic';
-          credits_to_grant := 150; -- Basic tier monthly credits
-        ELSE
-          tier_id := 'basic';
-          credits_to_grant := 150;
-      END CASE;
-    ELSE
-      -- Free user
+  -- First, handle users from user_subscriptions table if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_subscriptions') THEN
+    FOR user_record IN
+      SELECT DISTINCT us.user_id
+      FROM user_subscriptions us
+      WHERE us.user_id NOT IN (SELECT user_id FROM user_credits)
+    LOOP
+      -- Check if user has an active subscription
+      SELECT * INTO subscription_record
+      FROM user_subscriptions
+      WHERE user_id = user_record.user_id
+        AND is_active = true
+        AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY created_at DESC
+      LIMIT 1;
+      
+      IF subscription_record.product_id IS NOT NULL THEN
+        -- Determine tier and credits based on product_id
+        CASE
+          WHEN subscription_record.product_id LIKE '%yearly%' THEN
+            tier_id := 'premium';
+            credits_to_grant := 400; -- Premium tier monthly credits
+          WHEN subscription_record.product_id LIKE '%monthly%' THEN
+            tier_id := 'basic';
+            credits_to_grant := 150; -- Basic tier monthly credits
+          ELSE
+            tier_id := 'basic';
+            credits_to_grant := 150;
+        END CASE;
+      ELSE
+        -- Free user
+        tier_id := 'free';
+        credits_to_grant := 10;
+      END IF;
+      
+      -- Create user credits record
+      INSERT INTO user_credits (user_id, current_balance, subscription_tier_id)
+      VALUES (user_record.user_id, credits_to_grant, tier_id)
+      ON CONFLICT (user_id) DO NOTHING;
+      
+      -- Log the migration transaction only if we inserted a new record
+      IF FOUND THEN
+        INSERT INTO credit_transactions (
+          user_id,
+          transaction_type,
+          amount,
+          balance_before,
+          balance_after,
+          source_type,
+          source_id,
+          description
+        ) VALUES (
+          user_record.user_id,
+          'granted',
+          credits_to_grant,
+          0,
+          credits_to_grant,
+          'migration',
+          tier_id,
+          'Initial credits granted during migration to credit system'
+        );
+        
+        users_migrated := users_migrated + 1;
+      END IF;
+    END LOOP;
+  END IF;
+  
+  -- Also handle users from profiles table if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'profiles') THEN
+    FOR user_record IN
+      SELECT DISTINCT p.id as user_id
+      FROM profiles p
+      WHERE p.id NOT IN (SELECT user_id FROM user_credits)
+    LOOP
+      -- Default to free tier for profile users without subscriptions
       tier_id := 'free';
       credits_to_grant := 10;
-    END IF;
-    
-    -- Create user credits record
-    INSERT INTO user_credits (user_id, current_balance, subscription_tier_id)
-    VALUES (user_record.user_id, credits_to_grant, tier_id);
-    
-    -- Log the migration transaction
-    INSERT INTO credit_transactions (
-      user_id,
-      transaction_type,
-      amount,
-      balance_before,
-      balance_after,
-      source_type,
-      source_id,
-      description
-    ) VALUES (
-      user_record.user_id,
-      'granted',
-      credits_to_grant,
-      0,
-      credits_to_grant,
-      'migration',
-      tier_id,
-      'Initial credits granted during migration to credit system'
-    );
-    
-    users_migrated := users_migrated + 1;
-  END LOOP;
+      
+      -- Create user credits record
+      INSERT INTO user_credits (user_id, current_balance, subscription_tier_id)
+      VALUES (user_record.user_id, credits_to_grant, tier_id)
+      ON CONFLICT (user_id) DO NOTHING;
+      
+      -- Log the migration transaction only if we inserted a new record
+      IF FOUND THEN
+        INSERT INTO credit_transactions (
+          user_id,
+          transaction_type,
+          amount,
+          balance_before,
+          balance_after,
+          source_type,
+          source_id,
+          description
+        ) VALUES (
+          user_record.user_id,
+          'granted',
+          credits_to_grant,
+          0,
+          credits_to_grant,
+          'migration',
+          tier_id,
+          'Initial credits granted during migration to credit system'
+        );
+        
+        users_migrated := users_migrated + 1;
+      END IF;
+    END LOOP;
+  END IF;
   
   RETURN users_migrated;
 END;

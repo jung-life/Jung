@@ -29,7 +29,8 @@ import { ConversationInsightsScreen } from '../screens/ConversationInsightsScree
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import SubscriptionScreen from '../screens/SubscriptionScreen'; // Import SettingsScreen
+import SubscriptionScreen from '../screens/SubscriptionScreen'; 
+import TransactionHistoryScreen from '../screens/TransactionHistoryScreen'; // Import TransactionHistoryScreen
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -162,6 +163,11 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
         <Stack.Screen 
           name="Subscription" 
           component={SubscriptionScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="TransactionHistory" 
+          component={TransactionHistoryScreen}
           options={{ headerShown: false }}
         />
   </Stack.Navigator>

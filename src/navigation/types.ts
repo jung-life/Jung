@@ -29,6 +29,7 @@ export type RootStackParamList = {
   LoadingScreen: undefined; // Add LoadingScreen
   JournalingScreen: undefined; // Add Journaling screen
   SettingsScreen: undefined; // Add Settings screen
+  TransactionHistory: undefined; // Add Transaction History screen
 };
 
 // Add these types for navigation

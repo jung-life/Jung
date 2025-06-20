@@ -42,6 +42,9 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [availableSubscriptions, setAvailableSubscriptions] = useState<IAPSubscription[]>([]);
+  const [activeTab, setActiveTab] = useState<'tiers' | 'packages'>('tiers');
+  
+  const { availableTiers, creditPackages } = useCredits();
 
   const subscriptionPlans: SubscriptionPlan[] = [
     {
@@ -152,6 +155,154 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  const renderTierCard = (tier: any) => {
+    const isPurchasing = purchasing === tier.id;
+    const price = tier.priceCents / 100;
+    const pricePerCredit = (tier.priceCents / tier.monthlyCredits / 100).toFixed(3);
+
+    return (
+      <View key={tier.id} style={styles.subscriptionCard}>
+        <LinearGradient
+          colors={tier.isPopular ? ['#667eea', '#764ba2'] : ['#f7fafc', '#edf2f7']}
+          style={[styles.cardGradient, tier.isPopular && styles.popularCard]}
+        >
+          {tier.isPopular ? (
+            <View style={styles.popularBadge}>
+              <View style={styles.popularBadgeInner}>
+                <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.cardHeader}>
+            <View style={styles.priceContainer}>
+              <Text style={[styles.planTitle, tier.isPopular && styles.whiteText]}>
+                {tier.name}
+              </Text>
+              <View style={styles.priceRow}>
+                <Text style={[styles.price, tier.isPopular && styles.whiteText]}>
+                  {tier.monthlyCredits} credits
+                </Text>
+                <Text style={[styles.period, tier.isPopular && styles.lightText]}>
+                  per month
+                </Text>
+              </View>
+              <Text style={[styles.originalPrice, tier.isPopular && styles.lightText]}>
+                ${price.toFixed(2)}/month
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featuresContainer}>
+            <View style={styles.feature}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={[styles.featureText, tier.isPopular && styles.lightText]}>
+                {tier.monthlyCredits} credits every month
+              </Text>
+            </View>
+            <View style={styles.feature}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={[styles.featureText, tier.isPopular && styles.lightText]}>
+                ${pricePerCredit} per credit
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => Alert.alert('Coming Soon', 'Credit-based subscriptions will be available soon!')}
+            disabled={isPurchasing}
+            style={[
+              styles.subscribeButton,
+              tier.isPopular ? styles.whiteButton : styles.purpleButton,
+            ]}
+          >
+            <Text style={[
+              styles.buttonText,
+              tier.isPopular ? styles.purpleText : styles.whiteText,
+            ]}>
+              Subscribe Now
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+    );
+  };
+
+  const renderCreditPackageCard = (pkg: any) => {
+    const isPurchasing = purchasing === pkg.id;
+    const price = pkg.priceCents / 100;
+    const pricePerCredit = (pkg.priceCents / pkg.totalCredits / 100).toFixed(3);
+
+    return (
+      <View key={pkg.id} style={styles.subscriptionCard}>
+        <LinearGradient
+          colors={pkg.isPopular ? ['#10b981', '#047857'] : ['#f7fafc', '#edf2f7']}
+          style={[styles.cardGradient, pkg.isPopular && styles.popularCard]}
+        >
+          {pkg.isPopular ? (
+            <View style={styles.popularBadge}>
+              <View style={styles.popularBadgeInner}>
+                <Text style={styles.popularBadgeText}>BEST VALUE</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.cardHeader}>
+            <View style={styles.priceContainer}>
+              <Text style={[styles.planTitle, pkg.isPopular && styles.whiteText]}>
+                {pkg.name}
+              </Text>
+              <View style={styles.priceRow}>
+                <Text style={[styles.price, pkg.isPopular && styles.whiteText]}>
+                  {pkg.totalCredits} credits
+                </Text>
+                {pkg.bonusCredits ? (
+                  <Text style={[styles.period, pkg.isPopular && styles.lightText]}>
+                    +{pkg.bonusCredits} bonus
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={[styles.originalPrice, pkg.isPopular && styles.lightText]}>
+                ${price.toFixed(2)} (${pricePerCredit}/credit)
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featuresContainer}>
+            <View style={styles.feature}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={[styles.featureText, pkg.isPopular && styles.lightText]}>
+                {pkg.description || 'One-time purchase'}
+              </Text>
+            </View>
+            <View style={styles.feature}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={[styles.featureText, pkg.isPopular && styles.lightText]}>
+                Credits never expire
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => Alert.alert('Coming Soon', 'Credit packages will be available soon!')}
+            disabled={isPurchasing}
+            style={[
+              styles.subscribeButton,
+              pkg.isPopular ? styles.whiteButton : styles.purpleButton,
+            ]}
+          >
+            <Text style={[
+              styles.buttonText,
+              pkg.isPopular ? styles.purpleText : styles.whiteText,
+            ]}>
+              Purchase Credits
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+    );
+  };
+
   const renderSubscriptionCard = (plan: SubscriptionPlan) => {
     const isActive = subscriptionStatus?.isActive && subscriptionStatus.productId === plan.id;
     const isPurchasing = purchasing === plan.id;
@@ -166,21 +317,21 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           colors={plan.popular ? ['#667eea', '#764ba2'] : ['#f7fafc', '#edf2f7']}
           style={[styles.cardGradient, plan.popular && styles.popularCard]}
         >
-          {plan.popular && (
+          {plan.popular ? (
             <View style={styles.popularBadge}>
               <View style={styles.popularBadgeInner}>
                 <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
               </View>
             </View>
-          )}
+          ) : null}
 
-          {plan.savings && (
+          {plan.savings ? (
             <View style={styles.savingsBadge}>
               <View style={styles.savingsBadgeInner}>
                 <Text style={styles.savingsBadgeText}>{plan.savings}</Text>
               </View>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.cardHeader}>
             <View style={styles.priceContainer}>
@@ -195,18 +346,18 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   {plan.period}
                 </Text>
               </View>
-              {plan.originalPrice && (
+              {plan.originalPrice ? (
                 <Text style={[styles.originalPrice, plan.popular && styles.lightText]}>
                   {plan.originalPrice}
                 </Text>
-              )}
+              ) : null}
             </View>
             
-            {isActive && (
+            {isActive ? (
               <View style={styles.activeBadge}>
                 <Text style={styles.activeBadgeText}>ACTIVE</Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           <View style={styles.featuresContainer}>
@@ -303,8 +454,28 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </Text>
           </View>
 
+          {/* Tab Navigation */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              onPress={() => setActiveTab('tiers')}
+              style={[styles.tab, activeTab === 'tiers' && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, activeTab === 'tiers' && styles.activeTabText]}>
+                Monthly Plans
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab('packages')}
+              style={[styles.tab, activeTab === 'packages' && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, activeTab === 'packages' && styles.activeTabText]}>
+                Credit Packages
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Current Subscription Status */}
-          {subscriptionStatus?.isActive && (
+          {subscriptionStatus?.isActive ? (
             <View style={styles.activeStatus}>
               <View style={styles.activeStatusHeader}>
                 <Text style={styles.checkIcon}>✓</Text>
@@ -312,15 +483,49 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               </View>
               <Text style={styles.activeStatusText}>
                 Your premium subscription is active
-                {subscriptionStatus.expirationDate && 
-                  ` until ${subscriptionStatus.expirationDate.toLocaleDateString()}`
+                {subscriptionStatus.expirationDate ? 
+                  ` until ${subscriptionStatus.expirationDate.toLocaleDateString()}` : ''
                 }
               </Text>
             </View>
-          )}
+          ) : null}
 
-          {/* Subscription Plans */}
-          {subscriptionPlans.map(renderSubscriptionCard)}
+          {/* Content based on active tab */}
+          {activeTab === 'tiers' ? (
+            <View>
+              <Text style={styles.sectionTitle}>Credit-Based Monthly Plans</Text>
+              <Text style={styles.sectionSubtitle}>
+                Get monthly credits automatically renewed each month
+              </Text>
+              {availableTiers && availableTiers.length > 0 ? (
+                availableTiers.map(renderTierCard)
+              ) : (
+                <View style={styles.noDataContainer}>
+                  <Text style={styles.noDataText}>Monthly credit plans coming soon!</Text>
+                  <Text style={styles.noDataSubtext}>
+                    We're preparing credit-based subscription tiers for you.
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.sectionTitle}>One-Time Credit Packages</Text>
+              <Text style={styles.sectionSubtitle}>
+                Purchase credits when you need them, no monthly commitment
+              </Text>
+              {creditPackages && creditPackages.length > 0 ? (
+                creditPackages.map(renderCreditPackageCard)
+              ) : (
+                <View style={styles.noDataContainer}>
+                  <Text style={styles.noDataText}>Credit packages coming soon!</Text>
+                  <Text style={styles.noDataSubtext}>
+                    We're preparing one-time credit purchase options for you.
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Footer Actions */}
           <View style={styles.footer}>
@@ -623,6 +828,63 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: '#667eea',
+  },
+  tabText: {
+    fontWeight: '600',
+    color: '#374151',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    color: '#6b7280',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  noDataContainer: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 32,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  noDataText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noDataSubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 
