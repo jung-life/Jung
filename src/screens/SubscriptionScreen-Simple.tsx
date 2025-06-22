@@ -15,10 +15,6 @@ import { useCredits } from '../hooks/useCredits';
 import { CreditDisplay } from '../components/CreditDisplay';
 import { creditService } from '../lib/creditService';
 import { useAuth } from '../contexts/AuthContext';
-import { GradientBackground } from '../components/GradientBackground';
-import { SymbolicBackground } from '../components/SymbolicBackground';
-import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
-import tw from '../lib/tailwind';
 
 export default function SimpleSubscriptionScreen() {
   const navigation = useNavigation();
@@ -143,148 +139,92 @@ export default function SimpleSubscriptionScreen() {
 
   if (isLoading) {
     return (
-      <GradientBackground>
-        <SafeAreaView style={tw`flex-1`}>
-          <SymbolicBackground opacity={0.03} />
-          <View style={tw`flex-1 justify-center items-center`}>
-            <View style={tw`bg-white/90 rounded-2xl p-8 shadow-lg`}>
-              <ActivityIndicator size="large" color="#667eea" />
-              <Text style={tw`mt-4 text-jung-deep text-lg font-semibold text-center`}>
-                Loading pricing options...
-              </Text>
-            </View>
-          </View>
-        </SafeAreaView>
-      </GradientBackground>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text style={styles.loadingText}>Loading pricing options...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <GradientBackground>
-      <SafeAreaView style={tw`flex-1`}>
-        <SymbolicBackground opacity={0.03} />
-        
-        {/* Header */}
-        <View style={tw`flex-row items-center px-5 py-4 bg-white/10 backdrop-blur-sm`}>
-          <TouchableOpacity
-            style={tw`mr-4 bg-white/20 rounded-full p-2`}
-            onPress={() => navigation.goBack()}
-          >
-            <SafePhosphorIcon iconType="ArrowLeft" size={24} color="#2D2B55" weight="bold" />
-          </TouchableOpacity>
-          <Text style={tw`text-xl font-bold text-jung-deep`}>Choose Your Plan</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Choose Your Plan</Text>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Current Credit Status */}
+        <View style={styles.creditSection}>
+          <CreditDisplay variant="detailed" showUpgradeButton={false} />
         </View>
 
-        <ScrollView style={tw`flex-1 px-4`} showsVerticalScrollIndicator={false}>
-          {/* Current Credit Status */}
-          <View style={tw`mt-4 mb-6`}>
-            <CreditDisplay variant="detailed" showUpgradeButton={false} />
+        {/* Header */}
+        <View style={styles.introSection}>
+          <Text style={styles.mainTitle}>Transparent Pricing</Text>
+          <Text style={styles.subtitle}>
+            Choose credit packages for flexibility or monthly plans for convenience.
+          </Text>
+        </View>
+
+        {/* Tab Container */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('credits')}
+            style={[styles.tab, activeTab === 'credits' && styles.activeTab]}
+          >
+            <Text style={[styles.tabText, activeTab === 'credits' && styles.activeTabText]}>
+              Credit Packages
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab('subscriptions')}
+            style={[styles.tab, activeTab === 'subscriptions' && styles.activeTab]}
+          >
+            <Text style={[styles.tabText, activeTab === 'subscriptions' && styles.activeTabText]}>
+              Monthly Plans
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === 'credits' && (
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>One-Time Credit Packages</Text>
+            <Text style={styles.sectionDescription}>
+              Pay only for what you use. Credits never expire.
+            </Text>
+            
+            {creditPackages.length > 0 ? (
+              creditPackages.map(renderCreditPackageCard)
+            ) : (
+              <Text style={styles.noDataText}>No credit packages available</Text>
+            )}
           </View>
+        )}
 
-          {/* Header */}
-          <View style={tw`items-center mb-8`}>
-            <View style={tw`bg-white/90 rounded-2xl p-6 shadow-sm`}>
-              <View style={tw`items-center mb-4`}>
-                <SafePhosphorIcon iconType="Heart" size={40} color="#667eea" weight="fill" />
-              </View>
-              <Text style={tw`text-2xl font-bold text-jung-deep mb-2 text-center`}>
-                Transparent Pricing
-              </Text>
-              <Text style={tw`text-base text-gray-600 text-center leading-6`}>
-                Choose credit packages for flexibility or monthly plans for convenience.
-                Always know exactly what you're paying for.
-              </Text>
-            </View>
+        {activeTab === 'subscriptions' && (
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>Monthly Credit Plans</Text>
+            <Text style={styles.sectionDescription}>
+              Get monthly credits automatically with discounts.
+            </Text>
+            
+            {subscriptionTiers.length > 0 ? (
+              subscriptionTiers.map(renderSubscriptionCard)
+            ) : (
+              <Text style={styles.noDataText}>No subscription plans available</Text>
+            )}
           </View>
-
-          {/* Tab Container */}
-          <View style={tw`bg-white/90 rounded-xl p-1 mb-6 shadow-sm`}>
-            <View style={tw`flex-row`}>
-              <TouchableOpacity
-                onPress={() => setActiveTab('credits')}
-                style={tw`flex-1 py-3 items-center rounded-lg ${activeTab === 'credits' ? 'bg-jung-purple' : ''}`}
-              >
-                <Text style={tw`text-sm font-semibold ${activeTab === 'credits' ? 'text-white' : 'text-gray-600'}`}>
-                  💳 Credit Packages
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setActiveTab('subscriptions')}
-                style={tw`flex-1 py-3 items-center rounded-lg ${activeTab === 'subscriptions' ? 'bg-jung-purple' : ''}`}
-              >
-                <Text style={tw`text-sm font-semibold ${activeTab === 'subscriptions' ? 'text-white' : 'text-gray-600'}`}>
-                  📅 Monthly Plans
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {activeTab === 'credits' && (
-            <View style={tw`mb-6`}>
-              <View style={tw`bg-white/90 rounded-xl p-4 mb-4 shadow-sm`}>
-                <Text style={tw`text-xl font-bold text-jung-deep mb-2`}>One-Time Credit Packages</Text>
-                <Text style={tw`text-base text-gray-600 leading-6`}>
-                  Pay only for what you use. Credits never expire. No monthly commitment.
-                </Text>
-              </View>
-              
-              {creditPackages.length > 0 ? (
-                creditPackages.map(renderCreditPackageCard)
-              ) : (
-                <View style={tw`bg-white/90 rounded-xl p-8 shadow-sm`}>
-                  <Text style={tw`text-base text-gray-500 text-center`}>No credit packages available</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {activeTab === 'subscriptions' && (
-            <View style={tw`mb-6`}>
-              <View style={tw`bg-white/90 rounded-xl p-4 mb-4 shadow-sm`}>
-                <Text style={tw`text-xl font-bold text-jung-deep mb-2`}>Monthly Credit Plans</Text>
-                <Text style={tw`text-base text-gray-600 leading-6`}>
-                  Get monthly credits automatically plus discounts on additional purchases.
-                </Text>
-              </View>
-              
-              {subscriptionTiers.length > 0 ? (
-                subscriptionTiers.map(renderSubscriptionCard)
-              ) : (
-                <View style={tw`bg-white/90 rounded-xl p-8 shadow-sm`}>
-                  <Text style={tw`text-base text-gray-500 text-center`}>No subscription plans available</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Value Proposition */}
-          <View style={tw`bg-white/90 rounded-xl p-6 mb-6 shadow-sm`}>
-            <Text style={tw`text-lg font-bold text-jung-deep mb-4 text-center`}>Why Choose Jung?</Text>
-            <View style={tw`space-y-3`}>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-xl mr-3`}>✅</Text>
-                <Text style={tw`text-base text-gray-700`}>Complete price transparency</Text>
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-xl mr-3`}>⏰</Text>
-                <Text style={tw`text-base text-gray-700`}>Credits never expire</Text>
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-xl mr-3`}>🤝</Text>
-                <Text style={tw`text-base text-gray-700`}>Support between therapy sessions</Text>
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-xl mr-3`}>🌟</Text>
-                <Text style={tw`text-base text-gray-700`}>Enhance your therapy journey</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Footer spacer */}
-          <View style={tw`h-8`} />
-        </ScrollView>
-      </SafeAreaView>
-    </GradientBackground>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

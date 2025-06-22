@@ -95,6 +95,16 @@ class CreditService {
         .eq('user_id', userId)
         .single();
 
+      if (error && error.code === 'PGRST116') {
+        // No record found - create initial credit record for user
+        console.log('No credit record found for user, initializing...');
+        const initialized = await this.initializeUserCredits(userId);
+        if (initialized) {
+          return await this.getCreditBalance(userId);
+        }
+        return null;
+      }
+
       if (error) {
         console.error('Error fetching credit balance:', error);
         return null;
