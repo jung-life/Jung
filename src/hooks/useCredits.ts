@@ -198,14 +198,20 @@ export const useCredits = (): UseCreditsReturn => {
   // Set up real-time subscription for credit balance changes
   useEffect(() => {
     let subscription: any = null;
+    let isSubscribed = false;
 
     const setupRealtimeSubscription = async () => {
       try {
+        if (isSubscribed) return; // Prevent multiple subscriptions
+        
         const userId = await getCurrentUserId();
         if (!userId) return;
 
+        // Create a unique channel name to avoid conflicts
+        const channelName = `user-credits-${userId}-${Date.now()}`;
+        
         subscription = supabase
-          .channel(`user-credits-${userId}`)
+          .channel(channelName)
           .on(
             'postgres_changes',
             {
@@ -232,7 +238,12 @@ export const useCredits = (): UseCreditsReturn => {
               await loadTransactions();
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isSubscribed = true;
+              console.log('Credit realtime subscription active');
+            }
+          });
       } catch (err) {
         console.error('Error setting up realtime subscription:', err);
       }
@@ -242,10 +253,12 @@ export const useCredits = (): UseCreditsReturn => {
 
     return () => {
       if (subscription) {
+        console.log('Cleaning up credit subscription');
         supabase.removeChannel(subscription);
+        isSubscribed = false;
       }
     };
-  }, [getCurrentUserId, refreshBalance, loadTransactions]);
+  }, []); // Remove dependencies to prevent re-subscription
 
   return {
     // State
