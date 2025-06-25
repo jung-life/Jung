@@ -1,7 +1,7 @@
 {
   "name": "jung",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index-enhanced.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
