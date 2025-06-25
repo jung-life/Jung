@@ -37,7 +37,7 @@ export const PrivacyPolicyScreen = () => {
           {/* App Logo */}
           <View style={tw`items-center mb-6`}>
             <Image 
-              source={require('../assets/logo/jung-app-log.png')} 
+              source={require('../assets/logo/jung-app-logo.png')} 
               style={tw`w-32 h-32`}
               resizeMode="contain"
             />
