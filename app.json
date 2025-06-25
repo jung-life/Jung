@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.jung",
+      "buildConfiguration": "Release",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
