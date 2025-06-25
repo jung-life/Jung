@@ -1,45 +1,32 @@
 {
   "cli": {
-    "version": ">= 3.13.3"
+    "version": ">= 7.3.0"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Debug",
-        "enterpriseProvisioning": "universal"
-      },
       "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+        "NODE_ENV": "development"
       }
     },
-    "development-simulator": {
-      "developmentClient": true,
-      "distribution": "internal",
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "ios-simulator": {
+      "extends": "development",
       "ios": {
         "simulator": true,
         "buildConfiguration": "Debug"
       },
       "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
-      }
-    },
-    "preview": {
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Release"
-      },
-      "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
-      }
-    },
-    "production": {
-      "ios": {
-        "buildConfiguration": "Release"
-      },
-      "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+        "NODE_ENV": "development",
+        "EXPO_PUBLIC_ENVIRONMENT": "simulator"
       }
     }
   },

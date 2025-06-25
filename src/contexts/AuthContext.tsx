@@ -3,6 +3,7 @@ import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuth
 import { Alert } from 'react-native';
 import { Session, User } from '@supabase/supabase-js'; // Import types
 import useAuthStore from '../store/useAuthStore'; // Import the Zustand store
+import { revenueCatService } from '../lib/revenueCatService'; // Import RevenueCat service
 
 // Define the shape of the context value
 interface AuthContextType {
@@ -168,6 +169,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Set isNewUser based on disclaimer status
         setIsNewUser(!hasSeenDisclaimer);
+
+        // Identify user with RevenueCat
+        try {
+          await revenueCatService.identifyUser(data.user.id);
+          console.log('User identified with RevenueCat successfully');
+        } catch (revenueCatError) {
+          console.error('Failed to identify user with RevenueCat:', revenueCatError);
+          // Don't fail the sign-in process if RevenueCat identification fails
+        }
         
         return { success: true, isNewUser: !hasSeenDisclaimer };
       }
@@ -190,6 +200,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     setLoading(true);
     try {
+      // Log out from RevenueCat first
+      try {
+        await revenueCatService.logOut();
+        console.log('User logged out from RevenueCat successfully');
+      } catch (revenueCatError) {
+        console.error('Failed to log out from RevenueCat:', revenueCatError);
+        // Don't fail the sign-out process if RevenueCat logout fails
+      }
+
       await supabase.auth.signOut();
       updateUserState(null); // Update both user states
       setSession(null);

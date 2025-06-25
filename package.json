@@ -52,6 +52,8 @@
     "react-native-gesture-handler": "~2.20.2",
     "react-native-get-random-values": "^1.11.0",
     "react-native-iap": "^12.16.2",
+    "react-native-purchases": "^8.11.6",
+    "react-native-purchases-ui": "^8.11.6",
     "react-native-reanimated": "~3.16.1",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",

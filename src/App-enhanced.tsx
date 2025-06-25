@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
 import { useFonts } from 'expo-font'; // Import useFonts
 import { initializeSupabaseEnhanced } from './lib/supabase-enhanced'; // Removed unused imports
+import { revenueCatService } from './lib/revenueCatService'; // Import RevenueCat service
 
 // Import Screens directly
 import LandingScreen from './screens/LandingScreen';
@@ -178,15 +179,28 @@ const AppContentEnhanced = () => {
   const [initializing, setInitializing] = useState(true); // Keep app init state
   const [initError, setInitError] = useState<string | null>(null); // Keep app init error state
 
-  // Initialize Supabase Enhanced
+  // Initialize Supabase Enhanced and RevenueCat
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Initialize Supabase
         const initResult = await initializeSupabaseEnhanced();
         if (!initResult.success) {
           console.error('Failed to initialize Supabase:', initResult.error);
           setInitError('Failed to initialize the app. Please restart.');
+          return;
         }
+
+        // Initialize RevenueCat
+        try {
+          await revenueCatService.initialize();
+          console.log('RevenueCat initialized successfully');
+        } catch (revenueCatError) {
+          console.error('Failed to initialize RevenueCat:', revenueCatError);
+          // Don't fail the entire app if RevenueCat fails to initialize
+          // The subscription features just won't work
+        }
+
       } catch (error) {
         console.error('Error during app initialization:', error);
         setInitError('An unexpected error occurred during initialization.');
