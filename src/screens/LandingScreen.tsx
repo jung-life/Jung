@@ -16,7 +16,7 @@ const LandingScreen = () => {
 
   return (
     <ImageBackground 
-      source={require('../assets/logo/jung-app-log.png')} 
+      source={require('../assets/logo/jung-app-logo.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >

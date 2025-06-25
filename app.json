@@ -2,13 +2,13 @@
   "expo": {
     "name": "jung",
     "slug": "jung",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png", 
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./src/assets/logo/jung-app-log.png",
+      "image": "./src/assets/logo/jung-app-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.jung",
       "buildConfiguration": "Release",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
@@ -36,7 +36,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/logo/jung-app-log.png",
+        "foregroundImage": "./src/assets/logo/jung-app-logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourcompany.jungai",
@@ -67,7 +67,7 @@
       "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./src/assets/logo/jung-app-log.png",
+      "favicon": "./src/assets/logo/jung-app-logo.png",
       "bundler": "metro"
     },
     "scheme": "jung",
