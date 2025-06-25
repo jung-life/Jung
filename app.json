@@ -4,7 +4,7 @@
     "slug": "jung",
     "version": "3.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/logo/jung-app-log.png",
+    "icon": "./assets/icon.png", 
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -20,6 +20,7 @@
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
+      "icon": "./assets/icon.png", 
       "config": {
         "googleSignIn": {
           "reservedClientId": "your-google-client-id"
