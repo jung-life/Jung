@@ -128,18 +128,18 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
     <View style={styles.consentOption}>
       <View style={styles.consentHeader}>
         <Text style={styles.consentTitle}>
-          {title} {required && <Text style={styles.required}>*</Text>}
+          {title}{required ? ' *' : ''}
         </Text>
         <TouchableOpacity
           style={[
             styles.toggle,
             enabled ? styles.toggleEnabled : styles.toggleDisabled,
-            required && styles.toggleRequired,
+            required ? styles.toggleRequired : null,
           ]}
           onPress={() => !required && onToggle(!enabled)}
           disabled={required}
         >
-          <View style={[styles.toggleKnob, enabled && styles.toggleKnobActive]} />
+          <View style={[styles.toggleKnob, enabled ? styles.toggleKnobActive : null]} />
         </TouchableOpacity>
       </View>
       <Text style={styles.consentDescription}>{description}</Text>
@@ -307,10 +307,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a1a',
     flex: 1,
-  },
-  required: {
-    color: '#dc3545',
-    fontWeight: 'bold',
   },
   consentDescription: {
     fontSize: 14,

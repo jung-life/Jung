@@ -184,8 +184,7 @@ export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
                 </Text>
                 {packageItem.product.introPrice && (
                   <Text style={styles.packageTrial}>
-                    {packageItem.product.introPrice.periodNumberOfUnits}{' '}
-                    {packageItem.product.introPrice.periodUnit} free trial
+                    {`${packageItem.product.introPrice.periodNumberOfUnits} ${packageItem.product.introPrice.periodUnit} free trial`}
                   </Text>
                 )}
               </View>
