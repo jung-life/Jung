@@ -81,10 +81,8 @@ export const SafePhosphorIcon: React.FC<SafePhosphorIconProps> = ({
   };
 
   return (
-    <Text style={{ fontSize: 0 }}>
-      <View style={style}>
-        {renderIcon()}
-      </View>
-    </Text>
+    <View style={style}>
+      {renderIcon()}
+    </View>
   );
 };

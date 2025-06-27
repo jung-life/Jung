@@ -136,14 +136,23 @@ export const CreditDisplay: React.FC<CreditDisplayProps> = ({
       </View>
       
       {isLowCredits && (
-        <View style={tw`mt-3 p-3 bg-${isOutOfCredits ? 'red' : 'amber'}-50 rounded-lg border border-${isOutOfCredits ? 'red' : 'amber'}-200`}>
-          <Text style={tw`text-sm font-medium text-${isOutOfCredits ? 'red' : 'amber'}-800`}>
+        <View style={[
+          tw`mt-3 p-3 rounded-lg border`,
+          isOutOfCredits ? tw`bg-red-50 border-red-200` : tw`bg-amber-50 border-amber-200`
+        ]}>
+          <Text style={[
+            tw`text-sm font-medium`,
+            isOutOfCredits ? tw`text-red-800` : tw`text-amber-800`
+          ]}>
             {isOutOfCredits 
               ? '⚠️ Out of credits!' 
               : '⚠️ Low credits'
             }
           </Text>
-          <Text style={tw`text-xs text-${isOutOfCredits ? 'red' : 'amber'}-600 mt-1`}>
+          <Text style={[
+            tw`text-xs mt-1`,
+            isOutOfCredits ? tw`text-red-600` : tw`text-amber-600`
+          ]}>
             {isOutOfCredits 
               ? 'Purchase credits to continue conversations' 
               : 'Consider upgrading your plan or buying more credits'

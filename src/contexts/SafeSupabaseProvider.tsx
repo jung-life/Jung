@@ -12,12 +12,8 @@ interface SupabaseProviderProps {
  */
 export const SupabaseProvider: React.FC<SupabaseProviderProps> = ({ children }) => {
   return (
-    <View style={{ flex: 1 }}>
-      {/* This hidden text component ensures React Native doesn't complain about text nodes */}
-      <Text style={{ fontSize: 0, opacity: 0, position: 'absolute' }}>.</Text>
-      <OriginalSupabaseProvider>
-        {children}
-      </OriginalSupabaseProvider>
-    </View>
+    <OriginalSupabaseProvider>
+      {children}
+    </OriginalSupabaseProvider>
   );
 };

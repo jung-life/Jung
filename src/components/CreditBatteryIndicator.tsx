@@ -126,7 +126,8 @@ export const CreditBatteryIndicator: React.FC<CreditBatteryIndicatorProps> = ({
         <View style={tw`w-6 h-16 bg-gray-200 rounded-full relative overflow-hidden`}>
           <View
             style={[
-              tw`absolute bottom-0 left-0 right-0 rounded-full ${getBgColorClass()}`,
+              tw`absolute bottom-0 left-0 right-0 rounded-full`,
+              tw`${getBgColorClass()}`,
               { height: `${percentage}%` }
             ]}
           />
@@ -175,7 +176,8 @@ export const CreditBatteryIndicator: React.FC<CreditBatteryIndicatorProps> = ({
         <View style={tw`${sizeClasses.container} bg-gray-200 rounded-full overflow-hidden`}>
           <View
             style={[
-              tw`h-full rounded-full ${getBgColorClass()}`,
+              tw`h-full rounded-full`,
+              tw`${getBgColorClass()}`,
               { width: `${percentage}%` }
             ]}
           />

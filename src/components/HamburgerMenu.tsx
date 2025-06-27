@@ -109,11 +109,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
         accessibilityLabel="Open menu"
         accessibilityRole="button"
       >
-        <Text style={{ fontSize: 0 }}>
-          <View>
-            <List size={24} color="#4A3B78" weight="bold" />
-          </View>
-        </Text>
+        <View>
+          <List size={24} color="#4A3B78" weight="bold" />
+        </View>
       </TouchableOpacity>
 
       <Modal
@@ -135,11 +133,9 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
                 onPress={item.onPress}
               >
                 <View style={tw`mr-3`}>
-                  <Text style={{ fontSize: 0 }}>
-                    <View>
-                      {item.icon}
-                    </View>
-                  </Text>
+                  <View>
+                    {item.icon}
+                  </View>
                 </View>
                 <Text style={[tw`text-base`, item.textStyle]}>{item.title}</Text>
               </TouchableOpacity>

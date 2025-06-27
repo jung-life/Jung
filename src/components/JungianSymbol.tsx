@@ -21,7 +21,7 @@ export const JungianSymbol = ({
   // Render different symbols based on type
   // This is a simplified example
   return (
-    <View style={tw`absolute opacity-${opacity * 100}`}>
+    <View style={[tw`absolute`, { opacity }]}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
         {type === 'mandala' && (
           <>
@@ -35,4 +35,4 @@ export const JungianSymbol = ({
       </Svg>
     </View>
   );
-}; 
+};

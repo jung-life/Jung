@@ -29,7 +29,7 @@ export const SymbolicBackground = ({
   const colors = getColors();
 
   return (
-    <View style={tw`absolute inset-0 overflow-hidden opacity-${opacity * 100}`}>
+    <View style={[tw`absolute inset-0 overflow-hidden`, { opacity }]}>
       <Svg width="100%" height="100%" viewBox="0 0 400 800">
         <Defs>
           <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="1">

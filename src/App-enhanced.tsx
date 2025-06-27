@@ -88,11 +88,9 @@ const defaultPostLoginOptions = {
   headerShown: true,
   headerLeft: () => (
     <TouchableOpacity onPress={() => NavigationService.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
-      <Text style={{ fontSize: 0 }}>
-        <View>
-          <House size={24} color={'#4A3B78'} />
-        </View>
-      </Text>
+      <View>
+        <House size={24} color={'#4A3B78'} />
+      </View>
     </TouchableOpacity>
   ),
   headerBackVisible: false,
@@ -150,11 +148,9 @@ const MainStackNavigator = ({ isNewUser }: { isNewUser: boolean }) => (
         headerBackVisible: false,
         headerLeft: () => (
           <TouchableOpacity onPress={() => navigation.navigate('PostLoginScreen')} style={{ marginLeft: 10, padding: 5 }}>
-            <Text style={{ fontSize: 0 }}>
-              <View>
-                <House size={24} color={'#4A3B78'} />
-              </View>
-            </Text>
+            <View>
+              <House size={24} color={'#4A3B78'} />
+            </View>
           </TouchableOpacity>
         ),
         // headerRight: () => <HamburgerMenu />, // Already set from screenOptions
