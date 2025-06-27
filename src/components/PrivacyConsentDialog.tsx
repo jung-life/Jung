@@ -128,7 +128,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
     <View style={styles.consentOption}>
       <View style={styles.consentHeader}>
         <Text style={styles.consentTitle}>
-          {title} {required && <Text style={styles.required}>*</Text>}
+          {title} {required ? <Text style={styles.required}>*</Text> : null}
         </Text>
         <TouchableOpacity
           style={[

@@ -166,7 +166,7 @@ export const MessageCostPreview: React.FC<MessageCostPreviewProps> = ({
         </View>
       )}
 
-      {showDetails && <CostBreakdown />}
+      {showDetails ? <CostBreakdown /> : null}
     </View>
   );
 };
