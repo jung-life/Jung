@@ -1,24 +1,36 @@
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useEffect } from 'react';
+
+// DEBUG: Catch the exact text error source
+const originalCreateElement = React.createElement;
+React.createElement = function(type, props, ...children) {
+  if (children) {
+    children.forEach((child, index) => {
+      if (typeof child === 'string' && child.trim() !== '' && type !== 'Text') {
+        console.error(`🚨 FOUND TEXT ERROR! String "${child}" in component ${type?.name || type}`);
+        console.trace('Stack trace:');
+      }
+    });
+  }
+  return originalCreateElement.apply(this, arguments);
+};
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
-import { AuthProvider, useAuth } from './contexts/AuthContext'; // Import useAuth
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SupabaseProvider } from './contexts/SupabaseContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking';
 import { navigationRef } from './navigation/navigationService';
-import * as NavigationService from './navigation/navigationService';
-// Remove AppNavigator import: import AppNavigator from './navigation/AppNavigator';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase, storeAuthData, checkSession } from './lib/supabase';
-import { initAnalytics } from './lib/analytics'; // Import initAnalytics
+import { initAnalytics } from './lib/analytics';
 
-// Import Screens directly
 import LandingScreen from './screens/LandingScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
@@ -35,11 +47,10 @@ import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
 import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
 import MoodTrackerScreen from './screens/MoodTrackerScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
-import { HamburgerMenu } from './components/HamburgerMenu'; // Import HamburgerMenu
-import { TouchableOpacity } from 'react-native'; // Added for headerLeft
-import { House } from 'phosphor-react-native'; // Added for headerLeft icon
+import { HamburgerMenu } from './components/HamburgerMenu';
+import { TouchableOpacity } from 'react-native';
+import { House } from 'phosphor-react-native';
 
-// Mixpanel setup (keeping existing logic)
 let mixpanelInstance;
 try {
   const Mixpanel = require('mixpanel-react-native');
@@ -50,22 +61,18 @@ try {
   } else {
     console.warn('Mixpanel module found but init method is missing');
   }
-  // Initialize our analytics module with the instance
-  initAnalytics(mixpanelInstance); 
+  initAnalytics(mixpanelInstance);
 } catch (error) {
   console.error('Failed to import or initialize Mixpanel:', error);
   const mockMixpanel = {
     track: (eventName: string, props?: Record<string, any>) => console.log('Mixpanel track (mock):', eventName, props),
     init: () => console.log('Mixpanel init (mock)'),
   };
-  // Initialize analytics with mock if real one failed
-  initAnalytics(mockMixpanel); 
+  initAnalytics(mockMixpanel);
 }
-// export const mixpanel = mixpanelInstance; // REMOVE THIS EXPORT
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Linking configuration (keeping existing)
 const linking = {
   prefixes: [Linking.createURL('/')],
   config: {
@@ -75,31 +82,27 @@ const linking = {
       Register: 'register',
       PostLoginScreen: 'post-login',
       Home: 'home',
-      AccountScreen: 'account', // Ensure this matches the screen name in RootStackParamList
-      // Add other deep linkable screens if needed
+      AccountScreen: 'account',
     },
   },
 };
 
-// Default header options for logged-in screens
 const defaultPostLoginOptions = {
-  headerShown: true, // Show header by default for these screens
+  headerShown: true,
   headerRight: () => <HamburgerMenu />,
   headerStyle: {
-    backgroundColor: '#ffffff', // Example color, adjust as needed
+    backgroundColor: '#ffffff',
   },
-  headerTintColor: '#4A3B78', // Example color, adjust as needed
+  headerTintColor: '#4A3B78',
   headerTitleStyle: {
     fontWeight: 'bold' as const,
   },
 };
 
-// Main App Component that includes the Navigator
 const AppContent = () => {
   const { session, isNewUser, loading } = useAuth();
-  const initialUrl = useURL(); // Keep deep link handling
+  const initialUrl = useURL();
 
-  // Handle deep linking for OAuth
   useEffect(() => {
     const handleAuthRedirect = (url: string | null) => {
       if (!url) return;
@@ -118,7 +121,6 @@ const AppContent = () => {
               else {
                 console.log('>>> Manual setSession call successful. Data:', data);
                 if (data.session) storeAuthData(data.session).catch(err => console.error('>>> Error storing session data:', err));
-                // No need to manually navigate here, the navigator will react to the session change
               }
             })
             .catch(err => console.error('>>> Exception during manual setSession call:', err));
@@ -131,7 +133,6 @@ const AppContent = () => {
     return () => subscription.remove();
   }, [initialUrl]);
 
-  // Load fonts
   const [fontsLoaded, fontError] = useFonts({
     'AntDesign': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/AntDesign.ttf'),
     'FontAwesome': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf'),
@@ -154,7 +155,6 @@ const AppContent = () => {
     );
   }
 
-  // Determine initial route based on auth state
   const initialRoute: keyof RootStackParamList = session?.user
     ? (isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen')
     : 'LandingScreen';
@@ -162,16 +162,13 @@ const AppContent = () => {
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator initialRouteName={initialRoute}>
-        {/* Screens always available */}
         <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
         <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
         <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
 
-        {/* Conditional Screens based on Auth */}
         {session?.user ? (
           <>
-            {/* Logged-in Screens */}
             <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
             <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
             <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
@@ -188,24 +185,20 @@ const AppContent = () => {
                 ...defaultPostLoginOptions,
                 headerLeft: () => (
                   <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
-                    <House size={24} color={defaultPostLoginOptions.headerTintColor} />
+                    <View>
+                      <House size={24} color={defaultPostLoginOptions.headerTintColor} />
+                    </View>
                   </TouchableOpacity>
                 ),
                 headerBackVisible: false, 
               })} 
             />
-            {/* Add Landing/Login/Register here ONLY if you want logged-in users to access them */}
-            {/* <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} /> */}
-            {/* <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} /> */}
-            {/* <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} /> */}
           </>
         ) : (
           <>
-            {/* Logged-out Screens */}
             <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-            {/* Note: Privacy/Terms/Disclaimer are already defined above and accessible */}
           </>
         )}
       </Stack.Navigator>
@@ -213,7 +206,6 @@ const AppContent = () => {
   );
 };
 
-// Root App component wrapping providers
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -221,7 +213,7 @@ export default function App() {
         <SupabaseProvider>
           <AuthProvider>
             <ThemeProvider>
-              <AppContent /> {/* Render the component containing hooks and navigator */}
+              <AppContent />
               <StatusBar style="auto" />
             </ThemeProvider>
           </AuthProvider>
@@ -235,5 +227,4 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Centering style removed from container, add back to LoadingScreen if needed
 });

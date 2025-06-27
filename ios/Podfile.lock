@@ -231,12 +231,10 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - ExpoAdapterGoogleSignIn (13.2.0):
+  - ExpoAdapterGoogleSignIn (13.3.1):
     - ExpoModulesCore
     - GoogleSignIn (~> 7.1)
     - React-Core
-  - ExpoAppleAuthentication (7.2.4):
-    - ExpoModulesCore
   - ExpoAsset (11.0.5):
     - ExpoModulesCore
   - ExpoClipboard (7.0.1):
@@ -318,16 +316,16 @@ PODS:
     - libavif/core
     - libdav1d (>= 0.6.0)
   - libdav1d (1.2.0)
-  - Mixpanel-swift (4.3.0):
-    - Mixpanel-swift/Complete (= 4.3.0)
-  - Mixpanel-swift/Complete (4.3.0)
-  - MixpanelReactNative (3.0.8):
-    - Mixpanel-swift (= 4.3.0)
+  - Mixpanel-swift (5.1.0):
+    - Mixpanel-swift/Complete (= 5.1.0)
+  - Mixpanel-swift/Complete (5.1.0)
+  - MixpanelReactNative (3.1.2):
+    - Mixpanel-swift (= 5.1.0)
     - React-Core
-  - PurchasesHybridCommon (13.37.0):
+  - PurchasesHybridCommon (13.38.1):
     - RevenueCat (= 5.29.0)
-  - PurchasesHybridCommonUI (13.37.0):
-    - PurchasesHybridCommon (= 13.37.0)
+  - PurchasesHybridCommonUI (13.38.1):
+    - PurchasesHybridCommon (= 13.38.1)
     - RevenueCatUI (= 5.29.0)
   - RCT-Folly (2024.10.14.00):
     - boost
@@ -1930,16 +1928,16 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNGoogleSignin (13.2.0):
+  - RNGoogleSignin (13.3.1):
     - GoogleSignIn (~> 7.1)
     - React-Core
-  - RNIap (12.16.2):
+  - RNIap (12.16.3):
     - React-Core
-  - RNPaywalls (8.11.6):
-    - PurchasesHybridCommonUI (= 13.37.0)
+  - RNPaywalls (8.11.7):
+    - PurchasesHybridCommonUI (= 13.38.1)
     - React-Core
-  - RNPurchases (8.11.6):
-    - PurchasesHybridCommon (= 13.37.0)
+  - RNPurchases (8.11.7):
+    - PurchasesHybridCommon (= 13.38.1)
     - React-Core
   - RNReanimated (3.16.7):
     - DoubleConversion
@@ -2103,7 +2101,6 @@ DEPENDENCIES:
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
   - "ExpoAdapterGoogleSignIn (from `../node_modules/@react-native-google-signin/google-signin/expo/ios`)"
-  - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoClipboard (from `../node_modules/expo-clipboard/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
@@ -2251,8 +2248,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu-interface/ios"
   ExpoAdapterGoogleSignIn:
     :path: "../node_modules/@react-native-google-signin/google-signin/expo/ios"
-  ExpoAppleAuthentication:
-    :path: "../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
   ExpoClipboard:
@@ -2459,8 +2454,7 @@ SPEC CHECKSUMS:
   expo-dev-launcher: 11ea4216669a6e466dcb5ef1c23f4ad441605803
   expo-dev-menu: 2c332a184dc36a9a9f23f399cc8d834666495ece
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
-  ExpoAdapterGoogleSignIn: 2b9d8c002ae5d09042b2fc87448dfc070d0e7a08
-  ExpoAppleAuthentication: 7e358fcbcbacb7685cddb0bbeede0acd677e58f6
+  ExpoAdapterGoogleSignIn: c9eabd7a2986aeb9eb269620cbebbf0d81bae1e4
   ExpoAsset: 0687fe05f5d051c4a34dd1f9440bd00858413cfe
   ExpoClipboard: 5250b207b6d545f4e9aac5ea3c6e61c4f16d0aed
   ExpoCrypto: 1eaf79360c8135af1f2ebb133394fd3513ca9a3d
@@ -2489,10 +2483,10 @@ SPEC CHECKSUMS:
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
-  Mixpanel-swift: 2192b9a24cf41b870749e4e0e10fbc9822bb2b4a
-  MixpanelReactNative: cd3d7129cfc77d796d07e117846f1f2a9d2fe02d
-  PurchasesHybridCommon: 1583b4532763b795f8ae61913102d6ef9ed556a8
-  PurchasesHybridCommonUI: 5b81191e03bb0e50625901d1515a4723beee5d0e
+  Mixpanel-swift: 7b26468fc0e2e521104e51d65c4bbf7cab8162f8
+  MixpanelReactNative: b523d54778e31e396c55df6f732173f3819e58ee
+  PurchasesHybridCommon: 5a46c67f78680dee9289783edbcebd983ff7bd9c
+  PurchasesHybridCommonUI: 16e8f67451f43e55308a10651283ecd0953d8bf7
   RCT-Folly: 7b4f73a92ad9571b9dbdb05bb30fad927fa971e1
   RCTDeprecation: ebe712bb05077934b16c6bf25228bdec34b64f83
   RCTRequired: ca91e5dd26b64f577b528044c962baf171c6b716
@@ -2556,10 +2550,10 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 826b603ae9c0f88b5ac4e956801f755109fa4d5c
   RNCMaskedView: 4c9557d3ee776eec65165c0ed8543db612379276
   RNGestureHandler: 783a0ed6c92de677e2346d4250c5de028a1db698
-  RNGoogleSignin: ee2938633d996756819e3212c8e0f7f696b380d0
-  RNIap: 2fba6c91f79fb7c71fcc44465f606061653caf01
-  RNPaywalls: 75142ec203dc6a85b75d4ad530fb9e1a0c3766ab
-  RNPurchases: 3292e03373e2ea17864829b8f9c924190a5943ec
+  RNGoogleSignin: c26dada63b1a357af4f6a87f93ee70268d420c0f
+  RNIap: abd48d77bfcff2516bb4fd8f1e7c43ca5b4a741a
+  RNPaywalls: 13c58a5d02e6be3f0102f15954c8288bfc9b6d43
+  RNPurchases: f832d16ec213befefc1f367d21c08ee5d53a589a
   RNReanimated: 3cdb86c3a93fd28e76b497f0ead4019fc502c1c1
   RNScreens: 02c4adf5b4820807807b1d7d4f8bc27eeaed8e11
   RNSentry: 04c096f6931bb1eb46eb5bfb132e9dc67687fad1
