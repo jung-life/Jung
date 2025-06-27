@@ -25,6 +25,8 @@ import Constants from 'expo-constants';
 import { useSupabase } from '../contexts/SupabaseContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -147,11 +149,114 @@ export const LoginScreen = () => {
 
   const handleAppleLogin = async () => {
     try {
-      // Implement Apple login logic here
-      Alert.alert('Apple Login', 'Apple login logic goes here.');
-    } catch (error) {
-      console.error('Apple login error:', error);
-      Alert.alert('Error', 'An error occurred during Apple login.');
+      setLoading(true);
+      console.log('🍎 Starting Apple login flow...');
+      console.log('🍎 Bundle ID Check:', Constants.expoConfig?.ios?.bundleIdentifier);
+
+      // Check if Apple Authentication is available
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      console.log('🍎 Apple Sign In available:', isAvailable);
+      
+      if (!isAvailable) {
+        Alert.alert('Apple Sign In Not Available', 
+          'Please ensure you are on a real iOS device (not simulator) and signed into iCloud with 2FA enabled.');
+        setLoading(false);
+        return;
+      }
+
+      // Generate a random nonce for security
+      const nonce = Math.random().toString(36).substring(2, 10);
+      console.log('🍎 Generated nonce:', nonce);
+      
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        nonce,
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+
+      console.log('🍎 Requesting Apple authentication...');
+      
+      // Request Apple authentication
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      console.log('🍎 Apple credential received:', {
+        user: credential.user,
+        email: credential.email,
+        fullName: credential.fullName,
+        hasIdentityToken: !!credential.identityToken,
+        hasAuthorizationCode: !!credential.authorizationCode
+      });
+
+      if (credential.identityToken) {
+        console.log('🍎 Authenticating with Supabase...');
+        
+        // Sign in with Supabase using Apple credentials
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+          nonce,
+        });
+
+        if (error) {
+          console.error('🍎 Supabase Apple auth error:', error);
+          Alert.alert('Login Error', `Supabase authentication failed: ${error.message}`);
+          return;
+        }
+
+        console.log('🍎 Supabase authentication successful:', {
+          userId: data?.user?.id,
+          hasSession: !!data?.session
+        });
+
+        // Store session data if available
+        if (data.session) {
+          await storeAuthData(data.session);
+          console.log('🍎 Apple login completed successfully');
+          
+          // Navigate to appropriate screen
+          navigation.reset({ 
+            index: 0, 
+            routes: [{ name: 'PostLoginScreen' }] 
+          });
+        }
+      } else {
+        console.error('🍎 No identity token received from Apple');
+        Alert.alert('Error', 'Failed to get identity token from Apple. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('🍎 Detailed Apple error:', {
+        code: error.code,
+        message: error.message,
+        domain: error.domain,
+        userInfo: error.userInfo,
+        stack: error.stack
+      });
+      
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        console.log('🍎 User cancelled Apple Sign In');
+        return;
+      }
+      
+      // Provide specific error messages based on error codes
+      let errorMessage = 'An error occurred during Apple login.';
+      
+      if (error.code === -7026 || error.message?.includes('AKAuthenticationError')) {
+        errorMessage = 'Apple Sign In configuration error. Please ensure your app is properly configured in Apple Developer Console with bundle ID: org.name.jung';
+      } else if (error.code === 1000) {
+        errorMessage = 'Apple Sign In capability not enabled. Please check your Apple Developer Console configuration.';
+      } else if (error.message?.includes('authorization attempt failed')) {
+        errorMessage = 'Authorization failed. Please ensure you have a valid Apple Developer account and the app is properly configured.';
+      }
+      
+      Alert.alert('Apple Sign In Error', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 

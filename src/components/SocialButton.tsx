@@ -56,8 +56,8 @@ export const SocialButton = ({
       case 'apple':
         return (
           <>
-            <AppleLogo size={22} color="#000000" weight="fill" style={tw`mr-3`} />
-            <Text style={tw`font-medium text-base ${colors.text}`}>Sign in with Apple</Text>
+            <AppleLogo size={22} color="#FFFFFF" weight="fill" style={tw`mr-3`} />
+            <Text style={tw`font-medium text-base text-white`}>Sign in with Apple</Text>
           </>
         );
       case 'email':
@@ -82,9 +82,17 @@ export const SocialButton = ({
     }
   };
   
+  // Apple button needs special styling per Apple guidelines
+  const getButtonStyle = () => {
+    if (provider === 'apple') {
+      return tw`bg-black rounded-xl py-3.5 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`;
+    }
+    return tw`${colors.bg} border ${colors.border} rounded-xl py-3.5 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`;
+  };
+
   return (
     <TouchableOpacity 
-      style={tw`${colors.bg} border ${colors.border} rounded-xl py-3.5 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`}
+      style={getButtonStyle()}
       onPress={onPress}
       disabled={disabled || loading}
     >
