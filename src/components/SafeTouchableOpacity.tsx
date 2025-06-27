@@ -27,8 +27,6 @@ export const SafeTouchableOpacity: React.FC<SafeTouchableOpacityProps> = ({
 
   return (
     <TouchableOpacity style={style} {...props}>
-      {/* This hidden text component ensures React Native doesn't complain about text nodes */}
-      <Text style={{ fontSize: 0, opacity: 0, position: 'absolute', height: 0 }}>.</Text>
       <View>
         {wrappedChildren}
       </View>
