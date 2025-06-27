@@ -193,10 +193,10 @@ export const TransactionHistoryScreen: React.FC = () => {
                 onPress={() => setFilters(prev => ({ ...prev, dateRange: range as any }))}
               >
                 <Text style={tw`text-gray-700`}>
-                  {range === '7d' && 'Last 7 days'}
-                  {range === '30d' && 'Last 30 days'}
-                  {range === '90d' && 'Last 90 days'}
-                  {range === 'all' && 'All time'}
+                  {range === '7d' ? 'Last 7 days' : null}
+                  {range === '30d' ? 'Last 30 days' : null}
+                  {range === '90d' ? 'Last 90 days' : null}
+                  {range === 'all' ? 'All time' : null}
                 </Text>
                 {filters.dateRange === range && (
                   <View style={tw`w-5 h-5 rounded-full bg-jung-purple`} />
