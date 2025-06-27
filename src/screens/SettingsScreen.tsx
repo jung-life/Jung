@@ -81,8 +81,8 @@ const SettingsScreen = () => {
         } as Notifications.NotificationTriggerInput, // Type assertion
         identifier: NOTIFICATION_ID,
       });
-      console.log(`Daily notification scheduled for ${hour}:${minute < 10 ? '0' : ''}${minute} with ID: ${NOTIFICATION_ID}`);
-      Alert.alert('Reminders On', `Daily reminders scheduled for ${hour}:${minute < 10 ? '0' : ''}${minute}.`);
+      console.log(`Daily notification scheduled for ${hour}:${minute.toString().padStart(2, '0')} with ID: ${NOTIFICATION_ID}`);
+      Alert.alert('Reminders On', `Daily reminders scheduled for ${hour}:${minute.toString().padStart(2, '0')}.`);
     } catch (error) {
       console.error('Error scheduling notification:', error);
       Alert.alert('Error', 'Could not schedule daily reminder.');
@@ -155,9 +155,9 @@ const SettingsScreen = () => {
     if (isReminderEnabled) {
       // Re-schedule with new time
       scheduleDailyNotification(newTime.hour, newTime.minute);
-      Alert.alert("Time Changed & Rescheduled", `Reminder time updated to ${newTime.hour}:${newTime.minute < 10 ? '0' : ''}${newTime.minute}. Notification has been rescheduled.`);
+      Alert.alert("Time Changed & Rescheduled", `Reminder time updated to ${newTime.hour}:${newTime.minute.toString().padStart(2, '0')}. Notification has been rescheduled.`);
     } else {
-      Alert.alert("Time Changed", `Reminder time updated to ${newTime.hour}:${newTime.minute < 10 ? '0' : ''}${newTime.minute}. Enable reminders to use this new time.`);
+      Alert.alert("Time Changed", `Reminder time updated to ${newTime.hour}:${newTime.minute.toString().padStart(2, '0')}. Enable reminders to use this new time.`);
     }
   };
 
@@ -188,7 +188,7 @@ const SettingsScreen = () => {
             <Text style={tw`text-lg font-medium text-gray-700 mb-2`}>Reminder Time</Text>
             <TouchableOpacity onPress={showTimePicker} style={tw`bg-jung-purple-light p-3 rounded-md`}>
               <Text style={tw`text-jung-purple text-center font-medium`}>
-                {`Current: ${notificationTime.hour}:${notificationTime.minute < 10 ? '0' : ''}${notificationTime.minute}`} (Tap to change)
+                {`Current: ${notificationTime.hour}:${notificationTime.minute.toString().padStart(2, '0')}`} (Tap to change)
               </Text>
             </TouchableOpacity>
             <Text style={tw`text-xs text-gray-500 mt-2`}>
