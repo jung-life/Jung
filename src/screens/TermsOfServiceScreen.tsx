@@ -37,7 +37,7 @@ export const TermsOfServiceScreen = () => {
           {/* App Logo */}
           <View style={tw`items-center mb-6`}>
             <Image 
-              source={require('../src/assets/logo/jung-app-logo.png')} 
+              source={require('../assets/logo/jung-app-logo.png')} 
               style={tw`w-32 h-32`}
               resizeMode="contain"
             />
