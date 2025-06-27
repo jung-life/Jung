@@ -381,7 +381,7 @@ export const EmotionalAssessmentScreen = () => {
               <View 
                 style={[
                   tw`bg-emotional h-full`, 
-                  { width: `${emotionalProfile.intensity * 10}%` }
+                  { width: `${Math.round((emotionalProfile.intensity || 0) * 10)}%` }
                 ]} 
               />
             </View>
