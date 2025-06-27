@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuthData, ensureUserPreferences } from '../lib/supabase';
+import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuthData, ensureUserPreferences, clearInvalidSession } from '../lib/supabase';
 import { Alert } from 'react-native';
 import { Session, User } from '@supabase/supabase-js'; // Import types
 import useAuthStore from '../store/useAuthStore'; // Import the Zustand store
@@ -85,18 +85,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set loading state
     setLoading(true);
     
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("AuthContext: Initial session check:", !!session);
-      setSession(session);
-      updateUserState(session?.user ?? null); // Update both user states
-      
-      if (session?.user) {
-        checkUserDisclaimerStatus(session.user);
+    // Check current session with error handling
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("AuthContext: Error getting initial session:", error);
+          
+          // If it's a refresh token error, clear the session
+          if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
+            console.log("AuthContext: Invalid refresh token detected, clearing session...");
+            await clearInvalidSession();
+            setSession(null);
+            updateUserState(null);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        console.log("AuthContext: Initial session check:", !!session);
+        setSession(session);
+        updateUserState(session?.user ?? null);
+        
+        if (session?.user) {
+          checkUserDisclaimerStatus(session.user);
+        }
+        
+      } catch (error) {
+        console.error("AuthContext: Unexpected error during auth initialization:", error);
+        setSession(null);
+        updateUserState(null);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -112,14 +137,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log("AuthContext: User signed in.");
           // Disclaimer status is checked initially and on manual signIn, 
           // no need to re-check aggressively here. Let the UI react to user state.
-          // Removed checkUserDisclaimerStatus call.
-          // Removed manual navigation logic. Navigation should react to context state changes.
         } else if (event === 'SIGNED_OUT') {
           console.log("AuthContext: User signed out.");
           setIsNewUser(false); // Reset disclaimer status on sign out
-        } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-           console.log(`AuthContext: Event ${event} received.`);
-           // Potentially re-check disclaimer or other user details if needed, but keep it simple for now.
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log("AuthContext: Token refreshed successfully.");
+        } else if (event === 'USER_UPDATED') {
+          console.log("AuthContext: User updated.");
         }
         
         setLoading(false);
@@ -172,6 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Identify user with RevenueCat
         try {
+          await revenueCatService.initialize(); // Ensure RevenueCat is initialized first
           await revenueCatService.identifyUser(data.user.id);
           console.log('User identified with RevenueCat successfully');
         } catch (revenueCatError) {
@@ -209,12 +234,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Don't fail the sign-out process if RevenueCat logout fails
       }
 
+      // Clear Supabase session
       await supabase.auth.signOut();
       updateUserState(null); // Update both user states
       setSession(null);
     } catch (error) {
       console.error('Error signing out:', error);
-      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      // Still update the local state even if signOut fails
+      updateUserState(null);
+      setSession(null);
+      Alert.alert('Warning', 'There was an issue signing out completely. You may need to sign in again.');
     } finally {
       setLoading(false);
     }

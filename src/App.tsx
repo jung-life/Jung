@@ -17,6 +17,7 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase, storeAuthData, checkSession } from './lib/supabase';
 import { initAnalytics } from './lib/analytics'; // Import initAnalytics
+import { revenueCatService } from './lib/revenueCatService'; // Import RevenueCat service
 
 // Import Screens directly
 import LandingScreen from './screens/LandingScreen';
@@ -98,6 +99,24 @@ const defaultPostLoginOptions = {
 const AppContent = () => {
   const { session, isNewUser, loading } = useAuth();
   const initialUrl = useURL(); // Keep deep link handling
+  const [revenueCatInitialized, setRevenueCatInitialized] = React.useState(false);
+
+  // Initialize RevenueCat early
+  useEffect(() => {
+    const initializeRevenueCat = async () => {
+      try {
+        await revenueCatService.initialize();
+        console.log('RevenueCat initialized in App.tsx');
+      } catch (error) {
+        console.error('Failed to initialize RevenueCat in App.tsx:', error);
+        // Don't fail the app if RevenueCat fails
+      } finally {
+        setRevenueCatInitialized(true);
+      }
+    };
+
+    initializeRevenueCat();
+  }, []);
 
   // Handle deep linking for OAuth
   useEffect(() => {

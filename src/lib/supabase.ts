@@ -33,6 +33,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true, 
     detectSessionInUrl: true,
+    storageKey: 'supabase.auth.token',
   },
 });
 
@@ -40,21 +41,72 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // The listener in LoginScreenEnhanced.tsx will handle navigation.
 
 // Function to refresh the token manually if needed
-// Note: This function might need adjustment if saveSession relied on the old custom storage
 export const refreshSession = async () => {
   try {
+    console.log('Attempting to refresh session...');
+    
+    // First check if we have a current session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      console.error('Error getting current session:', sessionError.message);
+      return null;
+    }
+    
+    if (!sessionData.session) {
+      console.log('No current session to refresh');
+      return null;
+    }
+    
     // Supabase client handles refresh and persistence via the storage adapter automatically
     const { data, error } = await supabase.auth.refreshSession(); 
     if (error) {
       console.error('Error refreshing session:', error.message);
+      
+      // If refresh fails, try to clear the invalid session
+      if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
+        console.log('Invalid refresh token detected, clearing session...');
+        await clearInvalidSession();
+        return null;
+      }
+      
       return null;
     }
-    // No need to manually save session when using the adapter
-    // await saveSession(data.session) 
+    
+    console.log('Session refreshed successfully');
     return data.session;
   } catch (e) {
     console.error('Unexpected error refreshing session:', e);
     return null;
+  }
+};
+
+// Function to clear invalid session data
+export const clearInvalidSession = async () => {
+  try {
+    console.log('Clearing invalid session data...');
+    
+    // Clear from Supabase auth
+    await supabase.auth.signOut();
+    
+    // Clear from secure storage
+    try {
+      await SecureStore.deleteItemAsync('supabase.auth.token');
+      console.log('Cleared session from secure storage');
+    } catch (storageError) {
+      console.error('Error clearing secure storage:', storageError);
+    }
+    
+    // Clear from AsyncStorage fallback
+    try {
+      const key = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`;
+      await AsyncStorage.removeItem(key);
+      console.log('Cleared session from AsyncStorage');
+    } catch (asyncError) {
+      console.error('Error clearing AsyncStorage:', asyncError);
+    }
+    
+  } catch (error) {
+    console.error('Error clearing invalid session:', error);
   }
 };
 

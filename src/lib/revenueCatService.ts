@@ -20,21 +20,32 @@ class RevenueCatService {
       return;
     }
 
-    // Check if running in Expo Go (which doesn't support RevenueCat)
-    if (__DEV__ && typeof Purchases.configure === 'undefined') {
-      console.warn('RevenueCat not available in Expo Go. Please use a development build.');
+    // Check if running in Expo Go or if RevenueCat is not available
+    if (!this.isRevenueCatAvailable()) {
+      console.warn('RevenueCat not available. Running in Expo Go or native module not linked.');
       this.initialized = true; // Mark as initialized to prevent further attempts
+      return;
+    }
+
+    // Check if API keys are configured
+    if (!REVENUECAT_APPLE_API_KEY && !REVENUECAT_GOOGLE_API_KEY) {
+      console.warn('RevenueCat API keys not configured. Skipping initialization.');
+      this.initialized = true;
       return;
     }
 
     try {
       // Set log level for debugging (you can change this to LOG_LEVEL.ERROR for production)
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      if (Purchases.setLogLevel) {
+        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      }
 
       // Configure RevenueCat based on platform
-      if (Platform.OS === 'ios') {
+      if (Platform.OS === 'ios' && REVENUECAT_APPLE_API_KEY) {
+        console.log('Configuring RevenueCat for iOS...');
         await Purchases.configure({ apiKey: REVENUECAT_APPLE_API_KEY });
-      } else if (Platform.OS === 'android') {
+      } else if (Platform.OS === 'android' && REVENUECAT_GOOGLE_API_KEY) {
+        console.log('Configuring RevenueCat for Android...');
         await Purchases.configure({ apiKey: REVENUECAT_GOOGLE_API_KEY });
         
         // For Amazon builds (uncomment if needed):
@@ -42,18 +53,24 @@ class RevenueCatService {
         //   apiKey: REVENUECAT_AMAZON_API_KEY, 
         //   useAmazon: true 
         // });
+      } else {
+        console.warn(`No RevenueCat API key configured for platform: ${Platform.OS}`);
+        this.initialized = true;
+        return;
       }
 
       this.initialized = true;
       console.log('RevenueCat initialized successfully');
     } catch (error) {
       console.error('Failed to initialize RevenueCat:', error);
-      // Don't throw error in development to prevent app crashes
+      // Always mark as initialized to prevent repeated attempts
+      this.initialized = true;
+      
+      // Don't throw error to prevent app crashes
       if (__DEV__) {
-        console.warn('RevenueCat initialization failed in development. This is expected if running in Expo Go.');
-        this.initialized = true;
+        console.warn('RevenueCat initialization failed in development. Continuing without RevenueCat functionality.');
       } else {
-        throw error;
+        console.error('RevenueCat initialization failed in production. Continuing without subscription features.');
       }
     }
   }
@@ -62,7 +79,14 @@ class RevenueCatService {
    * Check if RevenueCat is available (not in Expo Go)
    */
   private isRevenueCatAvailable(): boolean {
-    return typeof Purchases.configure !== 'undefined';
+    try {
+      return typeof Purchases !== 'undefined' && 
+             typeof Purchases.configure !== 'undefined' &&
+             Purchases.configure !== null;
+    } catch (error) {
+      console.warn('Error checking RevenueCat availability:', error);
+      return false;
+    }
   }
 
   /**
