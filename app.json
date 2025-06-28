@@ -15,16 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildConfiguration": "Release",
       "buildNumber": "4",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "your-google-client-id"
-        }
-      },
       "infoPlist": {
         "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library.",
         "NSLocationWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.",
