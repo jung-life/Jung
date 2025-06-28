@@ -2,7 +2,7 @@
   "expo": {
     "name": "jung",
     "slug": "jung",
-    "version": "4.0.0",
+    "version": "6.0.0",
     "orientation": "portrait",
     "icon": "./assets/jung-app-logo-1024.png",
     "userInterfaceStyle": "light",
@@ -15,11 +15,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "4",
+      "buildNumber": "6",
+      "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io"
       ],
       "infoPlist": {
+        "CFBundleIconName": "AppIcon",
         "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library.",
         "NSLocationWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
