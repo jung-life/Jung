@@ -1,4 +1,4 @@
-package com.jung
+package com.yourcompany.jungai
 
 import android.app.Application
 import android.content.res.Configuration

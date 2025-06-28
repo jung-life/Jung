@@ -1,4 +1,4 @@
-package com.jung
+package com.yourcompany.jungai
 
 import android.os.Build
 import android.os.Bundle
