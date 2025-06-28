@@ -7,10 +7,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { saveSession, getSession, clearAuthData } from './secureStorage'; 
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
+// Don't throw error - handle gracefully
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.error('Missing Supabase environment variables');
+  console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Set' : 'Missing');
+  console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Missing');
 }
 
 // Create an adapter for expo-secure-store
@@ -26,15 +29,32 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
-// Create the Supabase client using the ExpoSecureStoreAdapter
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: ExpoSecureStoreAdapter, // Use the new adapter
-    autoRefreshToken: true,
-    persistSession: true, 
-    detectSessionInUrl: true,
-  },
-});
+// Create the Supabase client only if environment variables exist
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: ExpoSecureStoreAdapter, // Use the new adapter
+        autoRefreshToken: true,
+        persistSession: true, 
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
+
+// Add safety wrapper for all Supabase operations
+export const safeSupabaseCall = async (operation: () => Promise<any>) => {
+  if (!supabase) {
+    console.error('Supabase not configured - missing environment variables');
+    return { data: null, error: { message: 'Database not available' } };
+  }
+  
+  try {
+    return await operation();
+  } catch (error) {
+    console.error('Supabase call failed:', error);
+    return { data: null, error };
+  }
+};
 
 // Remove the redundant onAuthStateChange listener here.
 // The listener in LoginScreenEnhanced.tsx will handle navigation.
@@ -95,7 +115,9 @@ export const storeAuthData = async (session: any) => {
   if (!session) return
   
   try {
-    const key = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+    // Use a safe fallback if supabaseUrl is undefined
+    const url = supabaseUrl || 'default'
+    const key = `sb-${url.split('//')[1]?.split('.')[0] || 'default'}-auth-token`
     const data = JSON.stringify({
       access_token: session.access_token,
       refresh_token: session.refresh_token,

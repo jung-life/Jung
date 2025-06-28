@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-// DEBUG: Catch the exact text error source
-const originalCreateElement = React.createElement;
-React.createElement = function(type, props, ...children) {
-  if (children) {
-    children.forEach((child, index) => {
-      if (typeof child === 'string' && child.trim() !== '' && type !== 'Text') {
-        console.error(`🚨 FOUND TEXT ERROR! String "${child}" in component ${type?.name || type}`);
-        console.trace('Stack trace:');
-      }
-    });
-  }
-  return originalCreateElement.apply(this, arguments);
-};
+// DEBUG: Catch the exact text error source (disabled for production)
+// const originalCreateElement = React.createElement;
+// React.createElement = function(type: any, props: any, ...children: any[]) {
+//   if (children) {
+//     children.forEach((child, index) => {
+//       if (typeof child === 'string' && child.trim() !== '' && type !== 'Text') {
+//         console.error(`🚨 FOUND TEXT ERROR! String "${child}" in component ${type?.name || type}`);
+//         console.trace('Stack trace:');
+//       }
+//     });
+//   }
+//   return originalCreateElement.apply(React, arguments as any);
+// };
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -115,15 +116,19 @@ const AppContent = () => {
         const refresh_token = params.get('refresh_token');
         if (access_token && refresh_token) {
           console.log('>>> Tokens found. Attempting manual setSession...');
-          supabase.auth.setSession({ access_token, refresh_token })
-            .then(({ data, error }) => {
-              if (error) console.error('>>> Error calling setSession manually:', error);
-              else {
-                console.log('>>> Manual setSession call successful. Data:', data);
-                if (data.session) storeAuthData(data.session).catch(err => console.error('>>> Error storing session data:', err));
-              }
-            })
-            .catch(err => console.error('>>> Exception during manual setSession call:', err));
+          if (supabase) {
+            supabase.auth.setSession({ access_token, refresh_token })
+              .then(({ data, error }) => {
+                if (error) console.error('>>> Error calling setSession manually:', error);
+                else {
+                  console.log('>>> Manual setSession call successful. Data:', data);
+                  if (data.session) storeAuthData(data.session).catch(err => console.error('>>> Error storing session data:', err));
+                }
+              })
+              .catch(err => console.error('>>> Exception during manual setSession call:', err));
+          } else {
+            console.error('>>> Supabase not configured - cannot set session');
+          }
         } else console.log('>>> access_token or refresh_token not found in URL fragment.');
       } else console.log('>>> URL does not contain a fragment (#).');
     };
@@ -208,18 +213,20 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaProvider>
-        <SupabaseProvider>
-          <AuthProvider>
-            <ThemeProvider>
-              <AppContent />
-              <StatusBar style="auto" />
-            </ThemeProvider>
-          </AuthProvider>
-        </SupabaseProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <SafeAreaProvider>
+          <SupabaseProvider>
+            <AuthProvider>
+              <ThemeProvider>
+                <AppContent />
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </AuthProvider>
+          </SupabaseProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
