@@ -2,7 +2,7 @@
   "expo": {
     "name": "jung",
     "slug": "jung",
-    "version": "6.0.0",
+    "version": "9.0.0",
     "orientation": "portrait",
     "icon": "./assets/jung-app-logo-1024.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "7",
+      "buildNumber": "9",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io"
