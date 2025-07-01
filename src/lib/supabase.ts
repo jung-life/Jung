@@ -12,8 +12,17 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 // Don't throw error - handle gracefully
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables');
-  console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Set' : 'Missing');
-  console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Set' : 'Missing');
+  console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl || 'UNDEFINED/NULL');
+  console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey || 'UNDEFINED/NULL');
+} else {
+  console.log('✅ Supabase URL:', supabaseUrl);
+  console.log('✅ Supabase anon key:', supabaseAnonKey ? 'Set (hidden)' : 'Missing');
+  
+  // Test basic connectivity
+  fetch(supabaseUrl + '/auth/v1/health')
+    .then(res => res.text())
+    .then(data => console.log('✅ Supabase health check:', data))
+    .catch(err => console.error('❌ Supabase health check failed:', err));
 }
 
 // Create an adapter for expo-secure-store
