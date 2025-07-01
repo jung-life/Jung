@@ -25,7 +25,8 @@
         "NSPhotoLibraryAddUsageDescription": "This app needs access to save files to your photo library.",
         "NSLocationWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
-        "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background."
+        "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
+        "NSMicrophoneUsageDescription": "This app needs microphone access for voice messages and audio recording features."
       }
     },
     "android": {

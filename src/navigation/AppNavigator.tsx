@@ -156,6 +156,11 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       options={{ headerShown: true, title: 'Conversation Insights' }}
     />
     <Stack.Screen
+      name="ConversationInsightsScreen-enhanced"
+      component={ConversationInsightsScreen}
+      options={{ headerShown: true, title: 'Conversation Insights' }}
+    />
+    <Stack.Screen
       name="SettingsScreen"
       component={SettingsScreen}
       options={{ headerShown: true, title: 'Settings' }}

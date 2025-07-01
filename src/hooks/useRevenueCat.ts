@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { revenueCatService, ENTITLEMENT_ID } from '../lib/revenueCatService';
 import { CustomerInfo, PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 
+// Global promise tracking to prevent simultaneous requests
+let currentOfferingPromise: Promise<PurchasesOffering | null> | null = null;
+
 interface UseRevenueCatReturn {
   // Subscription status
   isSubscribed: boolean;
@@ -68,14 +71,31 @@ export const useRevenueCat = (entitlementId: string = ENTITLEMENT_ID): UseRevenu
     }
   }, [entitlementId]);
 
-  // Get current offering
+  // Get current offering with debouncing to prevent simultaneous requests
   const fetchCurrentOffering = useCallback(async () => {
     try {
-      const offering = await revenueCatService.getCurrentOffering();
+      // If already loading, return the existing promise
+      if (currentOfferingPromise) {
+        console.log('RevenueCat offering request already in progress, waiting...');
+        const offering = await currentOfferingPromise;
+        setCurrentOffering(offering);
+        return;
+      }
+
+      currentOfferingPromise = revenueCatService.getCurrentOffering();
+      
+      const offering = await currentOfferingPromise;
       setCurrentOffering(offering);
     } catch (err) {
+      // Handle the "cancelled" error gracefully
+      if (err instanceof Error && err.message.includes('Previous request was cancelled')) {
+        console.log('RevenueCat offering request was cancelled - this is normal behavior');
+        return;
+      }
       console.error('Failed to fetch current offering:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch offerings');
+    } finally {
+      currentOfferingPromise = null;
     }
   }, []);
 

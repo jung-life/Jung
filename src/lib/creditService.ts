@@ -478,6 +478,11 @@ class CreditService {
         });
 
       if (error) {
+        // Handle duplicate key error (user credits already exist)
+        if (error.code === '23505') {
+          console.log('User credits already initialized for user:', userId);
+          return true; // This is not an error, user already has credits
+        }
         console.error('Error initializing user credits:', error);
         return false;
       }
