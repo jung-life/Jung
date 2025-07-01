@@ -10,18 +10,29 @@
         "NODE_ENV": "development"
       },
       "ios": {
-        "buildConfiguration": "Debug"
+        "buildConfiguration": "Debug",
+        "capabilities": {
+          "SignInWithApple": true
+        }
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "capabilities": {
+          "SignInWithApple": true
+        }
+      }
     },
     "production": {
       "env": {
         "NODE_ENV": "production"
       },
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "capabilities": {
+          "SignInWithApple": true
+        }
       }
     },
     "ios-simulator": {
