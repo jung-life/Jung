@@ -165,16 +165,16 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       component={SettingsScreen}
       options={{ headerShown: true, title: 'Settings' }}
     />
-        <Stack.Screen 
-          name="Subscription" 
-          component={SubscriptionScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="TransactionHistory" 
-          component={TransactionHistoryScreen}
-          options={{ headerShown: false }}
-        />
+    <Stack.Screen 
+      name="Subscription" 
+      component={SubscriptionScreen}
+      options={{ headerShown: true, title: 'Subscription' }}
+    />
+    <Stack.Screen 
+      name="TransactionHistory" 
+      component={TransactionHistoryScreen}
+      options={{ headerShown: true, title: 'Transaction History' }}
+    />
   </Stack.Navigator>
 );
 
