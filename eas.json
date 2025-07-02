@@ -10,7 +10,10 @@
         "NODE_ENV": "development",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "your-google-client-id",
+        "EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID": "your-ios-client-id",
+        "EXPO_PUBLIC_ANDROID_GOOGLE_CLIENT_ID": "your-android-client-id"
       },
       "ios": {
         "buildConfiguration": "Debug",
@@ -29,7 +32,10 @@
       "env": {
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "your-google-client-id",
+        "EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID": "your-ios-client-id",
+        "EXPO_PUBLIC_ANDROID_GOOGLE_CLIENT_ID": "your-android-client-id"
       }
     },
     "production": {
@@ -37,7 +43,10 @@
         "NODE_ENV": "production",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "your-google-client-id",
+        "EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID": "your-ios-client-id",
+        "EXPO_PUBLIC_ANDROID_GOOGLE_CLIENT_ID": "your-android-client-id"
       },
       "ios": {
         "buildConfiguration": "Release",
@@ -54,7 +63,13 @@
       },
       "env": {
         "NODE_ENV": "development",
-        "EXPO_PUBLIC_ENVIRONMENT": "simulator"
+        "EXPO_PUBLIC_ENVIRONMENT": "simulator",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "your-google-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id",
+        "EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID": "your-ios-client-id",
+        "EXPO_PUBLIC_ANDROID_GOOGLE_CLIENT_ID": "your-android-client-id"
       }
     }
   },
