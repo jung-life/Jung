@@ -138,13 +138,31 @@ export const ConversationsScreen = () => {
          return;
        }
        
-        console.log(`Found ${data?.length || 0} conversations. Skipping decryption for testing.`);
-        // Temporarily skip decryption to isolate the issue
-        const conversationsWithoutDecryption = data || [];
+        console.log(`Found ${data?.length || 0} conversations. Decrypting titles...`);
+        
+        // Decrypt conversation titles
+        const conversationsWithDecryptedTitles = (data || []).map(conversation => {
+          try {
+            // Check if the title is encrypted (starts with encryption prefix)
+            if (conversation.title && typeof conversation.title === 'string' && 
+                (conversation.title.startsWith('U2FsdGVkX1') || conversation.title.length > 100)) {
+              // Decrypt the title
+              const decryptedTitle = decryptData(conversation.title);
+              return { ...conversation, title: decryptedTitle };
+            } else {
+              // Title is already in plain text or empty
+              return conversation;
+            }
+          } catch (error) {
+            console.error('Error decrypting conversation title:', error);
+            // Fallback to a default title if decryption fails
+            return { ...conversation, title: 'Untitled Conversation' };
+          }
+        });
        
-       // Always set conversations, even if empty
-       console.log('Fetched conversations (without decryption):', conversationsWithoutDecryption.length || 0);
-       setConversations(conversationsWithoutDecryption);
+       // Set conversations with decrypted titles
+       console.log('Fetched conversations (with decrypted titles):', conversationsWithDecryptedTitles.length || 0);
+       setConversations(conversationsWithDecryptedTitles);
        
      } catch (error) {
        console.error('Error in fetchConversations:', error);
