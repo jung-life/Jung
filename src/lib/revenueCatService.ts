@@ -8,6 +8,10 @@ const REVENUECAT_GOOGLE_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_
 // Your entitlement identifier from RevenueCat dashboard
 export const ENTITLEMENT_ID = process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID || 'premium';
 
+// Global promise tracking to prevent simultaneous requests
+let offeringsPromise: Promise<any> | null = null;
+let customerInfoPromise: Promise<CustomerInfo> | null = null;
+
 class RevenueCatService {
   private initialized = false;
 
@@ -92,11 +96,25 @@ class RevenueCatService {
       return;
     }
 
+    // Check if RevenueCat is initialized before attempting logout
+    if (!this.initialized) {
+      console.warn('RevenueCat not initialized - skipping logout');
+      return;
+    }
+
     try {
       await Purchases.logOut();
       console.log('User logged out from RevenueCat');
     } catch (error) {
+      // Handle specific RevenueCat errors gracefully
+      if (error instanceof Error) {
+        if (error.message.includes('singleton instance') || error.message.includes('configuring-sdk')) {
+          console.log('RevenueCat not configured for logout - this is normal in development');
+          return;
+        }
+      }
       console.error('Failed to log out from RevenueCat:', error);
+      // Don't throw error in development to prevent app crashes
       if (!__DEV__) throw error;
     }
   }
@@ -165,7 +183,7 @@ class RevenueCatService {
   }
 
   /**
-   * Get current offering
+   * Get current offering with debouncing to prevent simultaneous requests
    */
   async getCurrentOffering(): Promise<PurchasesOffering | null> {
     if (!this.isRevenueCatAvailable()) {
@@ -174,11 +192,28 @@ class RevenueCatService {
     }
 
     try {
-      const offerings = await Purchases.getOfferings();
+      // If already loading offerings, return the existing promise
+      if (offeringsPromise) {
+        console.log('RevenueCat offerings request already in progress, waiting...');
+        const offerings = await offeringsPromise;
+        return offerings.current;
+      }
+
+      // Create new promise and store it
+      offeringsPromise = Purchases.getOfferings();
+      
+      const offerings = await offeringsPromise;
       return offerings.current;
     } catch (error) {
+      // Handle the "cancelled" error gracefully
+      if (error instanceof Error && error.message.includes('Previous request was cancelled')) {
+        console.log('RevenueCat offerings request was cancelled - this is normal behavior');
+        return null;
+      }
       console.error('Failed to get current offering:', error);
       return null;
+    } finally {
+      offeringsPromise = null;
     }
   }
 

@@ -219,11 +219,10 @@ export const LoginScreen = () => {
           await storeAuthData(data.session);
           console.log('🍎 Apple login completed successfully');
           
-          // Navigate to appropriate screen
-          navigation.reset({ 
-            index: 0, 
-            routes: [{ name: 'PostLoginScreen' }] 
-          });
+          // Don't manually navigate - let AuthContext handle the disclaimer flow
+          // The AppNavigator will automatically show DisclaimerScreen for new users
+          // or PostLoginScreen for existing users based on isNewUser state
+          console.log('🍎 Login successful - AuthContext will handle navigation');
         }
       } else {
         console.error('🍎 No identity token received from Apple');
