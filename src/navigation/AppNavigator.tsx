@@ -23,7 +23,7 @@ import { HamburgerMenu } from '../components/HamburgerMenu';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrackerScreen
-import JournalingScreen from '../screens/JournalingScreen'; // Import JournalingScreen
+import JournalingScreen from '../screens/JournalingScreen-Simple'; // Import JournalingScreen (Simple version for testing)
 import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen';
 import { ConversationInsightsScreen } from '../screens/ConversationInsightsScreen';
 import { navigationRef } from './navigationService';
@@ -117,17 +117,32 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen
       name="DailyMotivationScreen"
       component={DailyMotivationScreen}
-      options={{ headerShown: true, title: 'Daily Motivation', headerLeft: () => null, headerBackVisible: false }}
+      options={{ 
+        headerShown: true, 
+        title: 'Daily Motivation', 
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false 
+      }}
     />
     <Stack.Screen
       name="EmotionalAssessmentScreen"
       component={EmotionalAssessmentScreen}
-      options={{ headerShown: true, title: 'Emotional Assessment' }}
+      options={{ 
+        headerShown: true, 
+        title: 'Emotional Assessment',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
     <Stack.Screen
       name="SelfHelpResourcesScreen"
       component={SelfHelpResourcesScreen}
-      options={{ headerShown: true, title: 'Self-Help Resources', headerLeft: () => null, headerBackVisible: false }}
+      options={{ 
+        headerShown: true, 
+        title: 'Self-Help Resources', 
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false 
+      }}
     />
     <Stack.Screen // Add MoodTrackerScreen
       name="MoodTrackerScreen"
@@ -135,7 +150,7 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
       options={{ 
         headerShown: true, 
         title: 'Mood Tracker',
-        headerLeft: () => <HomeButton destination="Home" />,
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
         headerRight: () => <HamburgerMenu />, // Explicitly set headerRight
         headerBackVisible: false,
       }}
@@ -143,7 +158,12 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     <Stack.Screen // Add JournalingScreen
       name="JournalingScreen"
       component={JournalingScreen}
-      options={{ headerShown: true, title: 'Journal', headerLeft: () => null, headerBackVisible: false }}
+      options={{ 
+        headerShown: true, 
+        title: 'Journal', 
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false 
+      }}
     />
     <Stack.Screen
       name="ConversationHistoryScreen"
