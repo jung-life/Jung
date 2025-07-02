@@ -26,6 +26,7 @@ import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrac
 import JournalingScreen from '../screens/JournalingScreen-Simple'; // Import JournalingScreen (Simple version for testing)
 import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen';
 import { ConversationInsightsScreen } from '../screens/ConversationInsightsScreen';
+import { ConversationInsightsScreenEnhanced } from '../screens/ConversationInsightsScreen-enhanced';
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -177,7 +178,7 @@ const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
     />
     <Stack.Screen
       name="ConversationInsightsScreen-enhanced"
-      component={ConversationInsightsScreen}
+      component={ConversationInsightsScreenEnhanced}
       options={{ headerShown: true, title: 'Conversation Insights' }}
     />
     <Stack.Screen
