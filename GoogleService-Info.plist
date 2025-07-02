@@ -2,18 +2,32 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- 
+	PLACEHOLDER FILE - REPLACE WITH ACTUAL GoogleService-Info.plist
+	
+	Download this file from Google Cloud Console:
+	1. Go to https://console.cloud.google.com/
+	2. Select your project
+	3. Go to Project Settings
+	4. Download GoogleService-Info.plist for iOS
+	5. Replace this file with the downloaded file
+	-->
+	<key>CLIENT_ID</key>
+	<string>YOUR_CLIENT_ID</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>YOUR_REVERSED_CLIENT_ID</string>
 	<key>API_KEY</key>
-	<string>AIzaSyDV9o1bK4bWf_fDkt3SGxgZKD4mxovIzXc</string>
+	<string>YOUR_API_KEY</string>
 	<key>GCM_SENDER_ID</key>
-	<string>349583912351</string>
+	<string>YOUR_SENDER_ID</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.yourcompany.jungai</string>
+	<string>org.name.jung</string>
 	<key>PROJECT_ID</key>
-	<string>jung-73a5c</string>
+	<string>your-project-id</string>
 	<key>STORAGE_BUCKET</key>
-	<string>jung-73a5c.firebasestorage.app</string>
+	<string>your-project-id.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +39,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:349583912351:ios:8bca55647cd8cf564fe1aa</string>
+	<string>YOUR_GOOGLE_APP_ID</string>
 </dict>
 </plist>

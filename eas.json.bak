@@ -7,10 +7,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "development",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
+        "NODE_ENV": "development"
       },
       "ios": {
         "buildConfiguration": "Debug",
@@ -25,19 +22,11 @@
         "capabilities": {
           "SignInWithApple": true
         }
-      },
-      "env": {
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
       }
     },
     "production": {
       "env": {
-        "NODE_ENV": "production",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "your-ios-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "your-android-client-id",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB": "your-web-client-id"
+        "NODE_ENV": "production"
       },
       "ios": {
         "buildConfiguration": "Release",

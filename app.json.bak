@@ -26,17 +26,8 @@
         "NSLocationWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
         "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
-        "NSMicrophoneUsageDescription": "This app needs microphone access for voice messages and audio recording features.",
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLName": "google",
-            "CFBundleURLSchemes": [
-              "REVERSED_CLIENT_ID_FROM_GOOGLE_PLIST"
-            ]
-          }
-        ]
-      },
-      "googleServicesFile": "./GoogleService-Info.plist"
+        "NSMicrophoneUsageDescription": "This app needs microphone access for voice messages and audio recording features."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -67,8 +58,7 @@
         "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "favicon": "./assets/jung-app-logo-1024.png",
@@ -83,8 +73,7 @@
     "owner": "infinitydata.ai",
     "plugins": [
       "expo-secure-store",
-      "expo-apple-authentication",
-      "@react-native-google-signin/google-signin"
+      "expo-apple-authentication"
     ]
   }
 }
