@@ -20,8 +20,6 @@ import { SocialButton } from '../components/SocialButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import Constants from 'expo-constants';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
 import tw from '../lib/tailwind';
 
 // Import both Supabase clients and functions
@@ -31,6 +29,7 @@ import {
   storeAuthDataEnhanced, 
   checkSessionEnhanced 
 } from '../lib/supabase-enhanced';
+import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;

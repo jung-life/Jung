@@ -31,6 +31,7 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase, storeAuthData, checkSession } from './lib/supabase';
 import { initAnalytics } from './lib/analytics';
+import { initializeGoogleSignIn } from './lib/googleSignIn';
 
 import LandingScreen from './screens/LandingScreen';
 import { LoginScreen } from './screens/LoginScreen';
@@ -212,6 +213,11 @@ const AppContent = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    // Initialize Google Sign-In when the app starts
+    initializeGoogleSignIn();
+  }, []);
+
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.container}>

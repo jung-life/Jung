@@ -23,16 +23,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import Constants from 'expo-constants';
 import { useSupabase } from '../contexts/SupabaseContext';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-// Initialize WebBrowser
-WebBrowser.maybeCompleteAuthSession();
 
 export const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -75,72 +71,28 @@ export const LoginScreen = () => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      console.log('Starting Google login flow...');
+      console.log('🔵 Starting native Google Sign-In...');
       
-      const redirectUri = AuthSession.makeRedirectUri({});
-      console.log('Using Redirect URI:', redirectUri); // Log the redirect URI
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUri,
-          skipBrowserRedirect: false,
-        }
-      });
-
-      if (error) {
-        console.error('Supabase OAuth error:', error);
-        Alert.alert('Login Error', error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data?.url) {
-        console.log('Opening auth URL:', data.url);
+      // Use the native Google Sign-In
+      const result = await signInWithGoogle();
+      
+      if (result.data?.session) {
+        await storeAuthData(result.data.session);
+        console.log('🔵 Google login completed successfully');
         
-        // Open the URL in the browser
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectUri
-        );
-
-        console.log('WebBrowser result:', JSON.stringify(result));
-
-        if (result.type === 'success') {
-          console.log('OAuth flow successful, URL:', result.url);
-          
-          // Extract token from URL if available
-          const url = result.url;
-          if (url.includes('#') || url.includes('?')) {
-            console.log('URL contains parameters, will be processed by App.tsx handler');
-            
-            // Force a small delay to ensure the App.tsx handler has time to process
-            setTimeout(() => {
-              if (!navigation.isFocused()) {
-                console.log('Login screen is no longer focused, navigation likely occurred');
-              } else {
-                console.log('Login screen is still focused, manually navigating...');
-                navigation.reset({ index: 0, routes: [{ name: 'PostLoginScreen' }] });
-              }
-            }, 1000);
-          }
-        } else {
-          console.log('OAuth flow browser session ended:', result.type);
-          if (result.type !== 'cancel' && result.type !== 'dismiss') {
-            // Handle potential browser errors
-            Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
-          }
-        }
-      } else {
-        console.error('No URL returned from signInWithOAuth');
-        Alert.alert('Login Error', 'Failed to initiate Google login. Please try again.');
+        // Let AuthContext handle navigation
+        console.log('🔵 Login successful - AuthContext will handle navigation');
       }
     } catch (error) {
-      console.error('Google login error:', error);
+      console.error('🔵 Google login error:', error);
       if (error instanceof Error) {
-        Alert.alert('Error', error.message);
+        if (error.message === 'Sign-in was cancelled') {
+          console.log('🔵 User cancelled Google Sign-In');
+          return;
+        }
+        Alert.alert('Google Sign-In Error', error.message);
       } else {
-        Alert.alert('Error', 'An unexpected error occurred');
+        Alert.alert('Error', 'An unexpected error occurred during Google Sign-In');
       }
     } finally {
       setLoading(false);
@@ -193,7 +145,7 @@ export const LoginScreen = () => {
         hasAuthorizationCode: !!credential.authorizationCode
       });
 
-      if (credential.identityToken) {
+      if (credential.identityToken && supabase) {
         console.log('🍎 Authenticating with Supabase...');
         
         // Sign in with Supabase using Apple credentials
