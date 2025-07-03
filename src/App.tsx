@@ -49,6 +49,7 @@ import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
 import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
 import MoodTrackerScreen from './screens/MoodTrackerScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
+import JournalingScreen from './screens/JournalingScreen';
 import { HamburgerMenu } from './components/HamburgerMenu';
 import { TouchableOpacity } from 'react-native';
 import { House } from 'phosphor-react-native';
@@ -203,6 +204,7 @@ const AppContent = () => {
             <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
             <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
             <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
+            <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal', ...defaultPostLoginOptions }} />
             <Stack.Screen 
               name="MoodTrackerScreen" 
               component={MoodTrackerScreen} 
