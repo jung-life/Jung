@@ -934,6 +934,17 @@ Return only the title text with no additional explanation or formatting.`;
     try {
       setLoading(true);
       
+      // Check if an avatar is selected
+      if (!selectedAvatar) {
+        Alert.alert(
+          'Avatar Required',
+          'Please select an avatar to guide your conversation before starting.',
+          [{ text: 'OK' }]
+        );
+        setLoading(false);
+        return;
+      }
+      
       // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
