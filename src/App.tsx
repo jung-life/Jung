@@ -120,20 +120,14 @@ const AppContent = () => {
   const { session, isNewUser, loading } = useAuth();
   const initialUrl = useURL();
 
-  // Handle navigation after authentication
-  useEffect(() => {
-    if (!loading && session?.user) {
-      // Navigate to appropriate screen after successful authentication
-      if (isNewUser) {
-        navigationRef.current?.navigate('DisclaimerScreen');
-      } else {
-        navigationRef.current?.navigate('PostLoginScreen');
-      }
-    } else if (!loading && !session?.user) {
-      // Navigate to landing screen if not authenticated
-      navigationRef.current?.navigate('LandingScreen');
+  // Determine the initial route based on authentication state
+  const getInitialRouteName = (): keyof RootStackParamList => {
+    if (loading) return 'LoadingScreen';
+    if (session?.user) {
+      return isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen';
     }
-  }, [session, isNewUser, loading]);
+    return 'LandingScreen';
+  };
 
   useEffect(() => {
     const handleAuthRedirect = (url: string | null) => {
@@ -193,7 +187,7 @@ const AppContent = () => {
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={getInitialRouteName()}>
         <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
         <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
