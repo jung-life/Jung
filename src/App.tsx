@@ -58,17 +58,32 @@ try {
   const Mixpanel = require('mixpanel-react-native');
   mixpanelInstance = Mixpanel.default || Mixpanel;
   if (mixpanelInstance && typeof mixpanelInstance.init === 'function') {
-    mixpanelInstance.init('YOUR_MIXPANEL_TOKEN', { trackAutomaticEvents: true });
-    console.log('Mixpanel initialized successfully');
+    // Use a development token or disable in development
+    const mixpanelToken = __DEV__ ? null : 'YOUR_PRODUCTION_MIXPANEL_TOKEN';
+    if (mixpanelToken) {
+      mixpanelInstance.init(mixpanelToken, { trackAutomaticEvents: true });
+      console.log('Mixpanel initialized successfully');
+    } else {
+      console.log('Mixpanel disabled in development mode');
+      mixpanelInstance = null;
+    }
   } else {
     console.warn('Mixpanel module found but init method is missing');
+    mixpanelInstance = null;
   }
-  initAnalytics(mixpanelInstance);
+  
+  // Create mock analytics for development or when Mixpanel is not available
+  const mockMixpanel = {
+    track: (eventName: string, props?: Record<string, any>) => console.log('Analytics track:', eventName, props),
+    init: () => console.log('Analytics initialized (mock)'),
+  };
+  
+  initAnalytics(mixpanelInstance || mockMixpanel);
 } catch (error) {
   console.error('Failed to import or initialize Mixpanel:', error);
   const mockMixpanel = {
-    track: (eventName: string, props?: Record<string, any>) => console.log('Mixpanel track (mock):', eventName, props),
-    init: () => console.log('Mixpanel init (mock)'),
+    track: (eventName: string, props?: Record<string, any>) => console.log('Analytics track (fallback):', eventName, props),
+    init: () => console.log('Analytics initialized (fallback)'),
   };
   initAnalytics(mockMixpanel);
 }
@@ -104,6 +119,21 @@ const defaultPostLoginOptions = {
 const AppContent = () => {
   const { session, isNewUser, loading } = useAuth();
   const initialUrl = useURL();
+
+  // Handle navigation after authentication
+  useEffect(() => {
+    if (!loading && session?.user) {
+      // Navigate to appropriate screen after successful authentication
+      if (isNewUser) {
+        navigationRef.current?.navigate('DisclaimerScreen');
+      } else {
+        navigationRef.current?.navigate('PostLoginScreen');
+      }
+    } else if (!loading && !session?.user) {
+      // Navigate to landing screen if not authenticated
+      navigationRef.current?.navigate('LandingScreen');
+    }
+  }, [session, isNewUser, loading]);
 
   useEffect(() => {
     const handleAuthRedirect = (url: string | null) => {
@@ -161,13 +191,9 @@ const AppContent = () => {
     );
   }
 
-  const initialRoute: keyof RootStackParamList = session?.user
-    ? (isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen')
-    : 'LandingScreen';
-
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator initialRouteName={initialRoute}>
+      <Stack.Navigator>
         <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
         <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
