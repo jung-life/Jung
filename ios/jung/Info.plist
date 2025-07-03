@@ -29,24 +29,17 @@
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>google</string>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>jung</string>
-          <string>org.name.jung</string>
+          <string>com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>exp+jung</string>
-        </array>
-      </dict>
-      <dict>
-        <key>CFBundleURLName</key>
-        <string>google</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-          <string>com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h</string>
         </array>
       </dict>
     </array>
@@ -74,7 +67,7 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>This app needs microphone access for voice messages and audio recording features.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>This app needs access to save files to your photo library.</string>
     <key>NSPhotoLibraryUsageDescription</key>

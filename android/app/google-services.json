@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "478933387478",
+    "project_id": "jung-451811",
+    "storage_bucket": "jung-451811.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478933387478:android:com.yourcompany.jungai",
+        "android_client_info": {
+          "package_name": "com.yourcompany.jungai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "478933387478-uugq4ob2up04h1soblcvqfkot4pf0but.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yourcompany.jungai"
+          }
+        },
+        {
+          "client_id": "478933387478-uugq4ob2up04h1soblcvqfkot4pf0but.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummy_API_Key_Replace_With_Real"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

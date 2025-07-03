@@ -29,6 +29,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="jung"/>
+        <data android:scheme="com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"/>
         <data android:scheme="com.yourcompany.jungai"/>
         <data android:scheme="exp+jung"/>
       </intent-filter>
