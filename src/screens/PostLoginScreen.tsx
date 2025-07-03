@@ -12,8 +12,8 @@ import * as secureStore from '../lib/secureStorage';
 import * as Location from 'expo-location'; // Added Expo Location
 import { supabase } from '../lib/supabase'; // Added Supabase
 import useAuthStore from '../store/useAuthStore'; // Added AuthStore
-import { useSubscription } from '../hooks/useSubscription';
-import PremiumUpgradeButton from '../components/PremiumUpgradeButton';
+// import { useSubscription } from '../hooks/useSubscription';
+// import PremiumUpgradeButton from '../components/PremiumUpgradeButton';
 
 // Define types for mood tracking
 type MoodOption = 'Happy' | 'Okay' | 'Sad' | 'Anxious' | 'Angry' | 'Calm' | 'Excited' | 'Tired' | 'Stressed'; // Added new moods
@@ -41,7 +41,8 @@ const moodOptions: { name: MoodOption; icon: React.ReactNode; color: string }[] 
 const PostLoginScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const { user } = useAuthStore(); // Get user from auth store
-  const { isPremiumUser } = useSubscription();
+  // const { isPremiumUser } = useSubscription(); // Temporarily disabled
+  const isPremiumUser = false; // Temporarily set to false
   
   // Mood tracker state
   const [moodModalVisible, setMoodModalVisible] = useState(false);
@@ -83,23 +84,23 @@ const PostLoginScreen = () => {
         const { latitude, longitude, accuracy, altitude } = location.coords;
         const timestamp = new Date(location.timestamp).toISOString();
 
-        const { error: dbError } = await supabase
-          .from('user_locations')
-          .insert({
-            user_id: user.id,
-            latitude,
-            longitude,
-            accuracy,
-            altitude,
-            timestamp,
-          });
+        if (supabase) {
+          const { error: dbError } = await supabase
+            .from('user_locations')
+            .insert({
+              user_id: user.id,
+              latitude,
+              longitude,
+              accuracy,
+              altitude,
+              timestamp,
+            });
 
-        if (dbError) {
-          console.error('Error saving location to database:', dbError);
-          // Optionally alert the user, but might be too intrusive for a background task
-          // Alert.alert('Error', 'Could not save location data.');
-        } else {
-          console.log('Location saved successfully to database.');
+          if (dbError) {
+            console.error('Error saving location to database:', dbError);
+          } else {
+            console.log('Location saved successfully to database.');
+          }
         }
       } else {
         console.warn('Could not fetch location coordinates.');
@@ -285,33 +286,7 @@ const PostLoginScreen = () => {
             </Text>
           </View>
 
-          {/* Premium Status/Upgrade Section */}
-          {isPremiumUser ? (
-            <View style={tw`bg-yellow-100 border border-yellow-300 rounded-xl p-4 mb-6 flex-row items-center`}>
-              <SafePhosphorIcon iconType="Sparkle" size={24} color="#F59E0B" weight="fill" />
-              <View style={tw`ml-3 flex-1`}>
-                <Text style={tw`text-yellow-800 font-semibold`}>Premium Active</Text>
-                <Text style={tw`text-yellow-700 text-sm`}>Enjoy unlimited access to all features!</Text>
-              </View>
-            </View>
-          ) : (
-            <View style={tw`bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200 rounded-xl p-4 mb-6`}>
-              <View style={tw`flex-row items-center justify-between`}>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-purple-800 font-semibold mb-1`}>Unlock Premium Features</Text>
-                  <Text style={tw`text-purple-700 text-sm mb-3`}>
-                    Access all therapeutic avatars, advanced features, and unlimited conversations
-                  </Text>
-                  <PremiumUpgradeButton 
-                    variant="medium"
-                    onPress={() => navigation.navigate('Subscription')}
-                    message="Upgrade Now"
-                  />
-                </View>
-                <SafePhosphorIcon iconType="Sparkle" size={32} color="#7C3AED" weight="light" />
-              </View>
-            </View>
-          )}
+          {/* Premium section temporarily disabled */}
           
           {/* Conversations Button */}
           <SafeTouchableOpacity

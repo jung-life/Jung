@@ -152,7 +152,8 @@ export const getAvatarUrl = (filename: string): string => {
     return `https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars/${filename}`;
   }
   
-  return `${storageUrl}/${bucket}/${filename}`;
+  // Fix: Add /object/public/ to the URL path for Supabase storage
+  return `${storageUrl}/object/public/${bucket}/${filename}`;
 };
 
 // Check if a user has premium access
