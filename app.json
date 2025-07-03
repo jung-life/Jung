@@ -74,7 +74,7 @@
       "favicon": "./assets/jung-app-logo-1024.png",
       "bundler": "metro"
     },
-    "scheme": "jung",
+    "scheme": ["jung", "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"],
     "extra": {
       "eas": {
         "projectId": "c4f0be2f-a422-489b-acda-4d2be4769a36"
