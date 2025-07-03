@@ -31,7 +31,7 @@
           {
             "CFBundleURLName": "google",
             "CFBundleURLSchemes": [
-              "REVERSED_CLIENT_ID_FROM_GOOGLE_PLIST"
+              "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"
             ]
           }
         ]

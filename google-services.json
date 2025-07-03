@@ -1,50 +1,40 @@
 {
-  "_comment": "PLACEHOLDER FILE - REPLACE WITH ACTUAL google-services.json",
-  "_instructions": [
-    "Download this file from Google Cloud Console:",
-    "1. Go to https://console.cloud.google.com/",
-    "2. Select your project", 
-    "3. Go to Project Settings",
-    "4. Download google-services.json for Android",
-    "5. Replace this file with the downloaded file"
-  ],
   "project_info": {
-    "project_number": "YOUR_PROJECT_NUMBER",
-    "project_id": "your-project-id",
-    "storage_bucket": "your-project-id.appspot.com"
+    "project_number": "478933387478",
+    "project_id": "jung-451811",
+    "storage_bucket": "jung-451811.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_MOBILE_SDK_APP_ID",
+        "mobilesdk_app_id": "1:478933387478:android:com.yourcompany.jungai",
         "android_client_info": {
           "package_name": "com.yourcompany.jungai"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_ANDROID_CLIENT_ID",
+          "client_id": "478933387478-uugq4ob2up04h1soblcvqfkot4pf0but.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.yourcompany.jungai",
-            "certificate_hash": "YOUR_SHA1_HASH"
+            "package_name": "com.yourcompany.jungai"
           }
         },
         {
-          "client_id": "YOUR_WEB_CLIENT_ID",
+          "client_id": "478933387478-uugq4ob2up04h1soblcvqfkot4pf0but.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY"
+          "current_key": "AIzaSyDummy_API_Key_Replace_With_Real"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_WEB_CLIENT_ID",
+              "client_id": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
