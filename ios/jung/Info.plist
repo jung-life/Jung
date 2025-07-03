@@ -41,6 +41,14 @@
           <string>exp+jung</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>google</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>9</string>
