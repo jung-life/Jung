@@ -26,6 +26,7 @@ export const availableAvatars = [
   { id: 'freud', name: 'Freud', filename: 'frued.png', premium: false }, // Note: Filename has a typo "frued" to match actual file
   { id: 'adler', name: 'Adler', filename: 'alfredadler.png', premium: false },
   { id: 'rogers', name: 'Carl Rogers', filename: 'carl_rogers.png', premium: false },
+  { id: 'depthdelver', name: 'Depth Delver', filename: 'depth_delver.png', premium: false },
   { id: 'morpheus', name: 'Morpheus', filename: 'awakener.png', premium: true },
   { id: 'oracle', name: 'Oracle', filename: 'sage.png', premium: true },
 ];
@@ -57,6 +58,14 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
   const fetchUserAvatar = async () => {
     try {
       setLoading(true);
+      
+      if (!supabase) {
+        console.log('Supabase not available, using default avatar');
+        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+        setLoading(false);
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

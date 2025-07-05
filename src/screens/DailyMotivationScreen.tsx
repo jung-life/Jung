@@ -212,34 +212,7 @@ export default function DailyMotivationScreen() {
     return (
       <ScrollView style={tw`flex-1 p-6`}>
         
-        {personalizedQuote ? (
-          <View style={tw`mb-10`}>
-            <View style={tw`flex-row mb-2 items-center`}>
-              <SafePhosphorIcon iconType="Smiley" size={22} color="#97C1A9" weight="fill" />
-              <Text style={tw`text-sm text-gray-700 ml-2 font-medium`}>Personalized For You</Text>
-            </View>
-            <View style={tw`bg-white rounded-xl p-6 shadow-md mb-4 border border-soothing-green/30 overflow-hidden`}>
-              <Text style={tw`text-lg text-gray-700 italic leading-relaxed`}>
-                "{personalizedQuote}"
-              </Text>
-            </View>
-            {emotionalProfile ? (
-              <View style={tw`bg-soothing-green/10 rounded-lg p-4 border border-soothing-green/20`}>
-                <Text style={tw`text-sm text-gray-600 mb-2 font-medium`}>Based on your emotional profile:</Text>
-                <View style={tw`flex-row flex-wrap`}>
-                  <View style={tw`bg-motivation/20 rounded-full px-3 py-1 mr-2 mb-2 border border-motivation/30`}>
-                    <Text style={tw`text-gray-700 text-xs font-medium`}>{emotionalProfile.primary_emotion}</Text>
-                  </View>
-                  {emotionalProfile.secondary_emotions.slice(0, 2).map((emotion: string, index: number) => (
-                    <View key={index} style={tw`bg-soothing-green/10 rounded-full px-3 py-1 mr-2 mb-2 border border-soothing-green/20`}>
-                      <Text style={tw`text-gray-600 text-xs`}>{emotion}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
+
 
         {currentQuote ? (
           <View style={tw`mb-8`}>
