@@ -76,7 +76,7 @@ export const SocialButton = ({
         return (
           <>
             <GoogleGLogo />
-            <Text style={tw`font-medium text-sm text-white`}>Sign in with Google</Text>
+            <Text style={tw`font-medium text-base text-white`}>Sign in with Google</Text>
           </>
         );
       case 'apple':
@@ -89,8 +89,8 @@ export const SocialButton = ({
       case 'email':
         return (
           <>
-            <Envelope size={22} color="#6A8EAE" weight="bold" style={tw`mr-3`} /> 
-            <Text style={tw`font-medium text-base ${colors.text}`}>Sign in with Email</Text>
+            <Envelope size={22} color="#FFFFFF" weight="bold" style={tw`mr-3`} /> 
+            <Text style={tw`font-medium text-base text-white`}>Sign in with Email</Text>
           </>
         );
       default:
@@ -108,16 +108,18 @@ export const SocialButton = ({
     }
   };
   
-  // Special styling per provider guidelines
+  // Standardized styling for all buttons - exact same size with increased height for text visibility
   const getButtonStyle = () => {
+    const baseStyle = `rounded-xl py-4 px-4 mb-3 shadow-sm flex-row items-center justify-center h-14 min-w-full ${disabled ? 'opacity-60' : ''}`;
+    
     if (provider === 'apple') {
-      return tw`bg-black rounded-xl py-3.5 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`;
+      return tw`bg-black ${baseStyle}`;
     }
     if (provider === 'google') {
-      // Google's official dark button styling: dark background, rounded corners, proper spacing
-      return tw`bg-gray-800 rounded-lg py-3 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`;
+      return tw`bg-gray-800 ${baseStyle}`;
     }
-    return tw`${colors.bg} border ${colors.border} rounded-xl py-3.5 px-4 mb-3 shadow-sm flex-row items-center justify-center ${disabled ? 'opacity-60' : ''}`;
+    // Email button with same dark background as Google/Apple buttons
+    return tw`bg-gray-700 ${baseStyle}`;
   };
 
   return (
