@@ -937,9 +937,17 @@ Return only the title text with no additional explanation or formatting.`;
       // Check if an avatar is selected
       if (!selectedAvatar) {
         Alert.alert(
-          'Avatar Required',
-          'Please select an avatar to guide your conversation before starting.',
-          [{ text: 'OK' }]
+          '🤖 Choose Your AI Guide',
+          'Please select an avatar to guide your conversation. Each avatar offers a unique psychological approach to help you explore your thoughts and feelings.\n\nTap on any avatar above to select your guide.',
+          [
+            { 
+              text: 'Got it', 
+              style: 'default',
+              onPress: () => {
+                // Optional: scroll to avatar selector or highlight it
+              }
+            }
+          ]
         );
         setLoading(false);
         return;

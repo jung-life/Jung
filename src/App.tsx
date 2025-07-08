@@ -16,11 +16,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 // };
 
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { RootStackParamList } from './navigation/types';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { SupabaseProvider } from './contexts/SupabaseContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import * as Linking from 'expo-linking';
@@ -29,30 +27,10 @@ import { navigationRef } from './navigation/navigationService';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
-import { supabase, storeAuthData, checkSession } from './lib/supabase';
+import { supabase, storeAuthData } from './lib/supabase';
 import { initAnalytics } from './lib/analytics';
 import { initializeGoogleSignIn } from './lib/googleSignIn';
-
-import LandingScreen from './screens/LandingScreen';
-import { LoginScreen } from './screens/LoginScreen';
-import { RegisterScreen } from './screens/RegisterScreen';
-import PostLoginScreen from './screens/PostLoginScreen';
-import { HomeScreen } from './screens/HomeScreen';
-import { ConversationsScreen } from './screens/ConversationsScreen';
-import { ChatScreen } from './screens/ChatScreen';
-import { AccountScreen } from './screens/AccountScreen';
-import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
-import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
-import { DisclaimerScreen } from './screens/DisclaimerScreen';
-import DailyMotivationScreen from './screens/DailyMotivationScreen';
-import { EmotionalAssessmentScreen } from './screens/EmotionalAssessmentScreen';
-import SelfHelpResourcesScreen from './screens/SelfHelpResourcesScreen';
-import MoodTrackerScreen from './screens/MoodTrackerScreen';
-import { LoadingScreen } from './screens/LoadingScreen';
-import JournalingScreen from './screens/JournalingScreen';
-import { HamburgerMenu } from './components/HamburgerMenu';
-import { TouchableOpacity } from 'react-native';
-import { House } from 'phosphor-react-native';
+import AppNavigator from './navigation/AppNavigator';
 
 let mixpanelInstance;
 try {
@@ -89,8 +67,6 @@ try {
   initAnalytics(mockMixpanel);
 }
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
 const linking = {
   prefixes: [Linking.createURL('/')],
   config: {
@@ -105,31 +81,9 @@ const linking = {
   },
 };
 
-const defaultPostLoginOptions = {
-  headerShown: true,
-  headerRight: () => <HamburgerMenu />,
-  headerStyle: {
-    backgroundColor: '#ffffff',
-  },
-  headerTintColor: '#4A3B78',
-  headerTitleStyle: {
-    fontWeight: 'bold' as const,
-  },
-};
-
 const AppContent = () => {
-  const { session, isNewUser, loading } = useAuth();
   const initialUrl = useURL();
-
-  // Determine the initial route based on authentication state
-  const getInitialRouteName = (): keyof RootStackParamList => {
-    if (loading) return 'LoadingScreen';
-    if (session?.user) {
-      return isNewUser ? 'DisclaimerScreen' : 'PostLoginScreen';
-    }
-    return 'LandingScreen';
-  };
-
+  
   useEffect(() => {
     const handleAuthRedirect = (url: string | null) => {
       if (!url) return;
@@ -169,7 +123,7 @@ const AppContent = () => {
     'FontAwesome': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf'),
   });
 
-  if (loading || (!fontsLoaded && !fontError)) {
+  if (!fontsLoaded && !fontError) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#4A3B78" />
@@ -188,48 +142,7 @@ const AppContent = () => {
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator initialRouteName={getInitialRouteName()}>
-        <Stack.Screen name="LoadingScreen" component={LoadingScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="PrivacyPolicyScreen" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', ...defaultPostLoginOptions }} />
-        <Stack.Screen name="TermsOfServiceScreen" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', ...defaultPostLoginOptions }} />
-        <Stack.Screen name="DisclaimerScreen" component={DisclaimerScreen} options={{ title: 'Disclaimer', ...defaultPostLoginOptions }} />
-
-        {session?.user ? (
-          <>
-            <Stack.Screen name="PostLoginScreen" component={PostLoginScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Home', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="ConversationsScreen" component={ConversationsScreen} options={{ title: 'Conversations', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="AccountScreen" component={AccountScreen} options={{ title: 'Account Settings', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="DailyMotivationScreen" component={DailyMotivationScreen} options={{ title: 'Daily Motivation', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="EmotionalAssessmentScreen" component={EmotionalAssessmentScreen} options={{ title: 'Emotional Assessment', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="SelfHelpResourcesScreen" component={SelfHelpResourcesScreen} options={{ title: 'Self-Help Resources', ...defaultPostLoginOptions }} />
-            <Stack.Screen name="JournalingScreen" component={JournalingScreen} options={{ title: 'Journal', ...defaultPostLoginOptions }} />
-            <Stack.Screen 
-              name="MoodTrackerScreen" 
-              component={MoodTrackerScreen} 
-              options={({ navigation }) => ({ 
-                title: 'Mood Tracker', 
-                ...defaultPostLoginOptions,
-                headerLeft: () => (
-                  <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ marginLeft: 10, padding: 5 }}>
-                    <View>
-                      <House size={24} color={defaultPostLoginOptions.headerTintColor} />
-                    </View>
-                  </TouchableOpacity>
-                ),
-                headerBackVisible: false, 
-              })} 
-            />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="LandingScreen" component={LandingScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-          </>
-        )}
-      </Stack.Navigator>
+      <AppNavigator />
     </NavigationContainer>
   );
 };

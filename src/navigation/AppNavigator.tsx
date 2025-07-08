@@ -8,7 +8,7 @@ import LandingScreen from '../screens/LandingScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { DisclaimerScreen } from '../screens/DisclaimerScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth } from '../hooks/useAuth'; // Ensure this path is correct
+import { useAuth } from '../contexts/AuthContext'; // Use the AuthContext hook
 import { RootStackParamList } from './types';
 import { ConversationsScreen } from '../screens/ConversationsScreen';
 import { ChatScreen } from '../screens/ChatScreen';
