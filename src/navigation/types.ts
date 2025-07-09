@@ -5,6 +5,7 @@ export type RootStackParamList = {
   LandingScreen: undefined;
   Login: undefined;
   Register: undefined;
+  MotivationalSplashScreen: undefined; // Add Motivational Splash screen
   PostLoginScreen: undefined;
   Home: undefined;
   ConversationsScreen: { refresh?: boolean };

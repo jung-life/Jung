@@ -32,6 +32,7 @@ import { LoadingScreen } from '../screens/LoadingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen'; 
 import TransactionHistoryScreen from '../screens/TransactionHistoryScreen'; // Import TransactionHistoryScreen
+import { MotivationalSplashScreen } from '../screens/MotivationalSplashScreen'; // Import MotivationalSplashScreen
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,11 +70,17 @@ const AuthStack = () => (
 // Define Main App Stack
 const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
   <Stack.Navigator
-    // Set initial route based on whether user needs to see disclaimer
-    initialRouteName={isNewUser ? "DisclaimerScreen" : "PostLoginScreen"}
+    // Set initial route based on whether user needs to see disclaimer or motivational splash
+    initialRouteName={isNewUser ? "DisclaimerScreen" : "MotivationalSplashScreen"}
     // Apply default screen options, can be overridden per screen
     screenOptions={{ headerShown: false, ...defaultPostLoginOptions }} 
   >
+    {/* Motivational splash screen shown after login */}
+    <Stack.Screen
+      name="MotivationalSplashScreen"
+      component={MotivationalSplashScreen}
+      options={{ headerShown: false }} // No header for splash screen
+    />
     {/* Screens accessible after login */}
     <Stack.Screen
       name="PostLoginScreen"
