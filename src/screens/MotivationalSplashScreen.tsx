@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Image, Text, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Image, Text, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import tw from '../lib/tailwind';
@@ -12,6 +12,8 @@ type MotivationalSplashNavigationProp = NativeStackNavigationProp<RootStackParam
 
 export const MotivationalSplashScreen = () => {
   const navigation = useNavigation<MotivationalSplashNavigationProp>();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const navigateToPostLogin = () => {
     navigation.navigate('PostLoginScreen');
@@ -48,23 +50,67 @@ export const MotivationalSplashScreen = () => {
       <View style={tw`flex-1 justify-center items-center px-6`}>
         
         {/* Lighthouse Image - Full display with proper aspect ratio */}
-        <View style={tw`mb-8 rounded-2xl overflow-hidden shadow-2xl`}>
-          <Image
-            source={{ 
-              uri: 'https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/logo//lighhouse.png' 
-            }}
-            style={[
-              tw`rounded-2xl`,
+        <View style={tw`mb-8 rounded-2xl overflow-hidden shadow-2xl bg-gray-800`}>
+          {!imageLoaded && !imageError && (
+            <View style={[
+              tw`absolute inset-0 justify-center items-center z-10`,
               {
                 width: width * 0.9,
                 height: height * 0.55,
-                resizeMode: 'cover' // Changed back to 'cover' to fill container without white space
               }
-            ]}
-            onError={(error) => {
-              console.log('Image load error:', error);
-            }}
-          />
+            ]}>
+              <ActivityIndicator size="large" color="#FDE047" />
+              <Text style={tw`text-yellow-300 mt-4 text-lg`}>Loading lighthouse...</Text>
+            </View>
+          )}
+          
+          {imageError ? (
+            // Fallback to Jung logo if lighthouse image fails
+            <View style={[
+              tw`justify-center items-center bg-gray-800`,
+              {
+                width: width * 0.9,
+                height: height * 0.55,
+              }
+            ]}>
+              <Image
+                source={require('../../assets/jung-app-logo-1024.png')}
+                style={[
+                  tw`rounded-xl`,
+                  {
+                    width: width * 0.6,
+                    height: width * 0.6,
+                    resizeMode: 'contain'
+                  }
+                ]}
+              />
+              <Text style={tw`text-yellow-300 text-lg text-center mt-4 px-4`}>
+                Jung Logo
+              </Text>
+            </View>
+          ) : (
+            <Image
+              source={{ 
+                uri: 'https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/logo//lighthouse.png' 
+              }}
+              style={[
+                tw`rounded-2xl`,
+                {
+                  width: width * 0.9,
+                  height: height * 0.55,
+                  resizeMode: 'cover'
+                }
+              ]}
+              onLoad={() => {
+                console.log('✅ Lighthouse image loaded successfully');
+                setImageLoaded(true);
+              }}
+              onError={(error) => {
+                console.log('❌ Lighthouse image load error:', error);
+                setImageError(true);
+              }}
+            />
+          )}
         </View>
 
         {/* Motivational Text with better contrast */}
