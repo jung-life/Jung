@@ -937,6 +937,7 @@ Return only the title text with no additional explanation or formatting.`;
       
       // Check if an avatar is selected
       if (!selectedAvatar || selectedAvatar.trim() === '') {
+        setShowNewChatModal(false);
         setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
@@ -945,20 +946,8 @@ Return only the title text with no additional explanation or formatting.`;
       // Validate that the selected avatar exists in the available avatars
       const avatarExists = availableAvatars.some((avatar: Avatar) => avatar.id === selectedAvatar);
       if (!avatarExists) {
-        Alert.alert(
-          '⚠️ Invalid Avatar Selection',
-          'The selected avatar is not valid. Please choose a different avatar from the list above.',
-          [
-            { 
-              text: 'OK', 
-              style: 'default',
-              onPress: () => {
-                // Reset to default avatar
-                setSelectedAvatar('jung');
-              }
-            }
-          ]
-        );
+        setShowNewChatModal(false);
+        setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
       }
