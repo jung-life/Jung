@@ -68,6 +68,7 @@ export const ConversationsScreen = () => {
   const [analysesCache, setAnalysesCache] = useState<Record<string, Analysis[]>>({});
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showAvatarRequiredModal, setShowAvatarRequiredModal] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [newConversationTitle, setNewConversationTitle] = useState('');
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
@@ -524,7 +525,7 @@ export const ConversationsScreen = () => {
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
-            <View style={tw`flex-row justify-between items-center px-4 pt-6 pb-4 border-b border-gray-200`}>
+            <View style={tw`flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-3`}
                 onPress={() => setShowAnalysisModal(false)}
@@ -853,7 +854,7 @@ Return only the title text with no additional explanation or formatting.`;
       >
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
-            <View style={tw`flex-row justify-between items-center px-4 pt-6 pb-4 border-b border-gray-200`}>
+            <View style={tw`flex-row justify-between items-center px-4 pt-16 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-3`}
                 onPress={handleClearNewChat}
@@ -880,8 +881,18 @@ Return only the title text with no additional explanation or formatting.`;
               
               <AvatarSelector 
                 selectedAvatar={selectedAvatar}
-                onSelectAvatar={setSelectedAvatar}
+                onSelectAvatar={(avatar) => {
+                  setSelectedAvatar(avatar);
+                  setAvatarError(false);
+                }}
               />
+              {avatarError && (
+                <View style={tw`mt-3 p-3 bg-red-100 border border-red-300 rounded-lg`}>
+                  <Text style={tw`text-red-700 font-semibold text-center`}>
+                    Please choose a guide from the options above to begin your journey.
+                  </Text>
+                </View>
+              )}
               
               <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>
               
@@ -932,25 +943,15 @@ Return only the title text with no additional explanation or formatting.`;
     try {
       setLoading(true);
       
-      console.log('handleCreateNewConversation called');
-      console.log('selectedAvatar:', selectedAvatar);
-      console.log('selectedAvatar length:', selectedAvatar.length);
-      console.log('selectedAvatar trimmed:', selectedAvatar.trim());
-      
-      // Check if an avatar is selected
       if (!selectedAvatar || selectedAvatar.trim() === '') {
-        console.log('No avatar selected, showing modal');
-        setShowAvatarRequiredModal(true);
+        setAvatarError(true);
         setLoading(false);
         return;
       }
-
-      // Validate that the selected avatar exists in the available avatars
+      
       const avatarExists = availableAvatars.some((avatar: Avatar) => avatar.id === selectedAvatar);
-      console.log('Avatar exists:', avatarExists);
       if (!avatarExists) {
-        console.log('Avatar does not exist, showing modal');
-        setShowAvatarRequiredModal(true);
+        setAvatarError(true);
         setLoading(false);
         return;
       }
@@ -1017,50 +1018,6 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
-  const renderAvatarRequiredModal = () => (
-    <Modal
-      visible={showAvatarRequiredModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowAvatarRequiredModal(false)}
-    >
-      <View style={tw`flex-1 justify-center items-center bg-black/70`}>
-        <View style={tw`bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 mx-6 shadow-2xl border-2 border-purple-200 relative overflow-hidden`}>
-          {/* Jungian symbolic background */}
-          <View style={tw`absolute inset-0 opacity-5`}>
-            <Text style={tw`text-purple-300 text-8xl text-center mt-4`}>⚡</Text>
-            <Text style={tw`text-purple-300 text-6xl text-center mt-2`}>🌙</Text>
-            <Text style={tw`text-purple-300 text-4xl text-center mt-2`}>✨</Text>
-          </View>
-          
-          {/* Content */}
-          <View style={tw`relative z-10`}>
-            <Text style={tw`text-3xl font-bold text-purple-800 text-center mb-2`}>
-              🧠 Choose Your Guide
-            </Text>
-            <Text style={tw`text-lg font-semibold text-purple-600 text-center mb-4`}>
-              The Journey Awaits
-            </Text>
-            <Text style={tw`text-base text-gray-700 text-center mb-6 leading-relaxed`}>
-              To begin your psychological exploration, you must first select a guide. Each avatar represents a different approach to understanding the depths of the human psyche.
-              {'\n\n'}Choose wisely, for your guide will shape the nature of your inner dialogue.
-            </Text>
-            
-            <TouchableOpacity
-              style={tw`bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-8 rounded-full shadow-lg`}
-              onPress={() => {
-                console.log('Avatar required modal OK button pressed');
-                setShowAvatarRequiredModal(false);
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={tw`text-white font-bold text-lg text-center`}>I Understand</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
 
   return (
     <GradientBackground>
@@ -1213,7 +1170,6 @@ Return only the title text with no additional explanation or formatting.`;
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}
-        {renderAvatarRequiredModal()}
         <TouchableOpacity
           style={tw`absolute bottom-20 right-6 bg-jung-purple w-14 h-14 rounded-full justify-center items-center shadow-lg`}
           onPress={handleNewConversation}
