@@ -937,7 +937,6 @@ Return only the title text with no additional explanation or formatting.`;
       
       // Check if an avatar is selected
       if (!selectedAvatar || selectedAvatar.trim() === '') {
-        setShowNewChatModal(false);
         setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
@@ -946,7 +945,6 @@ Return only the title text with no additional explanation or formatting.`;
       // Validate that the selected avatar exists in the available avatars
       const avatarExists = availableAvatars.some((avatar: Avatar) => avatar.id === selectedAvatar);
       if (!avatarExists) {
-        setShowNewChatModal(false);
         setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
@@ -1031,11 +1029,11 @@ Return only the title text with no additional explanation or formatting.`;
             {'\n\n'}Tap on any avatar above to select your guide.
           </Text>
           <TouchableOpacity
-            style={tw`bg-yellow-300 py-3 px-8 rounded-full`}
+            style={tw`bg-yellow-300 py-3 px-8 rounded-full shadow-lg`}
             onPress={() => setShowAvatarRequiredModal(false)}
             activeOpacity={0.8}
           >
-            <Text style={tw`text-yellow-900 font-semibold text-lg`}>Choose Guide</Text>
+            <Text style={tw`text-yellow-900 font-semibold text-lg`}>OK</Text>
           </TouchableOpacity>
         </View>
       </View>
