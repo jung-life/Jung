@@ -68,7 +68,7 @@ export const ConversationsScreen = () => {
   const [analysesCache, setAnalysesCache] = useState<Record<string, Analysis[]>>({});
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showAvatarRequiredModal, setShowAvatarRequiredModal] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState('jung');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
   const [newConversationTitle, setNewConversationTitle] = useState('');
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
@@ -186,11 +186,8 @@ export const ConversationsScreen = () => {
   );
 
   const handleNewConversation = () => {
-    setSelectedAvatar('jung');
-    
-    // Set a more intuitive default title
+    setSelectedAvatar('');
     setNewConversationTitle('New Reflection');
-    
     setShowNewChatModal(true);
   };
 
