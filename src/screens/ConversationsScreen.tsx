@@ -834,7 +834,7 @@ Return only the title text with no additional explanation or formatting.`;
   // Clear function to reset form without closing modal
   const handleClearNewChat = () => {
     // Reset state when clearing
-    setSelectedAvatar('jung');
+    setSelectedAvatar('');
     setNewConversationTitle('New Reflection');
   };
 
