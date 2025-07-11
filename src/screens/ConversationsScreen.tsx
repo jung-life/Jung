@@ -932,8 +932,14 @@ Return only the title text with no additional explanation or formatting.`;
     try {
       setLoading(true);
       
+      console.log('handleCreateNewConversation called');
+      console.log('selectedAvatar:', selectedAvatar);
+      console.log('selectedAvatar length:', selectedAvatar.length);
+      console.log('selectedAvatar trimmed:', selectedAvatar.trim());
+      
       // Check if an avatar is selected
       if (!selectedAvatar || selectedAvatar.trim() === '') {
+        console.log('No avatar selected, showing modal');
         setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
@@ -941,7 +947,9 @@ Return only the title text with no additional explanation or formatting.`;
 
       // Validate that the selected avatar exists in the available avatars
       const avatarExists = availableAvatars.some((avatar: Avatar) => avatar.id === selectedAvatar);
+      console.log('Avatar exists:', avatarExists);
       if (!avatarExists) {
+        console.log('Avatar does not exist, showing modal');
         setShowAvatarRequiredModal(true);
         setLoading(false);
         return;
@@ -1016,22 +1024,39 @@ Return only the title text with no additional explanation or formatting.`;
       animationType="fade"
       onRequestClose={() => setShowAvatarRequiredModal(false)}
     >
-      <View style={tw`flex-1 justify-center items-center bg-black/60`}>
-        <View style={tw`bg-yellow-50 rounded-2xl p-8 mx-6 shadow-2xl border border-yellow-200`}>
-          <Text style={tw`text-2xl font-bold text-yellow-700 text-center mb-4`}>
-            🤖 Choose Your AI Guide
-          </Text>
-          <Text style={tw`text-base text-gray-700 text-center mb-6`}>
-            Please select an avatar to guide your conversation. Each avatar offers a unique psychological approach to help you explore your thoughts and feelings.
-            {'\n\n'}Tap on any avatar above to select your guide.
-          </Text>
-          <TouchableOpacity
-            style={tw`bg-yellow-300 py-3 px-8 rounded-full shadow-lg`}
-            onPress={() => setShowAvatarRequiredModal(false)}
-            activeOpacity={0.8}
-          >
-            <Text style={tw`text-yellow-900 font-semibold text-lg`}>OK</Text>
-          </TouchableOpacity>
+      <View style={tw`flex-1 justify-center items-center bg-black/70`}>
+        <View style={tw`bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 mx-6 shadow-2xl border-2 border-purple-200 relative overflow-hidden`}>
+          {/* Jungian symbolic background */}
+          <View style={tw`absolute inset-0 opacity-5`}>
+            <Text style={tw`text-purple-300 text-8xl text-center mt-4`}>⚡</Text>
+            <Text style={tw`text-purple-300 text-6xl text-center mt-2`}>🌙</Text>
+            <Text style={tw`text-purple-300 text-4xl text-center mt-2`}>✨</Text>
+          </View>
+          
+          {/* Content */}
+          <View style={tw`relative z-10`}>
+            <Text style={tw`text-3xl font-bold text-purple-800 text-center mb-2`}>
+              🧠 Choose Your Guide
+            </Text>
+            <Text style={tw`text-lg font-semibold text-purple-600 text-center mb-4`}>
+              The Journey Awaits
+            </Text>
+            <Text style={tw`text-base text-gray-700 text-center mb-6 leading-relaxed`}>
+              To begin your psychological exploration, you must first select a guide. Each avatar represents a different approach to understanding the depths of the human psyche.
+              {'\n\n'}Choose wisely, for your guide will shape the nature of your inner dialogue.
+            </Text>
+            
+            <TouchableOpacity
+              style={tw`bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-8 rounded-full shadow-lg`}
+              onPress={() => {
+                console.log('Avatar required modal OK button pressed');
+                setShowAvatarRequiredModal(false);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={tw`text-white font-bold text-lg text-center`}>I Understand</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
