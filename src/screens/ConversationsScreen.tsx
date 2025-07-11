@@ -67,6 +67,7 @@ export const ConversationsScreen = () => {
   const swipeableRefs = React.useRef<Map<string, Swipeable>>(new Map());
   const [analysesCache, setAnalysesCache] = useState<Record<string, Analysis[]>>({});
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showAvatarRequiredModal, setShowAvatarRequiredModal] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState('jung');
   const [newConversationTitle, setNewConversationTitle] = useState('');
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
@@ -935,16 +936,25 @@ Return only the title text with no additional explanation or formatting.`;
       setLoading(true);
       
       // Check if an avatar is selected
-      if (!selectedAvatar) {
+      if (!selectedAvatar || selectedAvatar.trim() === '') {
+        setShowAvatarRequiredModal(true);
+        setLoading(false);
+        return;
+      }
+
+      // Validate that the selected avatar exists in the available avatars
+      const avatarExists = availableAvatars.some((avatar: Avatar) => avatar.id === selectedAvatar);
+      if (!avatarExists) {
         Alert.alert(
-          '🤖 Choose Your AI Guide',
-          'Please select an avatar to guide your conversation. Each avatar offers a unique psychological approach to help you explore your thoughts and feelings.\n\nTap on any avatar above to select your guide.',
+          '⚠️ Invalid Avatar Selection',
+          'The selected avatar is not valid. Please choose a different avatar from the list above.',
           [
             { 
-              text: 'Got it', 
+              text: 'OK', 
               style: 'default',
               onPress: () => {
-                // Optional: scroll to avatar selector or highlight it
+                // Reset to default avatar
+                setSelectedAvatar('jung');
               }
             }
           ]
@@ -1014,6 +1024,34 @@ Return only the title text with no additional explanation or formatting.`;
       setLoading(false);
     }
   };
+
+  const renderAvatarRequiredModal = () => (
+    <Modal
+      visible={showAvatarRequiredModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAvatarRequiredModal(false)}
+    >
+      <View style={tw`flex-1 justify-center items-center bg-black/60`}>
+        <View style={tw`bg-yellow-50 rounded-2xl p-8 mx-6 shadow-2xl border border-yellow-200`}>
+          <Text style={tw`text-2xl font-bold text-yellow-700 text-center mb-4`}>
+            🤖 Choose Your AI Guide
+          </Text>
+          <Text style={tw`text-base text-gray-700 text-center mb-6`}>
+            Please select an avatar to guide your conversation. Each avatar offers a unique psychological approach to help you explore your thoughts and feelings.
+            {'\n\n'}Tap on any avatar above to select your guide.
+          </Text>
+          <TouchableOpacity
+            style={tw`bg-yellow-300 py-3 px-8 rounded-full`}
+            onPress={() => setShowAvatarRequiredModal(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={tw`text-yellow-900 font-semibold text-lg`}>Choose Guide</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <GradientBackground>
@@ -1166,6 +1204,7 @@ Return only the title text with no additional explanation or formatting.`;
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}
+        {renderAvatarRequiredModal()}
         <TouchableOpacity
           style={tw`absolute bottom-20 right-6 bg-jung-purple w-14 h-14 rounded-full justify-center items-center shadow-lg`}
           onPress={handleNewConversation}
