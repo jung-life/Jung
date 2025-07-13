@@ -144,6 +144,21 @@ export const LoginScreen = () => {
         useNativeDriver: true,
       })
     ).start();
+
+    // Auto-cycle through features every 4 seconds
+    startAutoCycle();
+  };
+
+  // Auto-cycling through features
+  const startAutoCycle = () => {
+    const features: ('conversation' | 'motivation' | 'emotional')[] = ['conversation', 'motivation', 'emotional'];
+    let currentIndex = 0;
+
+    setInterval(() => {
+      const nextFeature = features[currentIndex];
+      setSelectedFeature(nextFeature);
+      currentIndex = (currentIndex + 1) % features.length;
+    }, 4000); // Change every 4 seconds
   };
 
   // Feature selection with smooth transition
@@ -177,6 +192,23 @@ export const LoginScreen = () => {
       default:
         return "Your journey to self-discovery awaits";
     }
+  };
+
+  // Get dynamic text colors that sync with background
+  const getFeatureTextColor = (feature: 'conversation' | 'motivation' | 'emotional') => {
+    if (selectedFeature === feature) {
+      switch(feature) {
+        case 'conversation':
+          return '#6A8EAE'; // Blue for conversation
+        case 'motivation':
+          return '#97C1A9'; // Green for motivation
+        case 'emotional':
+          return '#CEB5CD'; // Purple for emotional
+        default:
+          return '#6B7280'; // Gray default
+      }
+    }
+    return '#9CA3AF'; // Light gray when not selected
   };
 
   // Removed redundant onAuthStateChange listener. 
@@ -396,10 +428,12 @@ export const LoginScreen = () => {
                     ]}>
                       <Envelope size={24} color="#fff" weight={selectedFeature === 'conversation' ? 'fill' : 'regular'} />
                     </View>
-                    <Text style={tw`text-xs font-medium ${selectedFeature === 'conversation' ? 'text-conversation' : 'text-gray-500'}`}>
+                    <Text style={[tw`text-xs font-medium`, { color: getFeatureTextColor('conversation') }]}>
                       Connect
                     </Text>
-                    <Text style={tw`text-xs text-gray-400`}>Deep conversations</Text>
+                    <Text style={[tw`text-xs`, { color: selectedFeature === 'conversation' ? '#4A5568' : '#9CA3AF' }]}>
+                      Deep conversations
+                    </Text>
                   </TouchableOpacity>
                 </Animated.View>
                 
@@ -414,10 +448,12 @@ export const LoginScreen = () => {
                     ]}>
                       <ArrowLeft size={24} color="#fff" weight={selectedFeature === 'motivation' ? 'fill' : 'regular'} style={{transform: [{rotate: '45deg'}]}} />
                     </View>
-                    <Text style={tw`text-xs font-medium ${selectedFeature === 'motivation' ? 'text-motivation' : 'text-gray-500'}`}>
+                    <Text style={[tw`text-xs font-medium`, { color: getFeatureTextColor('motivation') }]}>
                       Grow
                     </Text>
-                    <Text style={tw`text-xs text-gray-400`}>Personal growth</Text>
+                    <Text style={[tw`text-xs`, { color: selectedFeature === 'motivation' ? '#4A5568' : '#9CA3AF' }]}>
+                      Personal growth
+                    </Text>
                   </TouchableOpacity>
                 </Animated.View>
                 
