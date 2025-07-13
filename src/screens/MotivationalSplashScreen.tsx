@@ -123,12 +123,6 @@ export const MotivationalSplashScreen = () => {
           </Text>
         </View>
 
-        {/* Loading Indicator */}
-        <View style={tw`mt-8 flex-row items-center`}>
-          <View style={tw`w-2 h-2 bg-yellow-300 rounded-full mr-2 opacity-60`} />
-          <View style={tw`w-2 h-2 bg-yellow-300 rounded-full mr-2 opacity-80`} />
-          <View style={tw`w-2 h-2 bg-yellow-300 rounded-full opacity-100`} />
-        </View>
       </View>
     </TouchableOpacity>
   );

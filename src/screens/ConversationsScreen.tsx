@@ -765,6 +765,25 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
+  // Archive conversation handler
+  const handleArchiveConversation = async (id: string) => {
+    try {
+      // Update archived status in DB
+      const { error } = await supabase
+        .from('conversations')
+        .update({ archived: true })
+        .eq('id', id);
+      if (error) {
+        Alert.alert('Error', 'Failed to archive conversation.');
+        return;
+      }
+      // Remove from active list
+      setConversations(prev => prev.filter(conv => conv.id !== id));
+    } catch (error) {
+      Alert.alert('Error', 'Unexpected error archiving conversation.');
+    }
+  };
+
   // Add state for voice input
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -1006,7 +1025,8 @@ Return only the title text with no additional explanation or formatting.`;
       // Navigate to the chat screen with the avatar ID
       navigation.navigate('Chat', { 
         conversationId,
-        avatarId: selectedAvatar
+        avatarId: selectedAvatar,
+        isNewConversation: true
       });
 
       trackEvent('Conversation Started', { avatarId: selectedAvatar });
@@ -1030,7 +1050,7 @@ Return only the title text with no additional explanation or formatting.`;
             style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
             onPress={() => navigation.navigate('ConversationHistoryScreen')}
           >
-            <Text style={tw`text-jung-purple font-medium`}>History</Text>
+            <Text style={tw`text-jung-purple font-medium`}>Archived Conversations</Text>
           </TouchableOpacity>
         </View>
         
@@ -1088,23 +1108,37 @@ Return only the title text with no additional explanation or formatting.`;
                   if (ref) swipeableRefs.current.set(item.id, ref);
                 }}
                 renderRightActions={() => (
-                  <TouchableOpacity 
-                    style={tw`bg-red-500 w-24 justify-center items-center`}
-                    onPress={() => {
-                      swipeableRefs.current.get(item.id)?.close();
-                      handleDeleteConversation(item.id, item.title);
-                    }}
-                    disabled={deleting === item.id}
-                  >
-                    {deleting === item.id ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
+                  <>
+                    <TouchableOpacity 
+                      style={tw`bg-red-500 w-24 justify-center items-center`}
+                      onPress={() => {
+                        swipeableRefs.current.get(item.id)?.close();
+                        handleDeleteConversation(item.id, item.title);
+                      }}
+                      disabled={deleting === item.id}
+                    >
+                      {deleting === item.id ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <View style={tw`items-center justify-center`}>
+                          <AntDesign name="delete" size={20} color="white" />
+                          <Text style={tw`text-white text-sm mt-1`}>Delete</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={tw`bg-gray-500 w-24 justify-center items-center`}
+                      onPress={() => {
+                        swipeableRefs.current.get(item.id)?.close();
+                        handleArchiveConversation(item.id);
+                      }}
+                    >
                       <View style={tw`items-center justify-center`}>
-                        <AntDesign name="delete" size={20} color="white" />
-                        <Text style={tw`text-white text-sm mt-1`}>Delete</Text>
+                        <AntDesign name="inbox" size={20} color="white" />
+                        <Text style={tw`text-white text-sm mt-1`}>Archive</Text>
                       </View>
-                    )}
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </>
                 )}
                 friction={2}
                 rightThreshold={40}
@@ -1170,12 +1204,15 @@ Return only the title text with no additional explanation or formatting.`;
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}
-        <TouchableOpacity
-          style={tw`absolute bottom-20 right-6 bg-jung-purple w-14 h-14 rounded-full justify-center items-center shadow-lg`}
-          onPress={handleNewConversation}
-        >
-          <SafePhosphorIcon iconType="Plus" size={28} color="white" />
-        </TouchableOpacity>
+        <View style={tw`absolute bottom-20 left-6 right-6`}>
+          <TouchableOpacity
+            style={tw`bg-jung-purple py-4 px-6 rounded-full flex-row items-center justify-center shadow-lg`}
+            onPress={handleNewConversation}
+          >
+            <SafePhosphorIcon iconType="Plus" size={20} color="white" />
+            <Text style={tw`text-white font-semibold text-base ml-2`}>Start New Conversation</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     </GradientBackground>
   );
