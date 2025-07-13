@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image
+  Image,
+  Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -39,6 +40,19 @@ export const LoginScreen = () => {
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<'default' | 'conversation' | 'motivation' | 'emotional'>('default');
   
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+  
+  // Individual animation refs for each button
+  const connectPulseAnim = useRef(new Animated.Value(1)).current;
+  const growFloatAnim = useRef(new Animated.Value(0)).current;
+  const healGlowAnim = useRef(new Animated.Value(0)).current;
+  
+  // Rotation animation for icons
+  const iconRotateAnim = useRef(new Animated.Value(0)).current;
+  
   // Use the Supabase context
   const { login } = useSupabase();
 
@@ -47,6 +61,124 @@ export const LoginScreen = () => {
                         Constants.expoConfig?.extra?.googleClientId ||
                          '';
   
+  // Initial animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Start continuous animations for buttons
+    startContinuousAnimations();
+  }, []);
+
+  // Continuous animations for the feature buttons
+  const startContinuousAnimations = () => {
+    // Connect button pulsing animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(connectPulseAnim, {
+          toValue: 1.1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(connectPulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Grow button floating animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(growFloatAnim, {
+          toValue: -5,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(growFloatAnim, {
+          toValue: 5,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(growFloatAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Heal button glow animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(healGlowAnim, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(healGlowAnim, {
+          toValue: 0,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Icon rotation animation
+    Animated.loop(
+      Animated.timing(iconRotateAnim, {
+        toValue: 1,
+        duration: 8000,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  // Feature selection with smooth transition
+  const handleFeatureSelection = (feature: 'default' | 'conversation' | 'motivation' | 'emotional') => {
+    // Button animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setSelectedFeature(feature);
+  };
+
+  // Get motivational messages based on selected feature
+  const getMotivationalMessage = () => {
+    switch(selectedFeature) {
+      case 'conversation':
+        return "Ready to explore your inner dialogue?";
+      case 'motivation':
+        return "Unlock your potential within";
+      case 'emotional':
+        return "Embrace your emotional journey";
+      default:
+        return "Your journey to self-discovery awaits";
+    }
+  };
+
   // Removed redundant onAuthStateChange listener. 
   // Navigation is now handled by AppNavigator based on AuthContext state.
 
@@ -231,42 +363,81 @@ export const LoginScreen = () => {
           style={tw`flex-1 justify-center`}
         >
           <View style={tw`flex-1 p-6 justify-center`}>
-            <View style={tw`bg-white/90 rounded-xl p-6 shadow-lg border border-soothing-blue`}>
-              <Typography variant="subtitle" style={tw`mb-6 text-center text-jung-purple`}>
+            <Animated.View 
+              style={[
+                tw`bg-white/90 rounded-xl p-6 shadow-lg border border-soothing-blue`,
+                { 
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }]
+                }
+              ]}
+            >
+              <Typography variant="subtitle" style={tw`mb-2 text-center text-jung-purple`}>
                 Welcome Back
               </Typography>
               
-              {/* Feature Selection Buttons */}
+              {/* Motivational Subtitle */}
+              <Animated.View style={{ opacity: fadeAnim }}>
+                <Text style={tw`text-sm text-center text-gray-600 mb-6 italic`}>
+                  {getMotivationalMessage()}
+                </Text>
+              </Animated.View>
+              
+              {/* Feature Selection Buttons with Enhanced Design */}
               <View style={tw`flex-row justify-center mb-6`}>
-                <TouchableOpacity 
-                  style={tw`mx-2 items-center ${selectedFeature === 'conversation' ? 'opacity-100' : 'opacity-60'}`}
-                  onPress={() => setSelectedFeature('conversation')}
-                >
-                  <View style={tw`w-12 h-12 rounded-full bg-conversation mb-1 items-center justify-center`}>
-                    <Envelope size={22} color="#fff" weight="fill" />
-                  </View>
-                  <Text style={tw`text-xs text-gray-600`}>Chat</Text>
-                </TouchableOpacity>
+                <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                  <TouchableOpacity 
+                    style={tw`mx-2 items-center ${selectedFeature === 'conversation' ? 'opacity-100' : 'opacity-60'}`}
+                    onPress={() => handleFeatureSelection('conversation')}
+                  >
+                    <View style={[
+                      tw`w-14 h-14 rounded-full mb-2 items-center justify-center shadow-lg`,
+                      { backgroundColor: selectedFeature === 'conversation' ? '#6A8EAE' : '#B0BEC5' }
+                    ]}>
+                      <Envelope size={24} color="#fff" weight={selectedFeature === 'conversation' ? 'fill' : 'regular'} />
+                    </View>
+                    <Text style={tw`text-xs font-medium ${selectedFeature === 'conversation' ? 'text-conversation' : 'text-gray-500'}`}>
+                      Connect
+                    </Text>
+                    <Text style={tw`text-xs text-gray-400`}>Deep conversations</Text>
+                  </TouchableOpacity>
+                </Animated.View>
                 
-                <TouchableOpacity 
-                  style={tw`mx-2 items-center ${selectedFeature === 'motivation' ? 'opacity-100' : 'opacity-60'}`}
-                  onPress={() => setSelectedFeature('motivation')}
-                >
-                  <View style={tw`w-12 h-12 rounded-full bg-motivation mb-1 items-center justify-center`}>
-                    <ArrowLeft size={22} color="#fff" weight="fill" style={{transform: [{rotate: '45deg'}]}} />
-                  </View>
-                  <Text style={tw`text-xs text-gray-600`}>Motivation</Text>
-                </TouchableOpacity>
+                <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                  <TouchableOpacity 
+                    style={tw`mx-2 items-center ${selectedFeature === 'motivation' ? 'opacity-100' : 'opacity-60'}`}
+                    onPress={() => handleFeatureSelection('motivation')}
+                  >
+                    <View style={[
+                      tw`w-14 h-14 rounded-full mb-2 items-center justify-center shadow-lg`,
+                      { backgroundColor: selectedFeature === 'motivation' ? '#97C1A9' : '#B0BEC5' }
+                    ]}>
+                      <ArrowLeft size={24} color="#fff" weight={selectedFeature === 'motivation' ? 'fill' : 'regular'} style={{transform: [{rotate: '45deg'}]}} />
+                    </View>
+                    <Text style={tw`text-xs font-medium ${selectedFeature === 'motivation' ? 'text-motivation' : 'text-gray-500'}`}>
+                      Grow
+                    </Text>
+                    <Text style={tw`text-xs text-gray-400`}>Personal growth</Text>
+                  </TouchableOpacity>
+                </Animated.View>
                 
-                <TouchableOpacity 
-                  style={tw`mx-2 items-center ${selectedFeature === 'emotional' ? 'opacity-100' : 'opacity-60'}`}
-                  onPress={() => setSelectedFeature('emotional')}
-                >
-                  <View style={tw`w-12 h-12 rounded-full bg-emotional mb-1 items-center justify-center`}>
-                    <Lock size={22} color="#fff" weight="fill" />
-                  </View>
-                  <Text style={tw`text-xs text-gray-600`}>Emotional</Text>
-                </TouchableOpacity>
+                <Animated.View style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                  <TouchableOpacity 
+                    style={tw`mx-2 items-center ${selectedFeature === 'emotional' ? 'opacity-100' : 'opacity-60'}`}
+                    onPress={() => handleFeatureSelection('emotional')}
+                  >
+                    <View style={[
+                      tw`w-14 h-14 rounded-full mb-2 items-center justify-center shadow-lg`,
+                      { backgroundColor: selectedFeature === 'emotional' ? '#CEB5CD' : '#B0BEC5' }
+                    ]}>
+                      <Lock size={24} color="#fff" weight={selectedFeature === 'emotional' ? 'fill' : 'regular'} />
+                    </View>
+                    <Text style={tw`text-xs font-medium ${selectedFeature === 'emotional' ? 'text-emotional' : 'text-gray-500'}`}>
+                      Heal
+                    </Text>
+                    <Text style={tw`text-xs text-gray-400`}>Emotional wellness</Text>
+                  </TouchableOpacity>
+                </Animated.View>
               </View>
               
               {showEmailLogin ? (
@@ -352,16 +523,44 @@ export const LoginScreen = () => {
                 </>
               )}
               
+              {/* Motivational Success Stories */}
+              <View style={tw`mt-4 mb-4 px-2`}>
+                <Text style={tw`text-xs text-center text-gray-500 mb-2`}>
+                  Join thousands finding clarity and transformation
+                </Text>
+                <View style={tw`flex-row justify-center items-center`}>
+                  <View style={tw`flex-row`}>
+                    {[1, 2, 3, 4, 5].map((_, index) => (
+                      <View 
+                        key={index}
+                        style={[
+                          tw`w-6 h-6 rounded-full border-2 border-white -ml-1 first:ml-0`,
+                          {
+                            backgroundColor: index === 0 ? '#6A8EAE' : 
+                                           index === 1 ? '#97C1A9' : 
+                                           index === 2 ? '#CEB5CD' : 
+                                           index === 3 ? '#A8DADC' : '#CFC7DC'
+                          }
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={tw`ml-2 text-xs text-gray-600 font-medium`}>
+                    2,847+ active users
+                  </Text>
+                </View>
+              </View>
+
               {/* Register Link */}
               <TouchableOpacity 
-                style={tw`mt-4`}
+                style={tw`mt-2`}
                 onPress={() => navigation.navigate('Register')}
               >
                 <Text style={tw`text-center font-medium text-soothing-blue`}>
-                  Don't have an account? Sign up
+                  Don't have an account? <Text style={tw`underline`}>Start your journey</Text>
                 </Text>
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
