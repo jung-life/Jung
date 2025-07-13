@@ -15,6 +15,7 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 import { GradientBackground } from '../components/GradientBackground';
 import { Typography } from '../components/Typography';
+import { DisclaimerRejectionModal } from '../components/DisclaimerRejectionModal';
 import tw from '../lib/tailwind';
 import { supabase, ensureUserPreferences, CURRENT_DISCLAIMER_VERSION } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,8 +24,9 @@ export const DisclaimerScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [healthDisclaimerChecked, setHealthDisclaimerChecked] = useState(false);
-  const { setIsNewUser, handleDisclaimerAccepted } = useAuth();
+  const { setIsNewUser, handleDisclaimerAccepted, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
 
   useEffect(() => {
     const routes = navigation.getState()?.routes || [];
@@ -37,6 +39,9 @@ export const DisclaimerScreen = () => {
       setLoading(true);
       
       // Get the current user
+      if (!supabase) {
+        throw new Error('Supabase client not available');
+      }
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -93,20 +98,38 @@ export const DisclaimerScreen = () => {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = () => {
+    setShowRejectionModal(true);
+  };
+
+  const handleReconsider = () => {
+    setShowRejectionModal(false);
+  };
+
+  const handleConfirmReject = async () => {
     try {
-      console.log('Reject button pressed');
+      console.log('User confirmed rejection, signing out...');
       setLoading(true);
       
-      // Sign out the user
-      await supabase.auth.signOut();
+      // Use AuthContext signOut method to ensure proper state management
+      const { signOut } = useAuth();
+      await signOut();
+      console.log('User signed out successfully via AuthContext');
       
-      // The auth state change will automatically redirect to AuthStack
+      // Close modal
+      setShowRejectionModal(false);
+      
     } catch (error) {
-      console.error('Error rejecting disclaimer:', error);
-      Alert.alert('Error', 'Failed to process your rejection. Please try again.');
-      // Still sign out even if there's an error
-      await supabase.auth.signOut();
+      console.error('Error signing out after rejection:', error);
+      // Force sign out even if there's an error
+      try {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+      } catch (fallbackError) {
+        console.error('Fallback sign out also failed:', fallbackError);
+      }
+      setShowRejectionModal(false);
     } finally {
       setLoading(false);
     }
@@ -119,7 +142,7 @@ export const DisclaimerScreen = () => {
           {/* Header with logo */}
           <View style={tw`items-center mb-4`}>
             <Image 
-              source={{ uri: supabase.storage.from('assets').getPublicUrl('logo/jung-logo.png').data.publicUrl }}
+              source={{ uri: supabase?.storage.from('assets').getPublicUrl('logo/jung-logo.png').data.publicUrl || '' }}
               style={tw`w-16 h-16 mb-2`}
               resizeMode="contain"
             />
@@ -260,6 +283,14 @@ export const DisclaimerScreen = () => {
             </Text>
           </View>
         </View>
+
+        {/* Custom Rejection Modal */}
+        <DisclaimerRejectionModal
+          visible={showRejectionModal}
+          onReconsider={handleReconsider}
+          onConfirmReject={handleConfirmReject}
+          loading={loading}
+        />
       </SafeAreaView>
     </GradientBackground>
   );

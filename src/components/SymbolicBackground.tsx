@@ -3,14 +3,19 @@ import { View } from 'react-native';
 import Svg, { Circle, Path, G, Ellipse, Defs, LinearGradient, Stop } from 'react-native-svg';
 import tw from '../lib/tailwind';
 
+import { useRef, useEffect } from 'react';
+import { Animated } from 'react-native';
+
 interface SymbolicBackgroundProps {
   opacity?: number;
   variant?: 'default' | 'conversation' | 'motivation' | 'emotional';
+  animate?: boolean;
 }
 
 export const SymbolicBackground = ({ 
   opacity = 0.05, 
-  variant = 'default' 
+  variant = 'default',
+  animate = false
 }: SymbolicBackgroundProps) => {
   // Get colors based on variant
   const getColors = () => {
@@ -27,6 +32,36 @@ export const SymbolicBackground = ({
   };
 
   const colors = getColors();
+
+  // Animation for breathing oval
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (animate) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animatedValue, {
+            toValue: 1,
+            duration: 3500,
+            useNativeDriver: false,
+          }),
+          Animated.timing(animatedValue, {
+            toValue: 0,
+            duration: 3500,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [animate, animatedValue]);
+
+  // Animate oval rx/ry for breathing effect
+  const animatedRx = animate
+    ? animatedValue.interpolate({ inputRange: [0, 1], outputRange: [80, 120] })
+    : 80;
+  const animatedRy = animate
+    ? animatedValue.interpolate({ inputRange: [0, 1], outputRange: [40, 60] })
+    : 40;
 
   return (
     <View style={[tw`absolute inset-0 overflow-hidden`, { opacity }]}>
@@ -68,8 +103,8 @@ export const SymbolicBackground = ({
         <Ellipse 
           cx="200" 
           cy="600" 
-          rx="80" 
-          ry="40" 
+          rx={typeof animatedRx === 'number' ? animatedRx : 80}
+          ry={typeof animatedRy === 'number' ? animatedRy : 40}
           stroke={colors.secondary} 
           strokeWidth="1" 
           fill="url(#grad)" 

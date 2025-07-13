@@ -84,9 +84,11 @@ Created comprehensive test script (`test-disclaimer-flow.js`) that:
 
 ### Disclaimer Rejection:
 1. **User clicks "I Reject"**
-2. **User signed out** via `supabase.auth.signOut()`
-3. **AuthContext detects sign-out** and resets state
-4. **Navigation returns** to AuthStack (login screen)
+2. **Compassionate popup appears** with respectful message about privacy choice
+3. **User confirms with "Take me back to login"**
+4. **User signed out** via `supabase.auth.signOut()`
+5. **AuthContext detects sign-out** and resets state
+6. **Navigation returns** to AuthStack (login screen)
 
 ## Files Modified
 

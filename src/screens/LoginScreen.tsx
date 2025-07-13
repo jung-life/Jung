@@ -212,9 +212,9 @@ export const LoginScreen = () => {
   };
 
   return (
-    <GradientBackground variant={selectedFeature}>
+    <GradientBackground variant={selectedFeature} animate>
       <SafeAreaView style={tw`flex-1`}>
-        <SymbolicBackground opacity={0.05} variant={selectedFeature} />
+        <SymbolicBackground opacity={0.15} variant={selectedFeature} animate />
         
         {/* Back Button */}
         <TouchableOpacity 
