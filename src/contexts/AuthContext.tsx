@@ -86,48 +86,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("AuthContext: Initial session check:", !!session);
-      setSession(session);
-      updateUserState(session?.user ?? null); // Update both user states
-      
-      if (session?.user) {
-        checkUserDisclaimerStatus(session.user);
-      }
-      
-      setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        console.log('Auth state change session:', session ? `User ID: ${session.user.id}` : 'No session');
-        
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        console.log("AuthContext: Initial session check:", !!session);
         setSession(session);
         updateUserState(session?.user ?? null); // Update both user states
         
-        // Update state based on event
-        if (event === 'SIGNED_IN') {
-          console.log("AuthContext: User signed in.");
-          // Disclaimer status is checked initially and on manual signIn, 
-          // no need to re-check aggressively here. Let the UI react to user state.
-          // Removed checkUserDisclaimerStatus call.
-          // Removed manual navigation logic. Navigation should react to context state changes.
-        } else if (event === 'SIGNED_OUT') {
-          console.log("AuthContext: User signed out.");
-          setIsNewUser(false); // Reset disclaimer status on sign out
-        } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-           console.log(`AuthContext: Event ${event} received.`);
-           // Potentially re-check disclaimer or other user details if needed, but keep it simple for now.
+        if (session?.user) {
+          checkUserDisclaimerStatus(session.user);
         }
         
         setLoading(false);
-      }
-    );
+      });
+    } else {
+      console.error("AuthContext: Supabase client not available");
+      setLoading(false);
+    }
+
+    // Listen for auth state changes
+    let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+    
+    if (supabase) {
+      authListener = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log('Auth state changed:', event);
+          console.log('Auth state change session:', session ? `User ID: ${session.user.id}` : 'No session');
+          
+          setSession(session);
+          updateUserState(session?.user ?? null); // Update both user states
+          
+          // Update state based on event
+          if (event === 'SIGNED_IN') {
+            console.log("AuthContext: User signed in via auth state change.");
+            
+            // Check disclaimer status for ALL sign-ins (including OAuth like Google)
+            if (session?.user) {
+              console.log("AuthContext: Checking disclaimer status for signed-in user");
+              await checkUserDisclaimerStatus(session.user);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            console.log("AuthContext: User signed out.");
+            setIsNewUser(false); // Reset disclaimer status on sign out
+          } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+             console.log(`AuthContext: Event ${event} received.`);
+             // Don't re-check disclaimer on token refresh to avoid unnecessary calls
+          }
+          
+          setLoading(false);
+        }
+      );
+    }
 
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListener) {
+        authListener.data.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -135,6 +148,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      if (!supabase) {
+        throw new Error('Supabase client not available');
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -209,7 +226,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Don't fail the sign-out process if RevenueCat logout fails
       }
 
-      await supabase.auth.signOut();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       updateUserState(null); // Update both user states
       setSession(null);
     } catch (error) {

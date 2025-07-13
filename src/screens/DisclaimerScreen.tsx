@@ -101,13 +101,12 @@ export const DisclaimerScreen = () => {
       // Sign out the user
       await supabase.auth.signOut();
       
-      // Navigate back to landing page
-      navigation.navigate('LandingScreen');
+      // The auth state change will automatically redirect to AuthStack
     } catch (error) {
       console.error('Error rejecting disclaimer:', error);
       Alert.alert('Error', 'Failed to process your rejection. Please try again.');
-      // Ensure we still navigate to landing even if there's an error
-      navigation.navigate('LandingScreen');
+      // Still sign out even if there's an error
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }

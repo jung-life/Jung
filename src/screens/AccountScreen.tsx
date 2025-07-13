@@ -615,8 +615,7 @@ export const AccountScreen = () => {
       // Sign out
       await supabase.auth.signOut();
       
-      // Navigate to the landing screen
-      navigation.navigate('LandingScreen');
+      // The auth state change will automatically redirect to AuthStack
     } catch (error) {
       console.error('Error deleting account:', error);
       Alert.alert('Error', 'Failed to delete account. Please try again.');
@@ -710,7 +709,7 @@ export const AccountScreen = () => {
     try {
       setIsLoading(true);
       await supabase.auth.signOut();
-      navigation.navigate('LandingScreen');
+      // The auth state change will automatically redirect to AuthStack
     } catch (error) {
       console.error('Error signing out:', error);
       Alert.alert('Error', 'Failed to sign out. Please try again.');

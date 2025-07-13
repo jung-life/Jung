@@ -1,19 +1,39 @@
-import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
+ import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
 import { supabase } from './supabase';
 
 // Initialize Google Sign-In
 export const initializeGoogleSignIn = () => {
   try {
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+    
+    console.log('🔵 Initializing Google Sign-In...');
+    console.log('🔵 Web Client ID:', webClientId ? 'Set' : 'Missing');
+    console.log('🔵 iOS Client ID:', iosClientId ? 'Set' : 'Missing');
+    
+    if (!webClientId) {
+      console.error('❌ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not set');
+      return false;
+    }
+    
+    if (!iosClientId) {
+      console.error('❌ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID is not set');
+      return false;
+    }
+    
     GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      webClientId,
+      iosClientId,
       offlineAccess: true,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
     });
+    
     console.log('✅ Google Sign-In configured successfully');
+    return true;
   } catch (error) {
     console.error('❌ Error configuring Google Sign-In:', error);
+    return false;
   }
 };
 
@@ -34,25 +54,29 @@ export const signInWithGoogle = async () => {
       hasIdToken: !!result.data?.idToken
     });
     
-    if (result.data?.idToken && supabase) {
-      console.log('🔵 Authenticating with Supabase...');
-      
-      // Sign in to Supabase with Google ID token
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: result.data.idToken,
-      });
-      
-      if (error) {
-        console.error('❌ Supabase authentication error:', error);
-        throw error;
-      }
-      
-      console.log('✅ Supabase authentication successful');
-      return { data, userInfo: result.data };
-    } else {
-      throw new Error('No ID token received from Google or Supabase not available');
+    if (!result.data?.idToken) {
+      throw new Error('No ID token received from Google');
     }
+    
+    if (!supabase) {
+      throw new Error('Supabase client not available - check environment variables');
+    }
+    
+    console.log('🔵 Authenticating with Supabase...');
+    
+    // Sign in to Supabase with Google ID token
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: result.data.idToken,
+    });
+    
+    if (error) {
+      console.error('❌ Supabase authentication error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Supabase authentication successful');
+    return { data, userInfo: result.data };
   } catch (error: any) {
     console.error('❌ Google Sign-In error:', error);
     

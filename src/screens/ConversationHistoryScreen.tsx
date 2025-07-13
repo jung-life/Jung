@@ -50,7 +50,7 @@ export const ConversationHistoryScreen = () => {
 
   const fetchConversationHistory = useCallback(async () => {
     try {
-      console.log('Fetching conversation history...');
+      console.log('Fetching archived conversations...');
       setLoading(true);
       
       if (!supabase) {
@@ -68,31 +68,23 @@ export const ConversationHistoryScreen = () => {
       
       console.log('Using user from store:', user.id);
       
-      // Fetch conversation history
+      // Fetch archived conversations
       const { data, error } = await supabase
-        .from('conversation_history')
-        .select(`
-          id,
-          conversation_id,
-          title,
-          saved_at,
-          conversations:conversation_id (avatar_id)
-        `)
+        .from('conversations')
+        .select('*')
         .eq('user_id', user.id)
-        .order('saved_at', { ascending: false });
+        .eq('archived', true)
+        .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching conversation history:', error);
-        setError('Failed to load conversation history. Please try again later.');
+        console.error('Error fetching archived conversations:', error);
+        setError('Failed to load archived conversations. Please try again later.');
         setLoading(false);
         return;
       }
       
-      // Format the data to include avatar_id
+      // Format the data and decrypt titles
       const formattedHistory = data?.map(item => {
-        // Extract avatar_id from the conversations join
-        const avatarId = item.conversations ? (item.conversations as any).avatar_id : null;
-        
         // Decrypt title if needed
         let title = item.title;
         try {
@@ -106,19 +98,19 @@ export const ConversationHistoryScreen = () => {
         
         return {
           id: item.id,
-          conversation_id: item.conversation_id,
+          conversation_id: item.id, // Use the same ID since this is the conversation itself
           title: title,
-          saved_at: item.saved_at,
-          avatar_id: avatarId
+          saved_at: item.created_at, // Use created_at as the date
+          avatar_id: item.avatar_id
         };
       }) || [];
       
-      console.log('Fetched conversation history:', formattedHistory.length);
+      console.log('Fetched archived conversations:', formattedHistory.length);
       setHistory(formattedHistory);
       
     } catch (error) {
       console.error('Error in fetchConversationHistory:', error);
-      setError('Failed to load conversation history. Please try again later.');
+      setError('Failed to load archived conversations. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -140,8 +132,8 @@ export const ConversationHistoryScreen = () => {
 
   const handleDeleteHistory = (id: string, title: string) => {
     Alert.alert(
-      "Delete History",
-      `Are you sure you want to delete "${title}" from your history? This won't delete the actual conversation.`,
+      "Delete Archived Conversation",
+      `Are you sure you want to permanently delete "${title}"? This action cannot be undone.`,
       [
         {
           text: "Cancel",
@@ -160,24 +152,25 @@ export const ConversationHistoryScreen = () => {
     try {
       setDeleting(id);
       
+      // Delete the archived conversation permanently
       const { error } = await supabase
-        .from('conversation_history')
+        .from('conversations')
         .delete()
         .eq('id', id);
         
       if (error) {
-        console.error('Error deleting history:', error);
+        console.error('Error deleting archived conversation:', error);
         throw error;
       }
       
-      console.log(`Successfully deleted history ${id}`);
+      console.log(`Successfully deleted archived conversation ${id}`);
       
       // Update the UI
       setHistory(prev => prev.filter(item => item.id !== id));
       
     } catch (error) {
-      console.error('Error deleting history:', error);
-      Alert.alert("Error", "Failed to delete history. Please try again.");
+      console.error('Error deleting archived conversation:', error);
+      Alert.alert("Error", "Failed to delete archived conversation. Please try again.");
     } finally {
       setDeleting(null);
     }
@@ -272,14 +265,14 @@ export const ConversationHistoryScreen = () => {
           >
             <ArrowLeft size={24} color="#4A3B78" />
           </TouchableOpacity>
-          <Text style={tw`text-xl font-bold text-jung-deep`}>Conversation History</Text>
+          <Text style={tw`text-xl font-bold text-jung-deep`}>Archived Conversations</Text>
           <View style={tw`w-10`} />
         </View>
         
         {loading ? (
           <View style={tw`flex-1 justify-center items-center`}>
             <ActivityIndicator size="large" color="#4A3B78" />
-            <Text style={tw`mt-4 text-jung-purple`}>Loading conversation history...</Text>
+            <Text style={tw`mt-4 text-jung-purple`}>Loading archived conversations...</Text>
           </View>
         ) : error ? (
           <View style={tw`flex-1 justify-center items-center p-4`}>
@@ -304,9 +297,9 @@ export const ConversationHistoryScreen = () => {
         ) : history.length === 0 ? (
           <View style={tw`flex-1 justify-center items-center p-5`}>
             <Calendar size={60} color="#4A3B78" weight="light" />
-            <Text style={tw`text-xl font-bold text-gray-900 mt-4 mb-2`}>No conversation history</Text>
+            <Text style={tw`text-xl font-bold text-gray-900 mt-4 mb-2`}>No archived conversations</Text>
             <Text style={tw`text-base text-gray-600 text-center mb-6`}>
-              Your saved conversations will appear here
+              Your archived conversations will appear here
             </Text>
             <TouchableOpacity 
               style={tw`bg-jung-purple py-3 px-6 rounded-lg shadow-sm`}

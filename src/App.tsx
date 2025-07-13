@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorHandler } from './components/ErrorHandler';
 
 // DEBUG: Catch the exact text error source (disabled for production)
 // const originalCreateElement = React.createElement;
@@ -71,7 +72,6 @@ const linking = {
   prefixes: [Linking.createURL('/')],
   config: {
     screens: {
-      LandingScreen: 'landing',
       Login: 'login',
       Register: 'register',
       PostLoginScreen: 'post-login',
@@ -141,9 +141,11 @@ const AppContent = () => {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
-      <AppNavigator />
-    </NavigationContainer>
+    <ErrorHandler>
+      <NavigationContainer ref={navigationRef} linking={linking}>
+        <AppNavigator />
+      </NavigationContainer>
+    </ErrorHandler>
   );
 };
 

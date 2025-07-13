@@ -67,12 +67,27 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Define Main App Stack
-const MainAppStack = ({ isNewUser }: { isNewUser: boolean }) => (
+// Define Disclaimer Stack - for new users who haven't accepted disclaimer
+const DisclaimerStack = () => (
   <Stack.Navigator
-    // Set initial route based on whether user needs to see disclaimer or motivational splash
-    initialRouteName={isNewUser ? "DisclaimerScreen" : "MotivationalSplashScreen"}
-    // Apply default screen options, can be overridden per screen
+    initialRouteName="DisclaimerScreen"
+    screenOptions={{ headerShown: false }}
+  >
+    <Stack.Screen
+      name="DisclaimerScreen"
+      component={DisclaimerScreen}
+      options={{ 
+        headerShown: false,
+        gestureEnabled: false, // Prevent swipe back
+      }}
+    />
+  </Stack.Navigator>
+);
+
+// Define Main App Stack - for users who have accepted disclaimer
+const MainAppStack = () => (
+  <Stack.Navigator
+    initialRouteName="MotivationalSplashScreen"
     screenOptions={{ headerShown: false, ...defaultPostLoginOptions }} 
   >
     {/* Motivational splash screen shown after login */}
@@ -263,9 +278,18 @@ const AppNavigator = () => {
     );
   }
 
-  // Return the appropriate stack directly.
+  // Return the appropriate stack based on auth state and disclaimer status
   // NavigationContainer will be handled in App.tsx
-  return user ? <MainAppStack isNewUser={isNewUser} /> : <AuthStack />;
+  if (!user) {
+    // User not authenticated - show auth flow
+    return <AuthStack />;
+  } else if (isNewUser) {
+    // User authenticated but hasn't accepted disclaimer - show disclaimer only
+    return <DisclaimerStack />;
+  } else {
+    // User authenticated and has accepted disclaimer - show main app
+    return <MainAppStack />;
+  }
 };
 
 export default AppNavigator;

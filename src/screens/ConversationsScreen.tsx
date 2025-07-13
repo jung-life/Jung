@@ -39,6 +39,7 @@ import useAuthStore from '../store/useAuthStore';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
 // Removed duplicate import
 import { Audio } from 'expo-av';
+import { useErrorReporting } from '../components/ErrorHandler';
 
 type Conversation = {
   id: string;
@@ -82,6 +83,7 @@ export const ConversationsScreen = () => {
   const [currentConversationTitle, setCurrentConversationTitle] = useState('');
 
   const { user } = useAuthStore();
+  const { reportError } = useErrorReporting();
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -168,6 +170,7 @@ export const ConversationsScreen = () => {
        
      } catch (error) {
        console.error('Error in fetchConversations:', error);
+       reportError(error, 'fetchConversations');
        setError('Failed to load conversations. Please try again later.');
        setLoading(false); // Ensure loading stops on error
      } finally {
@@ -1143,53 +1146,63 @@ Return only the title text with no additional explanation or formatting.`;
                 friction={2}
                 rightThreshold={40}
               >
-                <TouchableOpacity 
-                  style={tw`flex-row items-center justify-between p-4 bg-white border-b border-gray-200`}
-                  onPress={() => handleSelectConversation(item.id)}
-                >
-                  <SimpleAvatar 
-                    avatarId={item.avatar || item.avatar_id || 'jung'} 
-                    size={50} 
-                    style={tw`mr-4`}
-                  />
-                  <View style={tw`flex-1`}>
-                    <Text style={tw`text-base font-medium text-gray-900`}>{item.title}</Text>
-                    <View style={tw`flex-row items-center`}>
-                      <Text style={tw`text-sm text-gray-500`}>
-                        {new Date(item.created_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </Text>
-                      {item.avatar_id && (
-                        <View style={tw`flex-row items-center ml-2`}>
-                          <Text style={tw`text-sm text-gray-400 mx-1`}>•</Text>
-                          <Text style={tw`text-sm text-gray-500`}>
+                <View style={tw`bg-white mx-4 my-2 rounded-xl shadow-sm border border-gray-100`}>
+                  <TouchableOpacity 
+                    style={tw`p-5`}
+                    onPress={() => handleSelectConversation(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={tw`flex-row items-start`}>
+                      <SimpleAvatar 
+                        avatarId={item.avatar || item.avatar_id || 'jung'} 
+                        size={60} 
+                        style={tw`mr-4`}
+                      />
+                      <View style={tw`flex-1`}>
+                        <Text style={tw`text-lg font-semibold text-gray-900 mb-1`} numberOfLines={2}>
+                          {item.title}
+                        </Text>
+                        <View style={tw`flex-row items-center mb-3`}>
+                          <Text style={tw`text-sm font-medium text-jung-purple`}>
                             {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'Jung'}
                           </Text>
+                          <Text style={tw`text-sm text-gray-400 mx-2`}>•</Text>
+                          <Text style={tw`text-sm text-gray-500`}>
+                            {new Date(item.created_at).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </Text>
                         </View>
-                      )}
+                        
+                        {/* Action buttons row */}
+                        <View style={tw`flex-row items-center justify-between`}>
+                          <TouchableOpacity
+                            style={tw`flex-row items-center bg-jung-purple-light px-3 py-2 rounded-lg`}
+                            onPress={() => handleAnalyzeChat(item.id, item.title)}
+                            disabled={analyzing === item.id}
+                            activeOpacity={0.7}
+                          >
+                            {analyzing === item.id ? (
+                              <ActivityIndicator size="small" color="#4A3B78" />
+                            ) : (
+                              <SafePhosphorIcon iconType="Brain" size={16} color="#4A3B78" weight="fill" />
+                            )}
+                            <Text style={tw`text-jung-purple font-medium text-sm ml-2`}>
+                              {analyzing === item.id ? 'Analyzing...' : 'Get Insights'}
+                            </Text>
+                          </TouchableOpacity>
+                          
+                          <View style={tw`flex-row items-center`}>
+                            <SafePhosphorIcon iconType="ArrowRight" size={16} color="#9CA3AF" weight="bold" />
+                            <Text style={tw`text-gray-400 text-sm ml-1`}>Continue chat</Text>
+                          </View>
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                  <View style={tw`flex-row items-center`}>
-                    <TouchableJung
-                      style={tw`p-2 mr-2`}
-                      onPress={() => handleAnalyzeChat(item.id, item.title)}
-                      disabled={analyzing === item.id}
-                    >
-                      {analyzing === item.id ? (
-                        <ActivityIndicator size="small" color="#536878" />
-                      ) : (
-                        <SafePhosphorIcon iconType="Brain" size={20} color="#536878" weight="light" />
-                      )}
-                    </TouchableJung>
-                    <Text style={tw`text-sm text-gray-500 mr-2`}>
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </Text>
-                    <AntDesign name="right" size={16} color="#718096" />
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               </Swipeable>
             )}
           />
