@@ -468,10 +468,12 @@ export const LoginScreen = () => {
                     ]}>
                       <Lock size={24} color="#fff" weight={selectedFeature === 'emotional' ? 'fill' : 'regular'} />
                     </View>
-                    <Text style={tw`text-xs font-medium ${selectedFeature === 'emotional' ? 'text-emotional' : 'text-gray-500'}`}>
+                    <Text style={[tw`text-xs font-medium`, { color: getFeatureTextColor('emotional') }]}>
                       Heal
                     </Text>
-                    <Text style={tw`text-xs text-gray-400`}>Emotional wellness</Text>
+                    <Text style={[tw`text-xs`, { color: selectedFeature === 'emotional' ? '#4A5568' : '#9CA3AF' }]}>
+                      Emotional wellness
+                    </Text>
                   </TouchableOpacity>
                 </Animated.View>
               </View>

@@ -110,15 +110,14 @@ export const DisclaimerScreen = () => {
     try {
       console.log('User confirmed rejection, signing out...');
       setLoading(true);
-      
-      // Use AuthContext signOut method to ensure proper state management
-      const { signOut } = useAuth();
+
+      // Use the signOut method from the top-level useAuth
       await signOut();
       console.log('User signed out successfully via AuthContext');
-      
+
       // Close modal
       setShowRejectionModal(false);
-      
+
     } catch (error) {
       console.error('Error signing out after rejection:', error);
       // Force sign out even if there's an error
