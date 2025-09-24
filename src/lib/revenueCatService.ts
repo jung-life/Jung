@@ -203,13 +203,41 @@ class RevenueCatService {
       offeringsPromise = Purchases.getOfferings();
       
       const offerings = await offeringsPromise;
-      return offerings.current;
-    } catch (error) {
-      // Handle the "cancelled" error gracefully
-      if (error instanceof Error && error.message.includes('Previous request was cancelled')) {
-        console.log('RevenueCat offerings request was cancelled - this is normal behavior');
+      
+      // Check if we have valid offerings
+      if (!offerings || !offerings.current) {
+        console.warn('No current offering available from RevenueCat. This may indicate:');
+        console.warn('1. No products configured in RevenueCat dashboard');
+        console.warn('2. Products not properly synced with App Store Connect');
+        console.warn('3. Missing StoreKit Configuration file');
+        console.warn('4. App Bundle ID mismatch between RevenueCat and App Store Connect');
         return null;
       }
+      
+      return offerings.current;
+    } catch (error) {
+      // Handle specific RevenueCat errors
+      if (error instanceof Error) {
+        // Handle the "cancelled" error gracefully
+        if (error.message.includes('Previous request was cancelled')) {
+          console.log('RevenueCat offerings request was cancelled - this is normal behavior');
+          return null;
+        }
+        
+        // Handle offerings configuration errors
+        if (error.message.includes('OfferingsManager.Error error 1') || 
+            error.message.includes('could be fetched from App Store Connect')) {
+          console.error('RevenueCat Configuration Error:', error.message);
+          console.error('This error indicates that:');
+          console.error('1. No products are registered in RevenueCat dashboard that match App Store Connect');
+          console.error('2. Bundle ID mismatch between RevenueCat and App Store Connect');
+          console.error('3. Products may not be approved or available in App Store Connect');
+          console.error('4. StoreKit Configuration file may be missing or misconfigured');
+          console.error('Please check: https://rev.cat/why-are-offerings-empty');
+          return null;
+        }
+      }
+      
       console.error('Failed to get current offering:', error);
       return null;
     } finally {

@@ -18,88 +18,128 @@ import { useAuth } from '../contexts/AuthContext';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
+import { useRevenueCat } from '../hooks/useRevenueCat';
+import { PurchasesPackage } from 'react-native-purchases';
 import tw from '../lib/tailwind';
 
 export default function SimpleSubscriptionScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'credits' | 'subscriptions'>('credits');
-  const [subscriptionTiers, setSubscriptionTiers] = useState<any[]>([]);
   const [creditPackages, setCreditPackages] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+  
+  // Use RevenueCat for subscriptions
+  const {
+    currentOffering,
+    isLoading: isLoadingRevenueCat,
+    purchasePackage,
+    error: revenueCatError,
+  } = useRevenueCat();
 
   useEffect(() => {
-    loadData();
+    loadCreditPackages();
   }, []);
 
-  const loadData = async () => {
+  const loadCreditPackages = async () => {
     try {
-      setIsLoading(true);
-      console.log('Loading subscription data...');
+      setIsLoadingCredits(true);
+      console.log('Loading credit packages...');
       
-      // Load data directly from creditService
-      const [tiers, packages] = await Promise.all([
-        creditService.getSubscriptionTiers(),
-        creditService.getCreditPackages()
-      ]);
+      const packages = await creditService.getCreditPackages();
       
-      console.log('Loaded tiers:', tiers.length);
       console.log('Loaded packages:', packages.length);
-      
-      setSubscriptionTiers(tiers);
       setCreditPackages(packages);
     } catch (error) {
-      console.error('Error loading subscription data:', error);
-      Alert.alert('Error', 'Failed to load pricing options. Please try again.');
+      console.error('Error loading credit packages:', error);
+      Alert.alert('Error', 'Failed to load credit packages. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoadingCredits(false);
     }
   };
 
-  const handleSubscriptionSelect = (tierId: string) => {
-    Alert.alert('Coming Soon', `Subscription plan "${tierId}" will be available soon!`);
+  const handleSubscriptionSelect = async (packageToPurchase: PurchasesPackage) => {
+    try {
+      const success = await purchasePackage(packageToPurchase);
+      if (success) {
+        Alert.alert(
+          'Purchase Successful!',
+          'Thank you for upgrading to Premium. Enjoy all the features!'
+        );
+      } else {
+        Alert.alert('Purchase Failed', 'Please try again or contact support.');
+      }
+    } catch (err) {
+      Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
+    }
   };
 
   const handleCreditPackageSelect = (packageId: string) => {
     Alert.alert('Coming Soon', `Credit package "${packageId}" will be available soon!`);
   };
 
-  const renderSubscriptionCard = (tier: any) => (
-    <View key={tier.id} style={styles.card}>
-      <LinearGradient
-        colors={tier.id === 'basic' ? ['#667eea', '#764ba2'] : ['#f7fafc', '#edf2f7']}
-        style={styles.cardGradient}
-      >
-        <Text style={[styles.cardTitle, tier.id === 'basic' && styles.whiteText]}>
-          {tier.name}
-        </Text>
-        
-        <View style={styles.priceContainer}>
-          <Text style={[styles.price, tier.id === 'basic' && styles.whiteText]}>
-            {tier.priceCents === 0 ? 'Free' : `$${(tier.priceCents / 100).toFixed(2)}`}
+  const getPackageTitle = (packageItem: PurchasesPackage): string => {
+    const { identifier } = packageItem;
+    
+    if (identifier.includes('monthly')) return 'Monthly';
+    if (identifier.includes('annual') || identifier.includes('yearly')) return 'Annual';
+    if (identifier.includes('weekly')) return 'Weekly';
+    if (identifier.includes('lifetime')) return 'Lifetime';
+    
+    return identifier.replace('$rc_', '').replace('_', ' ').toUpperCase();
+  };
+
+  const getPricePeriod = (packageItem: PurchasesPackage): string => {
+    const { identifier } = packageItem;
+    
+    if (identifier.includes('monthly')) return '/month';
+    if (identifier.includes('annual') || identifier.includes('yearly')) return '/year';
+    if (identifier.includes('weekly')) return '/week';
+    
+    return '';
+  };
+
+  const renderSubscriptionCard = (packageItem: PurchasesPackage, index: number) => {
+    const isPopular = index === 0;
+    
+    return (
+      <View key={packageItem.identifier} style={styles.card}>
+        <LinearGradient
+          colors={isPopular ? ['#667eea', '#764ba2'] : ['#f7fafc', '#edf2f7']}
+          style={styles.cardGradient}
+        >
+          <Text style={[styles.cardTitle, isPopular && styles.whiteText]}>
+            {getPackageTitle(packageItem)}
           </Text>
-          {tier.priceCents > 0 && (
-            <Text style={[styles.period, tier.id === 'basic' && styles.lightText]}>
-              /month
+          
+          <View style={styles.priceContainer}>
+            <Text style={[styles.price, isPopular && styles.whiteText]}>
+              {packageItem.product.priceString}
+            </Text>
+            <Text style={[styles.period, isPopular && styles.lightText]}>
+              {getPricePeriod(packageItem)}
+            </Text>
+          </View>
+          
+          {packageItem.product.introPrice && (
+            <Text style={[styles.credits, isPopular && styles.whiteText]}>
+              {packageItem.product.introPrice.periodNumberOfUnits}{' '}
+              {packageItem.product.introPrice.periodUnit} free trial
             </Text>
           )}
-        </View>
-        
-        <Text style={[styles.credits, tier.id === 'basic' && styles.lightText]}>
-          {tier.monthlyCredits} credits/month
-        </Text>
-        
-        <TouchableOpacity
-          style={[styles.button, tier.id === 'basic' && styles.whiteButton]}
-          onPress={() => handleSubscriptionSelect(tier.id)}
-        >
-          <Text style={[styles.buttonText, tier.id === 'basic' && styles.purpleText]}>
-            Select Plan
-          </Text>
-        </TouchableOpacity>
-      </LinearGradient>
-    </View>
-  );
+          
+          <TouchableOpacity
+            style={[styles.button, isPopular && styles.whiteButton]}
+            onPress={() => handleSubscriptionSelect(packageItem)}
+          >
+            <Text style={[styles.buttonText, isPopular && styles.purpleText]}>
+              Select Plan
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+    );
+  };
 
   const renderCreditPackageCard = (pkg: any) => (
     <View key={pkg.id} style={styles.card}>
@@ -140,6 +180,8 @@ export default function SimpleSubscriptionScreen() {
       </LinearGradient>
     </View>
   );
+
+  const isLoading = isLoadingRevenueCat || isLoadingCredits;
 
   if (isLoading) {
     return (
@@ -241,14 +283,22 @@ export default function SimpleSubscriptionScreen() {
           {activeTab === 'subscriptions' && (
             <View style={tw`mb-6`}>
               <View style={tw`bg-white/90 rounded-xl p-4 mb-4 shadow-sm`}>
-                <Text style={tw`text-xl font-bold text-jung-deep mb-2`}>Monthly Credit Plans</Text>
+                <Text style={tw`text-xl font-bold text-jung-deep mb-2`}>Subscription Plans</Text>
                 <Text style={tw`text-base text-gray-600 leading-6`}>
-                  Get monthly credits automatically plus discounts on additional purchases.
+                  Choose a subscription plan that works best for you.
                 </Text>
               </View>
               
-              {subscriptionTiers.length > 0 ? (
-                subscriptionTiers.map(renderSubscriptionCard)
+              {revenueCatError && (
+                <View style={tw`bg-red-50 rounded-xl p-4 mb-4`}>
+                  <Text style={tw`text-red-600 text-center`}>
+                    Unable to load subscription options. Please check your connection.
+                  </Text>
+                </View>
+              )}
+              
+              {currentOffering && currentOffering.availablePackages.length > 0 ? (
+                currentOffering.availablePackages.map((pkg, index) => renderSubscriptionCard(pkg, index))
               ) : (
                 <View style={tw`bg-white/90 rounded-xl p-8 shadow-sm`}>
                   <Text style={tw`text-base text-gray-500 text-center`}>No subscription plans available</Text>

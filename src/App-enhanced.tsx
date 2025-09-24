@@ -21,7 +21,7 @@ import { revenueCatService } from './lib/revenueCatService'; // Import RevenueCa
 
 // Import Screens directly
 import LandingScreen from './screens/LandingScreen';
-import LoginScreenEnhanced from './screens/LoginScreen-enhanced'; // Use enhanced version
+import LoginScreenEnhanced from './screens/LoginScreen-enhanced-fixed'; // Use fixed version
 import { RegisterScreen } from './screens/RegisterScreen';
 import PostLoginScreen from './screens/PostLoginScreen';
 import { HomeScreen } from './screens/HomeScreen';

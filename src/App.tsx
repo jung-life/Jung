@@ -31,6 +31,7 @@ import { useFonts } from 'expo-font';
 import { supabase, storeAuthData } from './lib/supabase';
 import { initAnalytics } from './lib/analytics';
 import { initializeGoogleSignIn } from './lib/googleSignIn';
+import { revenueCatService } from './lib/revenueCatService';
 import AppNavigator from './navigation/AppNavigator';
 
 let mixpanelInstance;
@@ -153,6 +154,9 @@ export default function App() {
   useEffect(() => {
     // Initialize Google Sign-In when the app starts
     initializeGoogleSignIn();
+    
+    // Initialize RevenueCat when the app starts
+    revenueCatService.initialize();
   }, []);
 
   return (

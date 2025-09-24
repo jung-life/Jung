@@ -1046,6 +1046,12 @@ Return only the title text with no additional explanation or formatting.`;
         <SymbolicBackground opacity={0.03} />
         
         <View style={tw`flex-row justify-between items-center p-4`}>
+          <TouchableOpacity
+            style={tw`py-2 px-4 rounded-lg bg-jung-purple-light`}
+            onPress={() => navigation.navigate('PostLoginScreen')}
+          >
+            <Text style={tw`text-jung-purple font-semibold text-base`}>Home</Text>
+          </TouchableOpacity>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
           <View style={tw`w-10`} />
         </View>
@@ -1170,10 +1176,12 @@ Return only the title text with no additional explanation or formatting.`;
         {renderAnalysisModal()}
         <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white border-t border-gray-200`}>
           <TouchableOpacity 
-            style={tw`p-3 bg-jung-purple-light rounded-full`}
+            style={tw`p-3 bg-jung-purple-light rounded-full items-center justify-center`}
             onPress={() => navigation.navigate('PostLoginScreen')}
           >
-            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
+            <View style={{ marginBottom: 2 }}>
+              <SafePhosphorIcon iconType="House" size={26} color="#4A3B78" weight="fill" />
+            </View>
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}

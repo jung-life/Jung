@@ -24,9 +24,9 @@ import tw from '../lib/tailwind';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 
-// Import both Supabase clients and functions
-import { supabase, storeAuthData } from '../lib/supabase';
-import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
+// Import Supabase client
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -39,55 +39,10 @@ export const LoginScreenEnhanced = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // Removed initializing state
   const [errorMessage, setErrorMessage] = useState('');
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<'default' | 'conversation' | 'motivation' | 'emotional'>('default');
-  
-  // Get Google Client ID from environment variables
-  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
-                        Constants.expoConfig?.extra?.googleClientId ||
-                        '';
-
-  // Removed initial session check useEffect hook.
-  // The listener below handles navigation if a session exists.
-
-  // Effect to listen for auth state changes and handle navigation
-  useEffect(() => {
-    if (!supabase) {
-      console.error('Supabase client not available');
-      return;
-    }
-
-    // Check session immediately upon listener setup
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // No need to navigate here, App-enhanced.tsx handles initial routing based on session
-        console.log('Existing session found on mount. App-enhanced will handle navigation.');
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change (standard client):', event, !!session);
-      
-      // Navigate on SIGNED_IN - Let App-enhanced.tsx handle this based on session state change
-      if (event === 'SIGNED_IN' && session) {
-         console.log('User signed in via listener. App-enhanced will handle navigation.');
-         // No explicit navigation needed here.
-      }
-      // Removed initializing state update
-
-      // Handle SIGNED_OUT if needed (e.g., navigate back to login)
-      // if (event === 'SIGNED_OUT') {
-      //   navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); // Or appropriate screen
-      // }
-    });
-
-    return () => {
-      console.log("Unsubscribing auth listener");
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigation]); // Dependency on navigation only
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -95,30 +50,18 @@ export const LoginScreenEnhanced = () => {
       return;
     }
 
-    if (!supabase) {
-      Alert.alert('Error', 'Authentication service not available');
-      return;
-    }
-
     setLoading(true);
     setErrorMessage('');
-    
+
     try {
-      console.log('Attempting email login with standard client...');
-      // Use standard Supabase email/password sign-in
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        console.error('Login failed:', error.message);
-        setErrorMessage(error.message || 'Login failed. Please check your credentials and try again.');
-        Alert.alert('Login Error', error.message || 'Login failed. Please check your credentials and try again.');
-        return; 
+      const result = await signIn(email, password);
+      if (!result.success) {
+        setErrorMessage(result.error || 'Login failed. Please check your credentials and try again.');
+        Alert.alert('Login Error', result.error || 'Login failed. Please check your credentials and try again.');
+        return;
       }
-      
-      console.log('Email login initiated successfully.');
-      // Navigation will be handled by the onAuthStateChange listener upon successful sign-in
+      // AuthContext will handle navigation and user state
     } catch (error) {
-      console.error('Unexpected email login error:', error);
       const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred during email login';
       setErrorMessage(errorMsg);
       Alert.alert('Login Error', errorMsg);
@@ -136,16 +79,16 @@ export const LoginScreenEnhanced = () => {
 
       setLoading(true);
       setErrorMessage('');
-      console.log('Starting Google login flow with standard client...');
+      console.log('Starting Google login flow...');
       
-      // Get the redirect URI - use AuthSession.makeRedirectUri for proper configuration
+      // Get the redirect URI
       const redirectUri = AuthSession.makeRedirectUri({
         scheme: 'jung',
         path: 'auth/callback'
       });
       console.log('Using redirect URI:', redirectUri);
       
-      // Use the standard Supabase client
+      // Use Supabase OAuth
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -159,15 +102,15 @@ export const LoginScreenEnhanced = () => {
       });
 
       if (error) {
-        console.error('Supabase OAuth error (standard client):', error);
+        console.error('Supabase OAuth error:', error);
         setErrorMessage(error.message);
         Alert.alert('Login Error', error.message);
-        setLoading(false); // Ensure loading stops on error
+        setLoading(false);
         return;
       }
 
       if (data?.url) {
-        console.log('Opening auth URL (standard client):', data.url);
+        console.log('Opening auth URL:', data.url);
         
         // Open the URL in the browser
         const result = await WebBrowser.openAuthSessionAsync(
@@ -175,163 +118,30 @@ export const LoginScreenEnhanced = () => {
           redirectUri
         );
 
-        console.log('WebBrowser result (standard client):', JSON.stringify(result));
+        console.log('WebBrowser result:', JSON.stringify(result));
         
-        // Handle the WebBrowser result
         if (result.type === 'success') {
-          console.log('OAuth flow completed successfully');
+          console.log('OAuth flow completed - checking for session');
           
-          // Check if there's an error in the URL
-          const resultUrl = result.url || '';
-          if (resultUrl.includes('error=')) {
-            console.warn('Error found in redirect URL:', resultUrl);
-            
-            // Extract error description
-            const errorMatch = resultUrl.match(/error_description=([^&]+)/);
-            const errorDesc = errorMatch ? decodeURIComponent(errorMatch[1].replace(/\+/g, ' ')) : 'Unknown error';
-            
-            console.log('Error description:', errorDesc);
-            
-            // If it's a database error saving new user, we can still proceed
-            if (errorDesc.includes('Database error saving new user')) {
-              console.log('Database error detected, but proceeding to PostLoginScreen anyway');
-              
-              // Let App-enhanced.tsx handle navigation based on session state
-              console.log('Database error detected, but session should still trigger navigation in App-enhanced.');
-              return;
-            } else {
-              // For other errors, show an alert
-              setErrorMessage(errorDesc);
-              Alert.alert('Login Error', errorDesc);
-              return;
-            }
-          }
+          // Simply wait a moment for Supabase to process the callback
+          // The AuthContext listener will pick up the session change
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Check if we have a session after the OAuth flow
-          if (!supabase) return;
+          // Check if session was established
+          const { data: sessionData } = await supabase.auth.getSession();
           
-          const { data } = await supabase.auth.getSession();
-          
-          if (data?.session) {
-            console.log('Session found after OAuth flow, navigating to PostLoginScreen');
-            
-            // Let App-enhanced.tsx handle navigation based on session state
-            console.log('Session found after OAuth flow. App-enhanced will handle navigation.');
+          if (sessionData?.session) {
+            console.log('Session established - AuthContext will handle navigation');
           } else {
-            console.log('No session found after OAuth flow, manually checking for session');
-            
-            // Try to get the session again after a short delay
-            setTimeout(async () => {
-              if (!supabase) return;
-              
-              const { data: delayedData } = await supabase.auth.getSession();
-              
-              if (delayedData?.session) {
-                console.log('Session found after delay, navigating to PostLoginScreen');
-                
-                // Let App-enhanced.tsx handle navigation based on session state
-                console.log('Session found after delay. App-enhanced will handle navigation.');
-              } else {
-                console.error('No session found after OAuth flow and delay');
-                
-              // No session found after delay, but we can try to extract tokens from the URL
-              console.log('No session found after OAuth flow and delay. Attempting to extract tokens from URL...');
-              
-              try {
-                // Try to extract tokens from the URL
-                const resultUrl = result.url || '';
-                
-                // Try to extract from fragment first (after #)
-                let fragment = resultUrl.split('#')[1];
-                let params = fragment ? new URLSearchParams(fragment) : null;
-                
-                // If no tokens in fragment, try query params (after ?)
-                if (!params || !params.get('access_token')) {
-                  const query = resultUrl.split('?')[1];
-                  params = query ? new URLSearchParams(query) : null;
-                }
-                
-                // Check if we found any params
-                if (params) {
-                  console.log('Found URL parameters, attempting to extract tokens');
-                  const access_token = params.get('access_token');
-                  const refresh_token = params.get('refresh_token');
-                  
-                  if (access_token) {
-                    console.log('Access token found in URL. Setting session manually...');
-                    
-                    // Manually set the session with the extracted tokens
-                    const sessionData = { 
-                      access_token,
-                      refresh_token: refresh_token || '' // Use empty string if no refresh token
-                    };
-                    
-                    // Store the token in AsyncStorage as well for redundancy
-                    await storeAuthData(sessionData);
-                    
-                    // Set the session in Supabase
-                    if (!supabase) return;
-                    
-                    const { data, error } = await supabase.auth.setSession(sessionData);
-                    
-                    if (error) {
-                      console.error('Error setting session manually:', error);
-                      setErrorMessage('Login failed. Could not set session: ' + error.message);
-                      Alert.alert('Login Error', 'Could not set session: ' + error.message);
-                    } else if (data?.session) {
-                      console.log('Session set successfully from URL tokens');
-                      // App-enhanced will handle navigation based on session state
-                    } else {
-                      console.error('No session returned after manual setSession');
-                      
-                      // Try one more approach - sign in with the token directly
-                      try {
-                        if (!supabase) return;
-                        
-                        console.log('Attempting to sign in with token directly...');
-                        const { data: signInData, error: signInError } = await supabase.auth.signInWithIdToken({
-                          provider: 'google',
-                          token: access_token
-                        });
-                        
-                        if (signInError) {
-                          console.error('Error signing in with token:', signInError);
-                          setErrorMessage('Login failed. Could not sign in with token.');
-                          Alert.alert('Login Error', 'Login failed. Could not sign in with token.');
-                        } else if (signInData?.session) {
-                          console.log('Successfully signed in with token');
-                          // App-enhanced will handle navigation based on session state
-                        }
-                      } catch (signInError) {
-                        console.error('Exception during token sign-in:', signInError);
-                        setErrorMessage('Login failed. Could not verify session.');
-                        Alert.alert('Login Error', 'Login failed. Could not verify session.');
-                      }
-                    }
-                    return;
-                  }
-                }
-                
-                // If we get here, we couldn't extract tokens
-                console.error('No tokens found in URL after OAuth flow');
-                setErrorMessage('Login failed. Could not verify session.');
-                Alert.alert('Login Error', 'Login failed. Could not verify session.');
-              } catch (tokenError) {
-                console.error('Error processing OAuth tokens:', tokenError);
-                setErrorMessage('Login failed. Error processing authentication response.');
-                Alert.alert('Login Error', 'Error processing authentication response.');
-              }
-              }
-            }, 1000);
+            console.warn('No session found after OAuth callback');
+            setErrorMessage('Authentication completed but session was not established. Please try again.');
+            Alert.alert('Login Error', 'Authentication completed but session was not established. Please try again.');
           }
         } else if (result.type === 'cancel' || result.type === 'dismiss') {
           console.log('OAuth flow was cancelled by the user:', result.type);
-          // User cancelled the authentication, just show a message
           setErrorMessage('Authentication was cancelled.');
-          // No need for an alert as this is a user-initiated cancellation
         } else {
           console.log('OAuth flow browser session ended with error:', result.type);
-          // Handle potential browser errors
           setErrorMessage('Authentication browser session failed.');
           Alert.alert('Authentication Error', 'The authentication process was interrupted or failed.');
         }
@@ -341,7 +151,7 @@ export const LoginScreenEnhanced = () => {
         Alert.alert('Login Error', 'Failed to initiate Google login. Please try again.');
       }
     } catch (error) {
-      console.error('Google login error (standard client):', error);
+      console.error('Google login error:', error);
       const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred during Google login';
       setErrorMessage(errorMsg);
       Alert.alert('Login Error', errorMsg);
@@ -366,8 +176,6 @@ export const LoginScreenEnhanced = () => {
       setLoading(false);
     }
   };
-
-  // Removed conditional rendering based on initializing state
 
   return (
     <GradientBackground variant={selectedFeature}>

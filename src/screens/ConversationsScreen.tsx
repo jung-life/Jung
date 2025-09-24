@@ -531,11 +531,14 @@ export const ConversationsScreen = () => {
             <View style={tw`flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-3`}
-                onPress={() => setShowAnalysisModal(false)}
+                onPress={() => {
+                  setShowAnalysisModal(false);
+                  navigation.navigate('PostLoginScreen');
+                }}
                 activeOpacity={0.7}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <SafePhosphorIcon iconType="X" size={24} color="#4A3B78" />
+                <Text style={tw`text-jung-purple font-medium`}>Home</Text>
               </TouchableOpacity>
               <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`}>
                 Analysis: {currentConversationTitle}
@@ -879,11 +882,11 @@ Return only the title text with no additional explanation or formatting.`;
             <View style={tw`flex-row justify-between items-center px-4 pt-16 pb-4 border-b border-gray-200`}>
               <TouchableOpacity 
                 style={tw`p-3`}
-                onPress={handleClearNewChat}
+                onPress={() => navigation.navigate('PostLoginScreen')}
                 activeOpacity={0.7}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={tw`text-jung-purple font-medium`}>Clear</Text>
+                <Text style={tw`text-jung-purple font-medium`}>Home</Text>
               </TouchableOpacity>
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
@@ -1048,6 +1051,13 @@ Return only the title text with no additional explanation or formatting.`;
         <SymbolicBackground opacity={0.03} />
         
         <View style={tw`flex-row justify-between items-center p-4`}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('PostLoginScreen')}
+            activeOpacity={0.7}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Text style={tw`text-jung-purple font-medium text-base`}>Home</Text>
+          </TouchableOpacity>
           <Text style={tw`text-xl font-bold`}>Conversations</Text>
           <TouchableOpacity
             style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
@@ -1213,7 +1223,7 @@ Return only the title text with no additional explanation or formatting.`;
             style={tw`p-3 bg-jung-purple-light rounded-full`}
             onPress={() => navigation.navigate('PostLoginScreen')}
           >
-            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
+            <Text style={tw`text-jung-purple font-semibold text-base`}>Home</Text>
           </TouchableOpacity>
         </View>
         {renderNewChatModal()}

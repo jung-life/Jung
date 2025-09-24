@@ -52,6 +52,8 @@ npm install @react-native-google-signin/google-signin
    ```
 4. Add scopes:
    - `../auth/userinfo.email`
+
+
    - `../auth/userinfo.profile`
    - `openid`
 
@@ -63,6 +65,10 @@ npm install @react-native-google-signin/google-signin
 3. Name: `Jung iOS App`
 4. Bundle ID: `org.name.jung`
 5. **Save the Client ID** - you'll need this
+478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com -- ios
+
+
+478933387478-uugq4ob2up04h1soblcvqfkot4pf0but.apps.googleusercontent.com -- android
 
 **For Android:**
 1. Click **Create Credentials** → **OAuth 2.0 Client IDs**

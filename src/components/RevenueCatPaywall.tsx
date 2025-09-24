@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { useRevenueCat } from '../hooks/useRevenueCat';
 import { PurchasesPackage } from 'react-native-purchases';
+import { creditService, CreditPackage } from '../lib/creditService';
 
 interface RevenueCatPaywallProps {
   onPurchaseSuccess?: () => void;
   onClose?: () => void;
   title?: string;
   subtitle?: string;
+  userId?: string;
 }
 
 export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
@@ -23,6 +25,7 @@ export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
   onClose,
   title = 'Upgrade to Premium',
   subtitle = 'Unlock all features and get unlimited access',
+  userId,
 }) => {
   const {
     currentOffering,
@@ -60,6 +63,7 @@ export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
     }
   };
 
+
   const handleRestore = async () => {
     setRestoring(true);
     try {
@@ -88,6 +92,17 @@ export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const { product } = packageItem;
     return `${product.priceString}`;
+  };
+
+  const getPricePeriod = (packageItem: PurchasesPackage): string => {
+    const { identifier } = packageItem;
+    
+    if (identifier.includes('monthly')) return '/month';
+    if (identifier.includes('annual') || identifier.includes('yearly')) return '/year';
+    if (identifier.includes('weekly')) return '/week';
+    if (identifier.includes('lifetime')) return '';
+    
+    return '';
   };
 
   const getPackageTitle = (packageItem: PurchasesPackage): string => {
@@ -155,43 +170,49 @@ export const RevenueCatPaywall: React.FC<RevenueCatPaywallProps> = ({
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        </View>
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            </View>
 
-        <View style={styles.packagesContainer}>
-          {currentOffering.availablePackages.map((packageItem, index) => (
-            <TouchableOpacity
-              key={packageItem.identifier}
-              style={[
-                styles.packageButton,
-                index === 0 && styles.popularPackage, // Mark first package as popular
-              ]}
-              onPress={() => handlePurchase(packageItem)}
-              disabled={purchasing}
-            >
-              {index === 0 && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
-                </View>
-              )}
-              
-              <View style={styles.packageContent}>
-                <Text style={styles.packageTitle}>
-                  {getPackageTitle(packageItem)}
-                </Text>
-                <Text style={styles.packagePrice}>
-                  {formatPrice(packageItem)}
-                </Text>
-                {packageItem.product.introPrice && (
-                  <Text style={styles.packageTrial}>
-                    {packageItem.product.introPrice.periodNumberOfUnits}{' '}
-                    {packageItem.product.introPrice.periodUnit} free trial
-                  </Text>
+            {/* Subscription Packages */}
+            <View style={styles.packagesContainer}>
+            {currentOffering.availablePackages.map((packageItem, index) => (
+              <TouchableOpacity
+                key={packageItem.identifier}
+                style={[
+                  styles.packageButton,
+                  index === 0 && styles.popularPackage, // Mark first package as popular
+                ]}
+                onPress={() => handlePurchase(packageItem)}
+                disabled={purchasing}
+              >
+                {index === 0 && (
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+                  </View>
                 )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+                
+                <View style={styles.packageContent}>
+                  <Text style={styles.packageTitle}>
+                    {getPackageTitle(packageItem)}
+                  </Text>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.packagePrice}>
+                      {formatPrice(packageItem)}
+                    </Text>
+                    <Text style={styles.pricePeriod}>
+                      {getPricePeriod(packageItem)}
+                    </Text>
+                  </View>
+                  {packageItem.product.introPrice && (
+                    <Text style={styles.packageTrial}>
+                      {packageItem.product.introPrice.periodNumberOfUnits}{' '}
+                      {packageItem.product.introPrice.periodUnit} free trial
+                    </Text>
+                  )}
+                </View>
+                  </TouchableOpacity>
+                ))}
+            </View>
 
         {purchasing && (
           <View style={styles.purchasingOverlay}>
@@ -316,11 +337,20 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
   packagePrice: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#4A3B78',
-    marginBottom: 4,
+  },
+  pricePeriod: {
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 4,
   },
   packageTrial: {
     fontSize: 14,

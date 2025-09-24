@@ -155,7 +155,7 @@ const MoodTrackerScreen = () => {
             style={tw`p-3 bg-jung-purple-light rounded-full`}
             onPress={() => navigation.navigate('PostLoginScreen')}
           >
-            <SafePhosphorIcon iconType="House" size={28} color="#4A3B78" weight="fill" />
+            <Text style={tw`text-jung-purple font-semibold text-base`}>Home</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
