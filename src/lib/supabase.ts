@@ -1,23 +1,38 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 // Keep AsyncStorage import for potential fallback or other uses if needed
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Remove imports related to the previous custom secureStorage implementation
-// import { saveSession, getSession, clearAuthData } from './secureStorage'; 
+// import { saveSession, getSession, clearAuthData } from './secureStorage';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Try multiple sources for environment variables (physical devices need Constants)
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ||
+                   Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+                       Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+// Enhanced debugging for physical devices
+console.log('🔍 ENVIRONMENT VARIABLES DEBUG:');
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- __DEV__:', __DEV__);
+console.log('- All EXPO_PUBLIC vars:', Object.keys(process.env).filter(k => k.startsWith('EXPO_PUBLIC')));
+console.log('- EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl || 'MISSING');
+console.log('- EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? `Set (${supabaseAnonKey.substring(0, 10)}...)` : 'MISSING');
+console.log('- EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'MISSING');
+console.log('- EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'MISSING');
 
 // Don't throw error - handle gracefully
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+  console.error('❌ Missing Supabase environment variables');
   console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl || 'UNDEFINED/NULL');
   console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey || 'UNDEFINED/NULL');
 } else {
   console.log('✅ Supabase URL:', supabaseUrl);
   console.log('✅ Supabase anon key:', supabaseAnonKey ? 'Set (hidden)' : 'Missing');
-  
+
   // Test basic connectivity
   fetch(supabaseUrl + '/auth/v1/health')
     .then(res => res.text())

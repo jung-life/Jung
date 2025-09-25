@@ -1,11 +1,16 @@
  import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
+import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 // Initialize Google Sign-In
 export const initializeGoogleSignIn = () => {
   try {
-    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-    const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+    // Try multiple sources for environment variables (physical devices need Constants)
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+                       Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
+    const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+                       Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
     
     console.log('🔵 Initializing Google Sign-In...');
     console.log('🔵 Web Client ID:', webClientId ? 'Set' : 'Missing');

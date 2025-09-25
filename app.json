@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io",
@@ -79,9 +79,7 @@
     "extra": {
       "eas": {
         "projectId": "c4f0be2f-a422-489b-acda-4d2be4769a36"
-      }
-    },
-    "env": {
+      },
       "EXPO_PUBLIC_SUPABASE_URL": "https://osmhesmrvxusckjfxugr.supabase.co",
       "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zbWhlc21ydnh1c2NramZ4dWdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTkwODM4MjcsImV4cCI6MjAzNDY1OTgyN30.LyPvkrfQlQCWMkcAO7zOFRZJIdxvYHqhv-mrnNz1e1A",
       "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
