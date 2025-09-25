@@ -59,7 +59,11 @@ export const signInWithGoogle = async () => {
     }
     
     if (!supabase) {
-      throw new Error('Supabase client not available - check environment variables');
+      console.error('❌ Supabase client not available');
+      console.error('Environment check:');
+      console.error('- EXPO_PUBLIC_SUPABASE_URL:', process.env.EXPO_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing');
+      console.error('- EXPO_PUBLIC_SUPABASE_ANON_KEY:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing');
+      throw new Error('Supabase client not available - check environment variables in app.json or .env');
     }
     
     console.log('🔵 Authenticating with Supabase...');

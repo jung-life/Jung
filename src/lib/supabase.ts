@@ -39,12 +39,12 @@ const ExpoSecureStoreAdapter = {
 };
 
 // Create the Supabase client only if environment variables exist
-export const supabase = (supabaseUrl && supabaseAnonKey) 
+export const supabase = (supabaseUrl && supabaseAnonKey)
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: ExpoSecureStoreAdapter, // Use the new adapter
         autoRefreshToken: true,
-        persistSession: true, 
+        persistSession: true,
         detectSessionInUrl: true,
       },
     })

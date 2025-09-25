@@ -183,9 +183,33 @@ export const EmotionalAssessmentScreen = () => {
       
       // Get analysis from AI
       const analysisResult = await generateAIResponse(prompt);
-      
-      // Parse JSON response
-      const profileData = JSON.parse(analysisResult);
+
+      // Clean and parse JSON response
+      // Remove any non-printable characters that might cause parsing issues
+      const cleanedResult = analysisResult.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
+
+      let profileData;
+      try {
+        // Try direct JSON parse first
+        profileData = JSON.parse(cleanedResult);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.log('Raw AI response:', analysisResult);
+        console.log('Cleaned response:', cleanedResult);
+
+        // Try to extract JSON object with regex as fallback
+        const jsonMatch = cleanedResult.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            profileData = JSON.parse(jsonMatch[0]);
+          } catch (extractError) {
+            console.error('Failed to parse extracted JSON:', extractError);
+            throw new Error('Invalid JSON response from AI analysis');
+          }
+        } else {
+          throw new Error('No valid JSON found in AI response');
+        }
+      }
       setEmotionalProfile(profileData);
       
       // Save to database (encrypted)
