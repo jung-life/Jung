@@ -118,14 +118,27 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
   // For user avatar, show a user icon with a darker color
   if (isUser) {
     return (
-      <View 
+      <View
         style={[
-          tw`bg-indigo-700 rounded-full justify-center items-center`,
-          { width: size, height: size },
+          styles.frameContainer,
+          {
+            width: size + 12,
+            height: size + 12,
+            borderRadius: 16,
+            shadowRadius: size * 0.15,
+            shadowOffset: { width: 0, height: size * 0.08 },
+          },
           style
         ]}
       >
-        <User size={size * 0.6} color="#F3F4F6" weight="fill" />
+        <View
+          style={[
+            tw`bg-indigo-700 justify-center items-center`,
+            { width: size + 6, height: size + 6, borderRadius: 12 }
+          ]}
+        >
+          <User size={size * 0.6} color="#F3F4F6" weight="fill" />
+        </View>
       </View>
     );
   }
@@ -135,43 +148,71 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
   const avatarUrl = getAvatarUrl(avatar.filename);
   
   return (
-    <View 
+    <View
       style={[
-        styles.container, 
-        { width: size, height: size, borderRadius: size / 2 },
+        styles.frameContainer,
+        {
+          width: size + 12,
+          height: size + 12,
+          borderRadius: 16,
+          shadowRadius: size * 0.15,
+          shadowOffset: { width: 0, height: size * 0.08 },
+        },
         style
       ]}
     >
-      {loading && (
-        <ActivityIndicator 
-          size="small" 
-          color="#8A2BE2" 
-          style={styles.loader} 
-        />
-      )}
-      
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="person" size={size * 0.6} color="#8A2BE2" />
-        </View>
-      ) : (
-        <Image
-          source={{ uri: avatarUrl }}
-          style={styles.image}
-          onLoadStart={() => setLoading(true)}
-          onLoad={() => setLoading(false)}
-          onError={() => {
-            setLoading(false);
-            setError(true);
-            console.error(`Failed to load image for ${avatar.id}: ${avatarUrl}`);
-          }}
-        />
-      )}
+      <View
+        style={[
+          styles.container,
+          {
+            width: size + 6,
+            height: size + 6,
+            borderRadius: 12,
+          }
+        ]}
+      >
+        {loading && (
+          <ActivityIndicator
+            size="small"
+            color="#8A2BE2"
+            style={styles.loader}
+          />
+        )}
+
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="person" size={size * 0.6} color="#8A2BE2" />
+          </View>
+        ) : (
+          <Image
+            source={{ uri: avatarUrl }}
+            style={styles.image}
+            onLoadStart={() => setLoading(true)}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setError(true);
+              console.error(`Failed to load image for ${avatar.id}: ${avatarUrl}`);
+            }}
+          />
+        )}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  frameContainer: {
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4A3B78',
+    shadowOpacity: 0.25,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: '#4A3B78',
+    padding: 3,
+  },
   container: {
     backgroundColor: '#f0e6ff',
     justifyContent: 'center',
@@ -181,7 +222,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'contain',
   },
   loader: {
     position: 'absolute',

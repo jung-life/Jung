@@ -43,16 +43,6 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
 
   const menuItems: MenuItem[] = [ // Apply the MenuItem type here
     {
-      title: isPremiumUser ? 'Premium Active' : 'Upgrade to Premium',
-      icon: <Crown size={20} color={isPremiumUser ? "#FFD700" : "#7C3AED"} />,
-      onPress: () => {
-        setMenuVisible(false);
-        console.log('HamburgerMenu: Navigate to Subscription screen');
-        NavigationService.navigate('Subscription'); // Use service
-      },
-      textStyle: { color: isPremiumUser ? "#FFD700" : "#7C3AED", fontWeight: '600' },
-    },
-    {
       title: 'Account Settings',
       icon: <Shield size={20} color="#4A3B78" />,
       onPress: () => {

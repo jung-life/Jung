@@ -38,7 +38,6 @@ import { trackEvent } from '../lib/analytics';
 import useAuthStore from '../store/useAuthStore';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
 // Removed duplicate import
-import { Audio } from 'expo-av';
 import { useErrorReporting } from '../components/ErrorHandler';
 
 type Conversation = {
@@ -759,72 +758,7 @@ Return only the title text with no additional explanation or formatting.`;
     }
   };
 
-  // Add state for voice input
-  const [isRecording, setIsRecording] = useState(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
-  // Add this function to handle microphone permission and start recording
-  const handleMicrophonePress = async () => {
-    try {
-      // Request permission
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Microphone permission is required to use voice input.');
-        return;
-      }
-      setIsRecording(true);
-      const rec = new Audio.Recording();
-      await rec.prepareToRecordAsync({
-        android: {
-          extension: '.m4a',
-          outputFormat: 2, // MPEG_4
-          audioEncoder: 3, // AAC
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.m4a',
-          outputFormat: 0, // MPEG4AAC
-          audioQuality: 1, // HIGH
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm',
-          bitsPerSecond: 128000,
-        },
-      });
-      await rec.startAsync();
-      setRecording(rec);
-    } catch (error) {
-      setIsRecording(false);
-      setRecording(null);
-      console.error('Microphone error:', error);
-      Alert.alert('Error', 'Could not start recording. Please try again.');
-    }
-  };
-
-  // Add this function to stop recording
-  const handleStopRecording = async () => {
-    try {
-      if (!recording) return;
-      await recording.stopAndUnloadAsync();
-      setIsRecording(false);
-      setRecording(null);
-      // TODO: Process the recorded audio or send to speech-to-text
-      Alert.alert('Voice Input', 'Recording stopped. (Speech-to-text not implemented)');
-    } catch (error) {
-      setIsRecording(false);
-      setRecording(null);
-      console.error('Stop recording error:', error);
-      Alert.alert('Error', 'Could not stop recording.');
-    }
-  };
 
   // Clear function to reset form without closing modal
   const handleClearNewChat = () => {
@@ -883,20 +817,12 @@ Return only the title text with no additional explanation or formatting.`;
               
               <Text style={tw`text-lg font-semibold mt-6 mb-4`}>Conversation title:</Text>
               
-              <View style={tw`flex-row items-center mb-2`}>
-                <TextInput
-                  style={tw`flex-1 border border-gray-300 rounded-lg p-3`}
-                  placeholder="Enter a title (optional)"
-                  value={newConversationTitle}
-                  onChangeText={setNewConversationTitle}
-                />
-                <TouchableOpacity
-                  style={tw`ml-2 p-2 bg-jung-purple-light rounded-full`}
-                  onPress={isRecording ? handleStopRecording : handleMicrophonePress}
-                >
-                  <AntDesign name="sound" size={24} color={isRecording ? "#E53E3E" : "#4A3B78"} />
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={tw`border border-gray-300 rounded-lg p-3 mb-2`}
+                placeholder="Enter a title (optional)"
+                value={newConversationTitle}
+                onChangeText={setNewConversationTitle}
+              />
               
               <TouchableOpacity
                 style={tw`bg-jung-purple-light py-2 px-4 rounded-lg self-start mb-4`}
@@ -1121,9 +1047,9 @@ Return only the title text with no additional explanation or formatting.`;
                     activeOpacity={0.7}
                   >
                     <View style={tw`flex-row items-start`}>
-                      <SimpleAvatar 
-                        avatarId={item.avatar || item.avatar_id || 'jung'} 
-                        size={60} 
+                      <SimpleAvatar
+                        avatarId={item.avatar || item.avatar_id || 'jung'}
+                        size={80}
                         style={tw`mr-4`}
                       />
                       <View style={tw`flex-1`}>
@@ -1144,27 +1070,29 @@ Return only the title text with no additional explanation or formatting.`;
                           </Text>
                         </View>
                         
-                        {/* Action buttons row */}
-                        <View style={tw`flex-row items-center justify-between`}>
+                        {/* Action buttons section */}
+                        <View style={tw`mt-3`}>
+                          {/* Get Insights button */}
                           <TouchableOpacity
-                            style={tw`flex-row items-center bg-jung-purple-light px-3 py-2 rounded-lg`}
+                            style={tw`flex-row items-center bg-jung-purple px-4 py-3 rounded-full shadow-md self-start`}
                             onPress={() => handleAnalyzeChat(item.id, item.title)}
                             disabled={analyzing === item.id}
-                            activeOpacity={0.7}
+                            activeOpacity={0.8}
                           >
                             {analyzing === item.id ? (
-                              <ActivityIndicator size="small" color="#4A3B78" />
+                              <ActivityIndicator size="small" color="white" />
                             ) : (
-                              <SafePhosphorIcon iconType="Brain" size={16} color="#4A3B78" weight="fill" />
+                              <SafePhosphorIcon iconType="Brain" size={18} color="white" weight="fill" />
                             )}
-                            <Text style={tw`text-jung-purple font-medium text-sm ml-2`}>
+                            <Text style={tw`text-white font-semibold text-sm ml-2`}>
                               {analyzing === item.id ? 'Analyzing...' : 'Get Insights'}
                             </Text>
                           </TouchableOpacity>
-                          
-                          <View style={tw`flex-row items-center`}>
-                            <SafePhosphorIcon iconType="ArrowRight" size={16} color="#9CA3AF" weight="bold" />
-                            <Text style={tw`text-gray-400 text-sm ml-1`}>Continue chat</Text>
+
+                          {/* Continue chat link */}
+                          <View style={tw`flex-row items-center mt-2 ml-2`}>
+                            <SafePhosphorIcon iconType="ArrowRight" size={16} color="#4A3B78" weight="bold" />
+                            <Text style={tw`text-jung-purple font-medium text-sm ml-1 underline`}>Continue chat</Text>
                           </View>
                         </View>
                       </View>

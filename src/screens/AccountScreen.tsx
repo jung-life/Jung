@@ -777,28 +777,6 @@ export const AccountScreen = () => {
                 </Text>
                 <Text style={tw`text-gray-500`}>{email}</Text>
                 
-                {/* Premium Badge or Upgrade Button */}
-                {profile?.is_premium ? (
-                  <View style={tw`flex-row items-center mt-2 bg-yellow-100 px-3 py-1 rounded-full`}>
-                    <Crown size={16} color="#D4AF37" weight="fill" />
-                    <Text style={tw`ml-1 text-yellow-800 font-medium text-sm`}>Premium Member</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={[
-                      tw`flex-row items-center justify-center rounded-xl py-3 px-4 shadow-md mt-2`,
-                      {
-                        backgroundImage: 'linear-gradient(to right, #FF0080, #FF8C00, #FFD700, #00FF00, #00BFFF, #8A2BE2)',
-                        backgroundSize: '200% 100%',
-                        animation: 'rainbow-animation 6s linear infinite'
-                      }
-                    ]}
-                    onPress={handleSubscribe}
-                  >
-                    <Crown size={20} color="#ffffff" weight="fill" />
-                    <Text style={tw`ml-2 text-white font-bold`}>Upgrade to Premium</Text>
-                  </TouchableOpacity>
-                )}
               </View>
               
               {/* Profile Form */}

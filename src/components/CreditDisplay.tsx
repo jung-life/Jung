@@ -44,21 +44,18 @@ export const CreditDisplay: React.FC<CreditDisplayProps> = ({
 
   if (variant === 'header') {
     return (
-      <TouchableOpacity 
-        style={tw`flex-row items-center bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200`}
+      <TouchableOpacity
+        style={tw`flex-row items-center bg-jung-purple rounded-full px-4 py-2 shadow-sm`}
         onPress={handlePress}
       >
-        <Coins 
-          size={18} 
-          color={isOutOfCredits ? "#EF4444" : isLowCredits ? "#F59E0B" : "#4A3B78"} 
-          weight="fill" 
+        <TrendUp
+          size={16}
+          color="white"
+          weight="bold"
         />
-        <Text style={tw`ml-2 font-semibold text-sm ${isOutOfCredits ? 'text-red-500' : isLowCredits ? 'text-amber-500' : 'text-jung-purple'}`}>
-          {credits}
+        <Text style={tw`ml-2 font-semibold text-sm text-white`}>
+          Premium
         </Text>
-        {showUpgradeButton && isLowCredits && (
-          <Plus size={14} color="#4A3B78" weight="bold" style={tw`ml-1`} />
-        )}
       </TouchableOpacity>
     );
   }

@@ -713,32 +713,34 @@ export const ChatScreen = () => {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        <View style={tw`flex-row items-center justify-between p-4 border-b border-gray-200`}>
-          <TouchableOpacity 
-            style={tw`p-2`}
-            onPress={() => navigation.goBack()}
-          >
-            <ArrowLeft size={24} color="#4A3B78" />
-          </TouchableOpacity>
-          
-          <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`} numberOfLines={1} ellipsizeMode="tail">
-            {conversationTitle || 'Conversation'}
-          </Text>
-          
-          <View style={tw`flex-row items-center`}>
-            {/* Credit Display in header */}
+        <View style={tw`p-4 border-b border-gray-200`}>
+          {/* First row - Back button and Title */}
+          <View style={tw`flex-row items-center mb-3`}>
+            <TouchableOpacity
+              style={tw`p-2`}
+              onPress={() => navigation.goBack()}
+            >
+              <ArrowLeft size={24} color="#4A3B78" />
+            </TouchableOpacity>
+
+            <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`} numberOfLines={1} ellipsizeMode="tail">
+              {conversationTitle || 'Conversation'}
+            </Text>
+          </View>
+
+          {/* Second row - Premium and Insights buttons */}
+          <View style={tw`flex-row justify-center items-center space-x-3`}>
             <CreditDisplay variant="header" showUpgradeButton={true} />
-            
+
             {/* Re-adding Analyze button to chat header */}
-            <TouchableOpacity 
-              style={tw`p-2 ml-2`}
+            <TouchableOpacity
+              style={tw`flex-row items-center bg-jung-purple px-3 py-2 rounded-full shadow-md ml-3`}
               onPress={() => navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId })}
               disabled={loading || isTyping}
+              activeOpacity={0.8}
             >
-              <View style={tw`flex-row items-center`}>
-                <Brain size={22} color="#4A3B78" />
-                <Text style={tw`ml-1 text-sm text-jung-purple font-medium`}>Insights</Text>
-              </View>
+              <Brain size={18} color="white" weight="fill" />
+              <Text style={tw`ml-1 text-sm text-white font-semibold`}>Insights</Text>
             </TouchableOpacity>
           </View>
         </View>
