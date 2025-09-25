@@ -177,7 +177,11 @@ class RevenueCatService {
       return Object.values(offerings.all);
     } catch (error) {
       console.error('Failed to get offerings:', error);
-      if (__DEV__) return [];
+      // Always return empty array in development to prevent blocking the app
+      if (__DEV__) {
+        console.warn('RevenueCat error suppressed in development mode');
+        return [];
+      }
       throw error;
     }
   }
