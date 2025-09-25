@@ -260,14 +260,6 @@ export default function DailyMotivationScreen() {
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.07} variant="motivation" />
         {renderContent()}
-        <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white/80 border-t border-gray-200`}>
-          <TouchableOpacity 
-            style={tw`p-3 bg-jung-purple-light rounded-full`}
-            onPress={() => navigation.navigate('PostLoginScreen')}
-          >
-            <Text style={tw`text-jung-purple font-semibold text-base`}>Home</Text>
-          </TouchableOpacity>
-        </View>
       </SafeAreaView>
     </GradientBackground>
   );

@@ -5,6 +5,9 @@
       location = "group:jung.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:JungStoreKit.storekit">
+   </FileRef>
+   <FileRef
       location = "group:Pods/Pods.xcodeproj">
    </FileRef>
 </Workspace>

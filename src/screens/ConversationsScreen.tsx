@@ -286,28 +286,7 @@ export const ConversationsScreen = () => {
   };
 
   const handleAnalyzeChat = async (conversationId: string, title: string) => {
-    Alert.alert(
-      'Analyze Conversation',
-      'What would you like to do?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Read Analysis',
-          onPress: () => showAnalysis(conversationId, title)
-        },
-        {
-          text: 'Export Analysis',
-          onPress: () => handleExportAnalysis(conversationId)
-        },
-        {
-          text: 'Save Analysis',
-          onPress: () => handleSaveAnalysis(conversationId)
-        }
-      ]
-    );
+    navigation.navigate('ConversationInsightsScreen-enhanced', { conversationId });
   };
 
   const showAnalysis = async (conversationId: string, title: string) => {
@@ -529,17 +508,7 @@ export const ConversationsScreen = () => {
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
             <View style={tw`flex-row justify-between items-center px-4 pt-12 pb-4 border-b border-gray-200`}>
-              <TouchableOpacity 
-                style={tw`p-3`}
-                onPress={() => {
-                  setShowAnalysisModal(false);
-                  navigation.navigate('PostLoginScreen');
-                }}
-                activeOpacity={0.7}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Text style={tw`text-jung-purple font-medium`}>Home</Text>
-              </TouchableOpacity>
+              <View style={tw`w-12`} />
               <Text style={tw`text-lg font-bold text-jung-deep text-center flex-1 mx-2`}>
                 Analysis: {currentConversationTitle}
               </Text>
@@ -880,18 +849,11 @@ Return only the title text with no additional explanation or formatting.`;
         <View style={tw`flex-1 bg-white`}>
           <SafeAreaView style={tw`flex-1`}>
             <View style={tw`flex-row justify-between items-center px-4 pt-16 pb-4 border-b border-gray-200`}>
-              <TouchableOpacity 
-                style={tw`p-3`}
-                onPress={() => navigation.navigate('PostLoginScreen')}
-                activeOpacity={0.7}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Text style={tw`text-jung-purple font-medium`}>Home</Text>
-              </TouchableOpacity>
+              <View style={tw`w-12`} />
               <Text style={tw`text-xl font-bold text-jung-deep`}>
                 New Conversation
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={tw`p-3`}
                 onPress={handleCancelNewChat}
                 activeOpacity={0.7}
@@ -1050,20 +1012,16 @@ Return only the title text with no additional explanation or formatting.`;
       <SafeAreaView style={tw`flex-1`}>
         <SymbolicBackground opacity={0.03} />
         
-        <View style={tw`flex-row justify-between items-center p-4`}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('PostLoginScreen')}
-            activeOpacity={0.7}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          >
-            <Text style={tw`text-jung-purple font-medium text-base`}>Home</Text>
-          </TouchableOpacity>
-          <Text style={tw`text-xl font-bold`}>Conversations</Text>
+        <View style={tw`items-center p-4 pb-2`}>
+          <Text style={tw`text-2xl font-bold`}>Conversations</Text>
+        </View>
+
+        <View style={tw`flex-row justify-end items-center px-4 pb-2`}>
           <TouchableOpacity
             style={tw`bg-jung-purple-light px-3 py-1 rounded-lg`}
             onPress={() => navigation.navigate('ConversationHistoryScreen')}
           >
-            <Text style={tw`text-jung-purple font-medium`}>Archived Conversations</Text>
+            <Text style={tw`text-jung-purple font-medium text-sm`}>Archived</Text>
           </TouchableOpacity>
         </View>
         
@@ -1218,16 +1176,8 @@ Return only the title text with no additional explanation or formatting.`;
           />
         )}
         {renderAnalysisModal()}
-        <View style={tw`absolute bottom-0 left-0 right-0 flex-row justify-center p-4 bg-white border-t border-gray-200`}>
-          <TouchableOpacity 
-            style={tw`p-3 bg-jung-purple-light rounded-full`}
-            onPress={() => navigation.navigate('PostLoginScreen')}
-          >
-            <Text style={tw`text-jung-purple font-semibold text-base`}>Home</Text>
-          </TouchableOpacity>
-        </View>
         {renderNewChatModal()}
-        <View style={tw`absolute bottom-20 left-6 right-6`}>
+        <View style={tw`absolute bottom-6 left-6 right-6`}>
           <TouchableOpacity
             style={tw`bg-jung-purple py-4 px-6 rounded-full flex-row items-center justify-center shadow-lg`}
             onPress={handleNewConversation}

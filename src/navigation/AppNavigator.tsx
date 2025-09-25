@@ -25,7 +25,6 @@ import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrackerScreen
 import JournalingScreen from '../screens/JournalingScreen-Simple'; // Import JournalingScreen (Simple version for testing)
 import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen';
-import { ConversationInsightsScreen } from '../screens/ConversationInsightsScreen';
 import { ConversationInsightsScreenEnhanced } from '../screens/ConversationInsightsScreen-enhanced';
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
@@ -110,7 +109,12 @@ const MainAppStack = () => (
     <Stack.Screen
       name="ConversationsScreen"
       component={ConversationsScreen}
-      options={{ headerShown: true, title: 'Conversations' }}
+      options={{
+        headerShown: true,
+        title: 'Conversations',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
     <Stack.Screen
       name="Chat"
@@ -191,32 +195,52 @@ const MainAppStack = () => (
     <Stack.Screen
       name="ConversationHistoryScreen"
       component={ConversationHistoryScreen}
-      options={{ headerShown: true, title: 'Conversation History' }}
-    />
-    <Stack.Screen
-      name="ConversationInsightsScreen"
-      component={ConversationInsightsScreen}
-      options={{ headerShown: true, title: 'Conversation Insights' }}
+      options={{
+        headerShown: true,
+        title: 'Conversation History',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
     <Stack.Screen
       name="ConversationInsightsScreen-enhanced"
       component={ConversationInsightsScreenEnhanced}
-      options={{ headerShown: true, title: 'Conversation Insights' }}
+      options={{
+        headerShown: true,
+        title: 'Conversation Insights',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
     <Stack.Screen
       name="SettingsScreen"
       component={SettingsScreen}
-      options={{ headerShown: true, title: 'Settings' }}
+      options={{
+        headerShown: true,
+        title: 'Settings',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
-    <Stack.Screen 
-      name="Subscription" 
+    <Stack.Screen
+      name="Subscription"
       component={SubscriptionScreen}
-      options={{ headerShown: true, title: 'Subscription' }}
+      options={{
+        headerShown: true,
+        title: 'Subscription',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
-    <Stack.Screen 
-      name="TransactionHistory" 
+    <Stack.Screen
+      name="TransactionHistory"
       component={TransactionHistoryScreen}
-      options={{ headerShown: true, title: 'Transaction History' }}
+      options={{
+        headerShown: true,
+        title: 'Transaction History',
+        headerLeft: () => <HomeButton destination="PostLoginScreen" />,
+        headerBackVisible: false
+      }}
     />
   </Stack.Navigator>
 );

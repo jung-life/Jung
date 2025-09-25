@@ -1,0 +1,170 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "C6B8F1E5",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21461538",
+      "localizations" : [
+
+      ],
+      "name" : "Jung Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6670470547",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Premium weekly subscription",
+              "displayName" : "Jung Premium Weekly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "org.name.jung.Weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Jung Premium Weekly",
+          "subscriptionGroupID" : "21461538",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6670470549",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Premium monthly subscription",
+              "displayName" : "Jung Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "org.name.jung.Monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Jung Premium Monthly",
+          "subscriptionGroupID" : "21461538",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6670470550",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Premium annual subscription",
+              "displayName" : "Jung Premium Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "org.name.jung.Annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Jung Premium Annual",
+          "subscriptionGroupID" : "21461538",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
