@@ -40,7 +40,6 @@ import {
 import { RootStackNavigationProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { useTheme, ThemeType } from '../contexts/ThemeContext'; // Import useTheme and ThemeType
 
 type UserProfile = {
   id?: string;
@@ -68,9 +67,6 @@ export const AccountScreen = () => {
   const [dailyReminders, setDailyReminders] = useState(false);
   const [newFeatures, setNewFeatures] = useState(true);
   const [insights, setInsights] = useState(true);
-  // Wrap useTheme in a try/catch to help debug any context issues
-  const { theme: currentTheme, setTheme } = useTheme();
-  console.log('[AccountScreen] Current theme:', currentTheme); // Add logging
 
   // Add this state variable near your other state declarations
   const [formState, setFormState] = useState<{
@@ -78,7 +74,6 @@ export const AccountScreen = () => {
     email: string;
     username?: string;
     avatar_url: string | null;
-    theme_preference: 'light' | 'dark' | 'system';
     notification_preferences: {
       daily_reminders: boolean;
       new_features: boolean;
@@ -89,7 +84,6 @@ export const AccountScreen = () => {
     email: '',
     username: '',
     avatar_url: null,
-    theme_preference: 'system',
     notification_preferences: {
       daily_reminders: false,
       new_features: true,
@@ -106,8 +100,6 @@ export const AccountScreen = () => {
       setFullName(formState.full_name);
       setEmail(formState.email);
       setAvatarUrl(formState.avatar_url);
-      // Theme is now managed by context, but we might still load it into formState initially
-      // setThemePreference(formState.theme_preference); // Remove this line
       setDailyReminders(formState.notification_preferences.daily_reminders);
       setNewFeatures(formState.notification_preferences.new_features);
       setInsights(formState.notification_preferences.insights);
@@ -158,7 +150,6 @@ export const AccountScreen = () => {
           email: user.email || '',
           username: user.email?.split('@')[0] || '',
           avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar if available
-          theme_preference: 'system', // Default
           notification_preferences: { daily_reminders: false, new_features: true, insights: true } // Defaults
         });
         setProfile(null); // Indicate profile wasn't loaded from DB
@@ -172,7 +163,6 @@ export const AccountScreen = () => {
           email: profileData.email || user.email || '', // Prefer profile email, fallback to auth email
           username: profileData.username || user.email?.split('@')[0] || '',
           avatar_url: profileData.avatar_url, // This is the path in storage
-          theme_preference: profileData.theme_preference || currentTheme, // Use profile theme or context theme
           notification_preferences: {
             daily_reminders: profileData.notification_preferences?.daily_reminders ?? false,
             new_features: profileData.notification_preferences?.new_features ?? true,
@@ -209,7 +199,6 @@ export const AccountScreen = () => {
            email: user.email || '',
            username: user.email?.split('@')[0] || '',
            avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar
-           theme_preference: currentTheme, // Use context theme
            notification_preferences: { daily_reminders: false, new_features: true, insights: true }
          });
          setAvatarUrl(user.user_metadata?.avatar_url || null); // Set display URL from metadata
@@ -227,7 +216,6 @@ export const AccountScreen = () => {
               email: user.email || '',
               username: user.email?.split('@')[0] || '',
               avatar_url: user.user_metadata?.avatar_url || null,
-              theme_preference: currentTheme, // Use context theme
               notification_preferences: { daily_reminders: false, new_features: true, insights: true }
             });
             setAvatarUrl(user.user_metadata?.avatar_url || null);
@@ -260,7 +248,6 @@ export const AccountScreen = () => {
         email: user.email,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
         avatar_url: null,
-        theme_preference: 'system',
         notification_preferences: {
           daily_reminders: false,
           new_features: true,
@@ -299,7 +286,6 @@ export const AccountScreen = () => {
         email: newProfile.email || '',
         username: newProfile.full_name,
         avatar_url: null,
-        theme_preference: currentTheme, // Use context theme
         notification_preferences: {
           daily_reminders: false,
           new_features: true,
@@ -318,7 +304,6 @@ export const AccountScreen = () => {
         email: data.email || '',
         username: data.username || data.email?.split('@')[0] || '',
         avatar_url: data.avatar_url,
-        theme_preference: data.theme_preference || currentTheme, // Use context theme
         notification_preferences: {
           daily_reminders: data.notification_preferences?.daily_reminders || false,
           new_features: data.notification_preferences?.new_features || true,
@@ -461,7 +446,6 @@ export const AccountScreen = () => {
           full_name: fullName,
           // email: email, // Email usually shouldn't be updated here, handle separately if needed
           avatar_url: formState.avatar_url, // Use the path stored in formState
-          theme_preference: currentTheme, // Save the theme from context
           notification_preferences: {
             daily_reminders: dailyReminders,
             new_features: newFeatures,
@@ -497,7 +481,6 @@ export const AccountScreen = () => {
          ...prev,
          full_name: upsertData.full_name || prev.full_name,
          avatar_url: upsertData.avatar_url || prev.avatar_url,
-         theme_preference: upsertData.theme_preference || prev.theme_preference,
          notification_preferences: upsertData.notification_preferences || prev.notification_preferences,
       }));
       // Update display avatar URL if it changed
@@ -675,7 +658,6 @@ export const AccountScreen = () => {
             user_id: user.id, // Use user_id as the primary identifier (UUID)
             email: user.email,
             full_name: fullName,
-            theme_preference: 'system',
             notification_preferences: {
               daily_reminders: false,
               new_features: true,
@@ -821,60 +803,6 @@ export const AccountScreen = () => {
             <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
               <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Preferences</Text>
               
-              {/* Theme Preference */}
-              <View style={tw`mb-6`}>
-                <Text style={tw`text-gray-600 mb-2`}>Theme</Text>
-                
-                <View style={tw`flex-row justify-between`}>
-                  <TouchableOpacity
-                    style={[
-                      tw`flex-1 items-center p-3 rounded-lg mr-2`,
-                      currentTheme === 'light' ? tw`bg-jung-purple` : tw`bg-gray-100`
-                    ]}
-                    onPress={() => {
-                      console.log('[AccountScreen] Setting theme to light');
-                      setTheme('light' as ThemeType);
-                    }}
-                  >
-                    <Text style={[
-                      tw`font-medium`,
-                      currentTheme === 'light' ? tw`text-white` : tw`text-gray-700`
-                    ]}>Light</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      tw`flex-1 items-center p-3 rounded-lg mr-2`,
-                      currentTheme === 'dark' ? tw`bg-jung-purple` : tw`bg-gray-100`
-                    ]}
-                    onPress={() => {
-                      console.log('[AccountScreen] Setting theme to dark');
-                      setTheme('dark' as ThemeType);
-                    }}
-                  >
-                    <Text style={[
-                      tw`font-medium`,
-                      currentTheme === 'dark' ? tw`text-white` : tw`text-gray-700`
-                    ]}>Dark</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      tw`flex-1 items-center p-3 rounded-lg`,
-                      currentTheme === 'system' ? tw`bg-jung-purple` : tw`bg-gray-100`
-                    ]}
-                    onPress={() => {
-                      console.log('[AccountScreen] Setting theme to system');
-                      setTheme('system' as ThemeType);
-                    }}
-                  >
-                    <Text style={[
-                      tw`font-medium`,
-                      currentTheme === 'system' ? tw`text-white` : tw`text-gray-700`
-                    ]}>System</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
               
               {/* Notifications */}
               <Text style={tw`text-gray-600 mb-2`}>Notifications</Text>
@@ -887,7 +815,16 @@ export const AccountScreen = () => {
                   </View>
                   <Switch
                     value={dailyReminders}
-                    onValueChange={setDailyReminders}
+                    onValueChange={(value) => {
+                      setDailyReminders(value);
+                      setFormState(prev => ({
+                        ...prev,
+                        notification_preferences: {
+                          ...prev.notification_preferences,
+                          daily_reminders: value
+                        }
+                      }));
+                    }}
                     trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
                     thumbColor={dailyReminders ? '#4A3B78' : '#F9FAFB'}
                   />
@@ -902,7 +839,16 @@ export const AccountScreen = () => {
                   </View>
                   <Switch
                     value={newFeatures}
-                    onValueChange={setNewFeatures}
+                    onValueChange={(value) => {
+                      setNewFeatures(value);
+                      setFormState(prev => ({
+                        ...prev,
+                        notification_preferences: {
+                          ...prev.notification_preferences,
+                          new_features: value
+                        }
+                      }));
+                    }}
                     trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
                     thumbColor={newFeatures ? '#4A3B78' : '#F9FAFB'}
                   />
@@ -917,7 +863,16 @@ export const AccountScreen = () => {
                   </View>
                   <Switch
                     value={insights}
-                    onValueChange={setInsights}
+                    onValueChange={(value) => {
+                      setInsights(value);
+                      setFormState(prev => ({
+                        ...prev,
+                        notification_preferences: {
+                          ...prev.notification_preferences,
+                          insights: value
+                        }
+                      }));
+                    }}
                     trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
                     thumbColor={insights ? '#4A3B78' : '#F9FAFB'}
                   />
