@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Switch,
   Image,
   ActivityIndicator,
   Alert,
@@ -26,14 +25,12 @@ import {
   SignOut, 
   Camera, 
   Gear, 
-  Bell, 
-  CreditCard, 
-  Lock, 
-  Question, 
+  CreditCard,
+  Lock,
+  Question,
   ArrowLeft,
   CheckCircle,
   Crown,
-  Sparkle,
   Download,
   Trash
 } from 'phosphor-react-native';
@@ -64,9 +61,6 @@ export const AccountScreen = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [dailyReminders, setDailyReminders] = useState(false);
-  const [newFeatures, setNewFeatures] = useState(true);
-  const [insights, setInsights] = useState(true);
 
   // Add this state variable near your other state declarations
   const [formState, setFormState] = useState<{
@@ -74,21 +68,11 @@ export const AccountScreen = () => {
     email: string;
     username?: string;
     avatar_url: string | null;
-    notification_preferences: {
-      daily_reminders: boolean;
-      new_features: boolean;
-      insights: boolean;
-    };
   }>({
     full_name: '',
     email: '',
     username: '',
     avatar_url: null,
-    notification_preferences: {
-      daily_reminders: false,
-      new_features: true,
-      insights: true
-    }
   });
   
   useEffect(() => {
@@ -100,9 +84,6 @@ export const AccountScreen = () => {
       setFullName(formState.full_name);
       setEmail(formState.email);
       setAvatarUrl(formState.avatar_url);
-      setDailyReminders(formState.notification_preferences.daily_reminders);
-      setNewFeatures(formState.notification_preferences.new_features);
-      setInsights(formState.notification_preferences.insights);
     }
   }, [formState]);
 
@@ -150,7 +131,6 @@ export const AccountScreen = () => {
           email: user.email || '',
           username: user.email?.split('@')[0] || '',
           avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar if available
-          notification_preferences: { daily_reminders: false, new_features: true, insights: true } // Defaults
         });
         setProfile(null); // Indicate profile wasn't loaded from DB
       } else if (profileData) {
@@ -163,11 +143,6 @@ export const AccountScreen = () => {
           email: profileData.email || user.email || '', // Prefer profile email, fallback to auth email
           username: profileData.username || user.email?.split('@')[0] || '',
           avatar_url: profileData.avatar_url, // This is the path in storage
-          notification_preferences: {
-            daily_reminders: profileData.notification_preferences?.daily_reminders ?? false,
-            new_features: profileData.notification_preferences?.new_features ?? true,
-            insights: profileData.notification_preferences?.insights ?? true
-          }
         });
 
         // Get public URL for display if avatar_url exists in profile
@@ -199,7 +174,6 @@ export const AccountScreen = () => {
            email: user.email || '',
            username: user.email?.split('@')[0] || '',
            avatar_url: user.user_metadata?.avatar_url || null, // Use metadata avatar
-           notification_preferences: { daily_reminders: false, new_features: true, insights: true }
          });
          setAvatarUrl(user.user_metadata?.avatar_url || null); // Set display URL from metadata
          setProfile(null);
@@ -216,7 +190,6 @@ export const AccountScreen = () => {
               email: user.email || '',
               username: user.email?.split('@')[0] || '',
               avatar_url: user.user_metadata?.avatar_url || null,
-              notification_preferences: { daily_reminders: false, new_features: true, insights: true }
             });
             setAvatarUrl(user.user_metadata?.avatar_url || null);
          }
@@ -248,11 +221,6 @@ export const AccountScreen = () => {
         email: user.email,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
         avatar_url: null,
-        notification_preferences: {
-          daily_reminders: false,
-          new_features: true,
-          insights: true
-        },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -286,11 +254,6 @@ export const AccountScreen = () => {
         email: newProfile.email || '',
         username: newProfile.full_name,
         avatar_url: null,
-        notification_preferences: {
-          daily_reminders: false,
-          new_features: true,
-            insights: true
-          }
         });
         return;
       }
@@ -304,11 +267,6 @@ export const AccountScreen = () => {
         email: data.email || '',
         username: data.username || data.email?.split('@')[0] || '',
         avatar_url: data.avatar_url,
-        notification_preferences: {
-          daily_reminders: data.notification_preferences?.daily_reminders || false,
-          new_features: data.notification_preferences?.new_features || true,
-          insights: data.notification_preferences?.insights || true
-        }
       });
     } catch (error) {
       console.error('Error in createUserProfile:', error);
@@ -439,20 +397,14 @@ export const AccountScreen = () => {
       
       // Prepare the profile data for upsert
         // Ensure we use the correct avatar_url (path) from formState
-        // Also save the theme preference from the context
         const profileDataToSave = {
           // Remove id field which is causing the integer type error
           user_id: user.id, // Use user_id as the primary identifier (UUID)
           full_name: fullName,
           // email: email, // Email usually shouldn't be updated here, handle separately if needed
           avatar_url: formState.avatar_url, // Use the path stored in formState
-          notification_preferences: {
-            daily_reminders: dailyReminders,
-            new_features: newFeatures,
-          insights: insights
-        },
-        updated_at: new Date().toISOString()
-      };
+          updated_at: new Date().toISOString()
+        };
       
       // Update the profile using upsert
       const { data: upsertData, error: upsertError } = await supabase // Renamed error variable
@@ -481,7 +433,6 @@ export const AccountScreen = () => {
          ...prev,
          full_name: upsertData.full_name || prev.full_name,
          avatar_url: upsertData.avatar_url || prev.avatar_url,
-         notification_preferences: upsertData.notification_preferences || prev.notification_preferences,
       }));
       // Update display avatar URL if it changed
       if (upsertData.avatar_url) {
@@ -658,11 +609,6 @@ export const AccountScreen = () => {
             user_id: user.id, // Use user_id as the primary identifier (UUID)
             email: user.email,
             full_name: fullName,
-            notification_preferences: {
-              daily_reminders: false,
-              new_features: true,
-              insights: true
-            },
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -799,86 +745,6 @@ export const AccountScreen = () => {
               </View>
             </View>
             
-            {/* Preferences Card */}
-            <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
-              <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Preferences</Text>
-              
-              
-              {/* Notifications */}
-              <Text style={tw`text-gray-600 mb-2`}>Notifications</Text>
-              
-              <View style={tw`mb-3`}>
-                <View style={tw`flex-row items-center justify-between`}>
-                  <View style={tw`flex-row items-center`}>
-                    <Bell size={20} color="#4A3B78" />
-                    <Text style={tw`ml-2 text-gray-700`}>Daily Reminders</Text>
-                  </View>
-                  <Switch
-                    value={dailyReminders}
-                    onValueChange={(value) => {
-                      setDailyReminders(value);
-                      setFormState(prev => ({
-                        ...prev,
-                        notification_preferences: {
-                          ...prev.notification_preferences,
-                          daily_reminders: value
-                        }
-                      }));
-                    }}
-                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
-                    thumbColor={dailyReminders ? '#4A3B78' : '#F9FAFB'}
-                  />
-                </View>
-              </View>
-              
-              <View style={tw`mb-3`}>
-                <View style={tw`flex-row items-center justify-between`}>
-                  <View style={tw`flex-row items-center`}>
-                    <Sparkle size={20} color="#4A3B78" />
-                    <Text style={tw`ml-2 text-gray-700`}>New Features</Text>
-                  </View>
-                  <Switch
-                    value={newFeatures}
-                    onValueChange={(value) => {
-                      setNewFeatures(value);
-                      setFormState(prev => ({
-                        ...prev,
-                        notification_preferences: {
-                          ...prev.notification_preferences,
-                          new_features: value
-                        }
-                      }));
-                    }}
-                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
-                    thumbColor={newFeatures ? '#4A3B78' : '#F9FAFB'}
-                  />
-                </View>
-              </View>
-              
-              <View style={tw`mb-3`}>
-                <View style={tw`flex-row items-center justify-between`}>
-                  <View style={tw`flex-row items-center`}>
-                    <Gear size={20} color="#4A3B78" />
-                    <Text style={tw`ml-2 text-gray-700`}>Insights</Text>
-                  </View>
-                  <Switch
-                    value={insights}
-                    onValueChange={(value) => {
-                      setInsights(value);
-                      setFormState(prev => ({
-                        ...prev,
-                        notification_preferences: {
-                          ...prev.notification_preferences,
-                          insights: value
-                        }
-                      }));
-                    }}
-                    trackColor={{ false: '#E2E8F0', true: '#A5B4FC' }}
-                    thumbColor={insights ? '#4A3B78' : '#F9FAFB'}
-                  />
-                </View>
-              </View>
-            </View>
             
             {/* Data Management Card */}
             <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
