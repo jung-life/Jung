@@ -74,10 +74,14 @@ export default function DailyMotivationScreen() {
     React.useCallback(() => {
       isMounted.current = true;
       const fetchData = async () => {
-        await loadDailyStats();
-        await loadFavorites();
         try {
           if (isMounted.current) setLoading(true);
+
+          // Initialize with a default quote immediately
+          selectRandomQuote('all');
+
+          await loadDailyStats();
+          await loadFavorites();
           
           // Get user
           const { data: { user } } = await supabase.auth.getUser();
@@ -178,12 +182,16 @@ export default function DailyMotivationScreen() {
             if (isMounted.current) {
               setEmotionalProfile(null); // Ensure profile is null if no data
               setPersonalizedQuote(''); // Ensure personalized quote is empty
-              selectRandomQuote();
             }
           }
         } catch (error) {
           console.error('Error in DailyMotivationScreen:', error);
-          if (isMounted.current) selectRandomQuote(selectedCategory);
+          // Ensure we always have a quote even if everything fails
+          if (isMounted.current) {
+            setEmotionalProfile(null);
+            setPersonalizedQuote('');
+            selectRandomQuote('all');
+          }
         } finally {
           if (isMounted.current) setLoading(false);
         }
@@ -197,11 +205,117 @@ export default function DailyMotivationScreen() {
     }, [])
   );
 
-  const selectRandomQuote = () => {
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    if (isMounted.current) {
-      setCurrentQuote(quotes[randomIndex].text);
-      setCurrentAuthor(quotes[randomIndex].author);
+  const loadDailyStats = async () => {
+    try {
+      const today = new Date().toDateString();
+      const statsData = await AsyncStorage.getItem('dailyMotivationStats');
+      const stats = statsData ? JSON.parse(statsData) : {
+        currentStreak: 0,
+        totalDays: 0,
+        lastVisit: '',
+        favoritesCount: 0
+      };
+
+      // Update streak and visit count
+      const lastVisit = new Date(stats.lastVisit).toDateString();
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+
+      if (stats.lastVisit === today) {
+        // Already visited today, keep current streak
+      } else if (lastVisit === yesterday) {
+        // Visited yesterday, continue streak
+        stats.currentStreak += 1;
+        stats.totalDays += 1;
+      } else if (stats.lastVisit) {
+        // Streak broken, start new
+        stats.currentStreak = 1;
+        stats.totalDays += 1;
+      } else {
+        // First visit
+        stats.currentStreak = 1;
+        stats.totalDays = 1;
+      }
+
+      stats.lastVisit = today;
+      await AsyncStorage.setItem('dailyMotivationStats', JSON.stringify(stats));
+      setDailyStats(stats);
+    } catch (error) {
+      console.error('Error loading daily stats:', error);
+    }
+  };
+
+  const loadFavorites = async () => {
+    try {
+      const favoritesData = await AsyncStorage.getItem('favoriteQuotes');
+      const favorites = favoritesData ? JSON.parse(favoritesData) : [];
+      setFavoriteQuotes(favorites);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (quote: string) => {
+    try {
+      let updatedFavorites;
+      if (favoriteQuotes.includes(quote)) {
+        updatedFavorites = favoriteQuotes.filter(fav => fav !== quote);
+      } else {
+        updatedFavorites = [...favoriteQuotes, quote];
+      }
+
+      setFavoriteQuotes(updatedFavorites);
+      await AsyncStorage.setItem('favoriteQuotes', JSON.stringify(updatedFavorites));
+
+      // Update stats
+      const updatedStats = { ...dailyStats, favoritesCount: updatedFavorites.length };
+      setDailyStats(updatedStats);
+      await AsyncStorage.setItem('dailyMotivationStats', JSON.stringify(updatedStats));
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const shareQuote = async () => {
+    try {
+      const quoteToShare = (isPersonalized && personalizedQuote) ? personalizedQuote : currentQuote;
+      const authorText = currentAuthor ? ` — ${currentAuthor}` : '';
+      const message = `"${quoteToShare}"${authorText}\n\nShared from Jung - Your AI Therapist`;
+
+      await Share.share({
+        message,
+        title: 'Daily Motivation'
+      });
+    } catch (error) {
+      console.error('Error sharing quote:', error);
+    }
+  };
+
+  const selectRandomQuote = (category: string = 'all') => {
+    console.log('Selecting quote for category:', category);
+    let filteredQuotes = quotes;
+
+    if (category !== 'all') {
+      filteredQuotes = quotes.filter(quote =>
+        quote.category?.toLowerCase() === category.toLowerCase()
+      );
+
+      // Fallback to all quotes if category has no quotes
+      if (filteredQuotes.length === 0) {
+        console.log('No quotes found for category, using all quotes');
+        filteredQuotes = quotes;
+      }
+    }
+
+    console.log('Filtered quotes count:', filteredQuotes.length);
+    const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+    const selectedQuote = filteredQuotes[randomIndex];
+
+    console.log('Selected quote:', selectedQuote?.text?.substring(0, 50) + '...');
+
+    if (isMounted.current && selectedQuote) {
+      setCurrentQuote(selectedQuote.text);
+      setCurrentAuthor(selectedQuote.author);
+      setIsPersonalized(false);
     }
   };
 
@@ -235,11 +349,11 @@ export default function DailyMotivationScreen() {
       }
       
       // Also set a fallback quote
-      if (isMounted.current) selectRandomQuote(selectedCategory);
+      if (isMounted.current) selectRandomQuote('all');
       
     } catch (error) {
       console.error('Error generating personalized quote:', error);
-      if (isMounted.current) selectRandomQuote(selectedCategory);
+      if (isMounted.current) selectRandomQuote('all');
     }
   };
 
@@ -415,41 +529,76 @@ export default function DailyMotivationScreen() {
         ) : null}
 
         {/* Action buttons */}
-        <View style={tw`px-6 space-y-4 mb-8`}>
+        <View style={tw`px-6 mb-8`}>
+          {/* Primary Action - Always visible */}
           <TouchableOpacity
-            style={tw`bg-jung-purple rounded-2xl py-4 items-center shadow-lg flex-row justify-center`}
+            style={tw`bg-jung-purple rounded-2xl py-4 shadow-lg flex-row justify-center items-center mb-3 h-14`}
             onPress={() => selectRandomQuote(selectedCategory)}
             activeOpacity={0.8}
           >
-            <SafePhosphorIcon iconType="Sparkle" size={20} color="white" weight="bold" />
-            <Text style={tw`text-white font-bold ml-2 text-lg`}>
+            <View style={tw`bg-white/20 rounded-full w-8 h-8 items-center justify-center mr-3`}>
+              <SafePhosphorIcon iconType="Sparkle" size={18} color="white" weight="bold" />
+            </View>
+            <Text style={tw`text-white font-bold text-base flex-1 text-center mr-11`}>
               Get New Inspiration
             </Text>
           </TouchableOpacity>
 
-          {emotionalProfile ? (
+          {/* Secondary Actions Grid */}
+          <View style={tw`flex-row space-x-3`}>
+            {/* Generate Personal Quote */}
             <TouchableOpacity
-              style={tw`bg-white border-2 border-jung-purple rounded-2xl py-4 items-center flex-row justify-center`}
-              onPress={() => generatePersonalizedQuote(emotionalProfile)}
+              style={tw`${emotionalProfile ? 'bg-blue-500' : 'bg-gray-300'} rounded-2xl py-4 flex-1 items-center justify-center h-14 shadow-sm`}
+              onPress={() => emotionalProfile ? generatePersonalizedQuote(emotionalProfile) : navigation.navigate('EmotionalAssessmentScreen')}
               activeOpacity={0.8}
             >
-              <SafePhosphorIcon iconType="Brain" size={20} color="#4A3B78" weight="bold" />
-              <Text style={tw`text-jung-purple font-bold ml-2 text-lg`}>
-                Generate Personal Quote
-              </Text>
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`bg-white/20 rounded-full w-6 h-6 items-center justify-center mr-2`}>
+                  <SafePhosphorIcon
+                    iconType={emotionalProfile ? "Brain" : "User"}
+                    size={14}
+                    color="white"
+                    weight="bold"
+                  />
+                </View>
+                <Text style={tw`text-white font-bold text-sm text-center`}>
+                  {emotionalProfile ? 'Personal' : 'Take Quiz'}
+                </Text>
+              </View>
             </TouchableOpacity>
-          ) : null}
 
-          <TouchableOpacity
-            style={tw`bg-white/80 rounded-2xl py-4 items-center flex-row justify-center border border-white/50`}
-            onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
-            activeOpacity={0.8}
-          >
-            <SafePhosphorIcon iconType="ChartLine" size={20} color="#4A3B78" weight="bold" />
-            <Text style={tw`text-jung-purple font-semibold ml-2`}>
-              Update Emotional Profile
-            </Text>
-          </TouchableOpacity>
+            {/* Update Profile */}
+            <TouchableOpacity
+              style={tw`bg-green-500 rounded-2xl py-4 flex-1 items-center justify-center h-14 shadow-sm`}
+              onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
+              activeOpacity={0.8}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`bg-white/20 rounded-full w-6 h-6 items-center justify-center mr-2`}>
+                  <SafePhosphorIcon iconType="ChartLine" size={14} color="white" weight="bold" />
+                </View>
+                <Text style={tw`text-white font-bold text-sm text-center`}>
+                  Update
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Insights */}
+            <TouchableOpacity
+              style={tw`bg-orange-500 rounded-2xl py-4 flex-1 items-center justify-center h-14 shadow-sm`}
+              onPress={() => navigation.navigate('JournalInsightsScreen')}
+              activeOpacity={0.8}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View style={tw`bg-white/20 rounded-full w-6 h-6 items-center justify-center mr-2`}>
+                  <SafePhosphorIcon iconType="Lightbulb" size={14} color="white" weight="bold" />
+                </View>
+                <Text style={tw`text-white font-bold text-sm text-center`}>
+                  Insights
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     );
