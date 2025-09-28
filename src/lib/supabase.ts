@@ -2,68 +2,306 @@ import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-// Keep AsyncStorage import for potential fallback or other uses if needed
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Remove imports related to the previous custom secureStorage implementation
-// import { saveSession, getSession, clearAuthData } from './secureStorage';
+import { Platform } from 'react-native';
 
-// Try multiple sources for environment variables (physical devices need Constants)
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ||
-                   Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL;
+// Enhanced environment variable detection for physical devices
+const getEnvironmentVariable = (key: string): string | undefined => {
+  // Try multiple sources in order of priority
+  const sources = [
+    process.env[key],                              // Standard process.env
+    Constants.expoConfig?.extra?.[key],            // Expo config extra
+    Constants.manifest?.extra?.[key],              // Legacy manifest extra
+    Constants.manifest2?.extra?.expoClient?.extra?.[key], // EAS Build
+  ];
 
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-                       Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  const value = sources.find(val => val && typeof val === 'string');
+  console.log(`🔍 Environment variable ${key}:`, value ? `Found (${value.substring(0, 10)}...)` : 'NOT FOUND');
 
-// Enhanced debugging for physical devices
-console.log('🔍 ENVIRONMENT VARIABLES DEBUG:');
-console.log('- NODE_ENV:', process.env.NODE_ENV);
-console.log('- __DEV__:', __DEV__);
-console.log('- All EXPO_PUBLIC vars:', Object.keys(process.env).filter(k => k.startsWith('EXPO_PUBLIC')));
-console.log('- EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl || 'MISSING');
-console.log('- EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? `Set (${supabaseAnonKey.substring(0, 10)}...)` : 'MISSING');
-console.log('- EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'MISSING');
-console.log('- EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'MISSING');
+  return value;
+};
 
-// Don't throw error - handle gracefully
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables');
-  console.log('EXPO_PUBLIC_SUPABASE_URL:', supabaseUrl || 'UNDEFINED/NULL');
-  console.log('EXPO_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey || 'UNDEFINED/NULL');
-} else {
-  console.log('✅ Supabase URL:', supabaseUrl);
-  console.log('✅ Supabase anon key:', supabaseAnonKey ? 'Set (hidden)' : 'Missing');
+// Get Supabase configuration with enhanced debugging
+const supabaseUrl = getEnvironmentVariable('EXPO_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = getEnvironmentVariable('EXPO_PUBLIC_SUPABASE_ANON_KEY');
 
-  // Test basic connectivity
+// Physical device debugging
+console.log('🔍 PHYSICAL DEVICE AUTHENTICATION DEBUG:');
+console.log('- Platform:', Platform.OS);
+console.log('- Is Device:', Constants.isDevice);
+console.log('- Expo Config Available:', !!Constants.expoConfig);
+console.log('- Manifest Available:', !!Constants.manifest);
+console.log('- App Ownership:', Constants.appOwnership);
+console.log('- Execution Environment:', Constants.executionEnvironment);
+
+// Enhanced SecureStore adapter with fallback
+const createSecureStoreAdapter = () => {
+  return {
+    getItem: async (key: string) => {
+      try {
+        console.log(`🔐 SecureStore: Getting item ${key}`);
+        const value = await SecureStore.getItemAsync(key);
+        console.log(`🔐 SecureStore: ${key} ${value ? 'found' : 'not found'}`);
+        return value;
+      } catch (error) {
+        console.error(`🔐 SecureStore: Error getting ${key}:`, error);
+        // Fallback to AsyncStorage on error
+        try {
+          const fallbackValue = await AsyncStorage.getItem(key);
+          console.log(`🔐 AsyncStorage fallback: ${key} ${fallbackValue ? 'found' : 'not found'}`);
+          return fallbackValue;
+        } catch (fallbackError) {
+          console.error(`🔐 AsyncStorage fallback failed for ${key}:`, fallbackError);
+          return null;
+        }
+      }
+    },
+    setItem: async (key: string, value: string) => {
+      try {
+        console.log(`🔐 SecureStore: Setting item ${key}`);
+        await SecureStore.setItemAsync(key, value);
+        console.log(`🔐 SecureStore: Successfully set ${key}`);
+
+        // Also store in AsyncStorage as backup
+        await AsyncStorage.setItem(key, value);
+        console.log(`🔐 AsyncStorage backup: Successfully set ${key}`);
+      } catch (error) {
+        console.error(`🔐 SecureStore: Error setting ${key}:`, error);
+        // Fallback to AsyncStorage only
+        try {
+          await AsyncStorage.setItem(key, value);
+          console.log(`🔐 AsyncStorage fallback: Successfully set ${key}`);
+        } catch (fallbackError) {
+          console.error(`🔐 AsyncStorage fallback failed for ${key}:`, fallbackError);
+          throw fallbackError;
+        }
+      }
+    },
+    removeItem: async (key: string) => {
+      try {
+        console.log(`🔐 SecureStore: Removing item ${key}`);
+        await SecureStore.deleteItemAsync(key);
+        await AsyncStorage.removeItem(key); // Also remove from backup
+        console.log(`🔐 SecureStore: Successfully removed ${key}`);
+      } catch (error) {
+        console.error(`🔐 SecureStore: Error removing ${key}:`, error);
+        // Try AsyncStorage fallback
+        try {
+          await AsyncStorage.removeItem(key);
+          console.log(`🔐 AsyncStorage fallback: Successfully removed ${key}`);
+        } catch (fallbackError) {
+          console.error(`🔐 AsyncStorage fallback failed for ${key}:`, fallbackError);
+        }
+      }
+    },
+  };
+};
+
+// Create the Supabase client with enhanced configuration
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: createSecureStoreAdapter(),
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce', // Use PKCE flow for better security on mobile
+      },
+    })
+  : null;
+
+// Test basic connectivity on initialization
+if (supabase) {
+  console.log('✅ Supabase client created successfully');
+
+  // Test connectivity
   fetch(supabaseUrl + '/auth/v1/health')
     .then(res => res.text())
     .then(data => console.log('✅ Supabase health check:', data))
     .catch(err => console.error('❌ Supabase health check failed:', err));
+
+  // Test session retrieval
+  supabase.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      console.error('❌ Initial session check failed:', error);
+    } else {
+      console.log('✅ Initial session check:', data.session ? 'Has session' : 'No session');
+    }
+  });
+} else {
+  console.error('❌ Failed to create Supabase client - missing environment variables');
 }
 
-// Create an adapter for expo-secure-store
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => {
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: (key: string, value: string) => {
-    SecureStore.setItemAsync(key, value);
-  },
-  removeItem: (key: string) => {
-    SecureStore.deleteItemAsync(key);
-  },
-};
+// Enhanced authentication functions for physical devices
+export const enhancedAuth = {
+  // Enhanced Apple Sign-In with proper Service ID handling
+  signInWithApple: async (identityToken: string, nonce: string) => {
+    console.log('🍎 Enhanced Apple Sign-In starting...');
 
-// Create the Supabase client only if environment variables exist
-export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        storage: ExpoSecureStoreAdapter, // Use the new adapter
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : null;
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    try {
+      console.log('🍎 Calling Supabase signInWithIdToken...');
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: identityToken,
+        nonce,
+      });
+
+      if (error) {
+        console.error('🍎 Apple Sign-In Supabase error:', error);
+
+        // Enhanced error messages for common issues
+        if (error.message.includes('Unacceptable audience')) {
+          throw new Error(
+            'Apple Sign-In configuration error: Service ID mismatch. ' +
+            'Please check your Supabase Apple provider settings. ' +
+            'The Service ID should match your Bundle ID: org.name.jung'
+          );
+        } else if (error.message.includes('Invalid token')) {
+          throw new Error(
+            'Apple ID token is invalid. This might be due to app configuration issues.'
+          );
+        } else {
+          throw error;
+        }
+      }
+
+      console.log('🍎 Apple Sign-In successful:', {
+        userId: data?.user?.id,
+        hasSession: !!data?.session
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('🍎 Enhanced Apple Sign-In error:', error);
+      throw error;
+    }
+  },
+
+  // Enhanced Google Sign-In
+  signInWithGoogle: async (idToken: string, accessToken?: string) => {
+    console.log('🔵 Enhanced Google Sign-In starting...');
+
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    try {
+      console.log('🔵 Calling Supabase signInWithIdToken...');
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+        access_token: accessToken,
+      });
+
+      if (error) {
+        console.error('🔵 Google Sign-In Supabase error:', error);
+        throw error;
+      }
+
+      console.log('🔵 Google Sign-In successful:', {
+        userId: data?.user?.id,
+        hasSession: !!data?.session
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('🔵 Enhanced Google Sign-In error:', error);
+      throw error;
+    }
+  },
+
+  // Enhanced email/password sign-in
+  signInWithEmail: async (email: string, password: string) => {
+    console.log('📧 Enhanced Email Sign-In starting...');
+
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('📧 Email Sign-In error:', error);
+        throw error;
+      }
+
+      console.log('📧 Email Sign-In successful:', {
+        userId: data?.user?.id,
+        hasSession: !!data?.session
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('📧 Enhanced Email Sign-In error:', error);
+      throw error;
+    }
+  },
+
+  // Enhanced session check
+  getSession: async () => {
+    console.log('🔍 Enhanced session check starting...');
+
+    if (!supabase) {
+      console.log('🔍 No Supabase client available');
+      return { data: { session: null }, error: null };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('🔍 Session check error:', error);
+      } else {
+        console.log('🔍 Session check result:', data.session ? 'Has session' : 'No session');
+        if (data.session) {
+          console.log('🔍 Session details:', {
+            userId: data.session.user?.id,
+            expiresAt: data.session.expires_at,
+            isExpired: data.session.expires_at ? new Date(data.session.expires_at * 1000) < new Date() : 'unknown'
+          });
+        }
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('🔍 Enhanced session check error:', error);
+      return { data: { session: null }, error };
+    }
+  },
+
+  // Enhanced sign out
+  signOut: async () => {
+    console.log('🚪 Enhanced sign out starting...');
+
+    if (!supabase) {
+      console.log('🚪 No Supabase client available');
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('🚪 Sign out error:', error);
+      } else {
+        console.log('🚪 Sign out successful');
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('🚪 Enhanced sign out error:', error);
+      return { error };
+    }
+  }
+};
 
 // Add safety wrapper for all Supabase operations
 export const safeSupabaseCall = async (operation: () => Promise<any>) => {
@@ -71,7 +309,7 @@ export const safeSupabaseCall = async (operation: () => Promise<any>) => {
     console.error('Supabase not configured - missing environment variables');
     return { data: null, error: { message: 'Database not available' } };
   }
-  
+
   try {
     return await operation();
   } catch (error) {

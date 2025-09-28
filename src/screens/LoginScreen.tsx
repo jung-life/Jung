@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { supabase, storeAuthData, checkSession } from '../lib/supabase';
+import { supabase, enhancedAuth, storeAuthData, checkSession } from '../lib/supabase';
 import tw from '../lib/tailwind';
 import { ArrowLeft, Lock, Envelope } from 'phosphor-react-native';
 import { GradientBackground } from '../components/GradientBackground';
@@ -60,11 +60,11 @@ export const LoginScreen = () => {
   const { login } = useSupabase();
 
   // Get Google Client ID from environment variables
-  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || 
+  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
                         Constants.expoConfig?.extra?.googleClientId ||
                          '';
-  
-  // Initial animations
+
+  // Initial animations and physical device testing
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -82,6 +82,11 @@ export const LoginScreen = () => {
 
     // Start continuous animations for buttons
     startContinuousAnimations();
+
+    // Log physical device info
+    if (Constants.isDevice) {
+      console.log('🔧 Running on physical device - enhanced authentication enabled');
+    }
   }, []);
 
   // Continuous animations for the feature buttons
@@ -225,11 +230,22 @@ export const LoginScreen = () => {
 
     setLoading(true);
     try {
-      console.log('Attempting email login...');
-      await login(email, password);
+      console.log('📧 Attempting enhanced email login...');
+
+      // Use enhanced auth for physical devices
+      if (Constants.isDevice) {
+        const result = await enhancedAuth.signInWithEmail(email, password);
+        if (result.data?.session) {
+          await storeAuthData(result.data.session);
+          console.log('📧 Enhanced email login completed successfully');
+        }
+      } else {
+        // Fallback to context login for simulator
+        await login(email, password);
+      }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('📧 Login error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -238,15 +254,35 @@ export const LoginScreen = () => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      console.log('🔵 Starting native Google Sign-In...');
-      
-      // Use the native Google Sign-In
+      console.log('🔵 Starting enhanced Google Sign-In...');
+
+      // Use the native Google Sign-In to get tokens
       const result = await signInWithGoogle();
-      
+
       if (result.data?.session) {
-        await storeAuthData(result.data.session);
-        console.log('🔵 Google login completed successfully');
-        
+        // For physical devices, use enhanced auth
+        if (Constants.isDevice && result.data.session.provider_token) {
+          console.log('🔵 Using enhanced Google auth for physical device...');
+          try {
+            const enhancedResult = await enhancedAuth.signInWithGoogle(
+              result.data.session.provider_token,
+              result.data.session.provider_refresh_token
+            );
+            if (enhancedResult.data?.session) {
+              await storeAuthData(enhancedResult.data.session);
+              console.log('🔵 Enhanced Google login completed successfully');
+            }
+          } catch (enhancedError) {
+            console.error('🔵 Enhanced Google auth failed, using fallback:', enhancedError);
+            // Fallback to original result
+            await storeAuthData(result.data.session);
+            console.log('🔵 Google login completed with fallback');
+          }
+        } else {
+          await storeAuthData(result.data.session);
+          console.log('🔵 Google login completed successfully');
+        }
+
         // Let AuthContext handle navigation
         console.log('🔵 Login successful - AuthContext will handle navigation');
       }
@@ -323,36 +359,59 @@ export const LoginScreen = () => {
         hasAuthorizationCode: !!credential.authorizationCode
       });
 
-      if (credential.identityToken && supabase) {
-        console.log('🍎 Authenticating with Supabase...');
-        
-        // Sign in with Supabase using Apple credentials
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'apple',
-          token: credential.identityToken,
-          nonce,
-        });
+      if (credential.identityToken) {
+        console.log('🍎 Authenticating with enhanced Supabase...');
 
-        if (error) {
-          console.error('🍎 Supabase Apple auth error:', error);
-          Alert.alert('Login Error', `Supabase authentication failed: ${error.message}`);
-          return;
-        }
+        try {
+          // Use enhanced auth for physical devices
+          if (Constants.isDevice) {
+            console.log('🍎 Using enhanced Apple auth for physical device...');
+            const result = await enhancedAuth.signInWithApple(credential.identityToken, nonce);
 
-        console.log('🍎 Supabase authentication successful:', {
-          userId: data?.user?.id,
-          hasSession: !!data?.session
-        });
+            if (result.data?.session) {
+              await storeAuthData(result.data.session);
+              console.log('🍎 Enhanced Apple login completed successfully');
+            }
+          } else if (supabase) {
+            // Fallback for simulator
+            console.log('🍎 Using standard Apple auth for simulator...');
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'apple',
+              token: credential.identityToken,
+              nonce,
+            });
 
-        // Store session data if available
-        if (data.session) {
-          await storeAuthData(data.session);
-          console.log('🍎 Apple login completed successfully');
-          
+            if (error) {
+              console.error('🍎 Supabase Apple auth error:', error);
+              Alert.alert('Login Error', `Supabase authentication failed: ${error.message}`);
+              return;
+            }
+
+            console.log('🍎 Supabase authentication successful:', {
+              userId: data?.user?.id,
+              hasSession: !!data?.session
+            });
+
+            // Store session data if available
+            if (data.session) {
+              await storeAuthData(data.session);
+              console.log('🍎 Apple login completed successfully');
+            }
+          }
+
           // Don't manually navigate - let AuthContext handle the disclaimer flow
           // The AppNavigator will automatically show DisclaimerScreen for new users
           // or PostLoginScreen for existing users based on isNewUser state
           console.log('🍎 Login successful - AuthContext will handle navigation');
+
+        } catch (authError) {
+          console.error('🍎 Enhanced Apple auth error:', authError);
+          if (authError instanceof Error) {
+            Alert.alert('Apple Sign-In Error', authError.message);
+          } else {
+            Alert.alert('Error', 'Failed to authenticate with Apple. Please try again.');
+          }
+          return;
         }
       } else {
         console.error('🍎 No identity token received from Apple');
