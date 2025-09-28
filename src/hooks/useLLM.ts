@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { standardizedLLM } from '../lib/standardizedLLM';
 
 const useLLM = () => {
   const [loading, setLoading] = useState(false);
@@ -6,30 +7,14 @@ const useLLM = () => {
   const generateQuote = async (prompt: string): Promise<string> => {
     setLoading(true);
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4', // or 'gpt-3.5-turbo' if preferred
-          messages: [
-            { role: 'system', content: 'You are a motivational quote generator.' },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-        }),
+      // Use cost-optimized strategy for quote generation
+      const response = await standardizedLLM.generateCostOptimized(prompt, {
+        systemPrompt: 'You are a motivational quote generator. Create inspiring, original quotes that resonate with people facing life challenges.',
+        maxTokens: 150, // Quotes are short
+        temperature: 0.8 // Higher creativity for quotes
       });
 
-      const data = await response.json();
-      
-      // Check if response contains valid data
-      if (!data?.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response from OpenAI API');
-      }
-      
-      return data.choices[0].message.content; // Extract the generated quote
+      return response.content;
     } catch (error) {
       console.error('Error generating quote:', error);
       throw error;
@@ -38,7 +23,53 @@ const useLLM = () => {
     }
   };
 
-  return { generateQuote, loading };
+  const generateContent = async (
+    prompt: string,
+    systemPrompt?: string,
+    strategy: 'cost-optimized' | 'balanced' | 'quality-first' = 'balanced'
+  ): Promise<{
+    content: string;
+    modelUsed: string;
+    costUSD: number;
+    creditsCost: number;
+  }> => {
+    setLoading(true);
+    try {
+      const response = await standardizedLLM.generateWithStrategy(prompt, strategy, {
+        systemPrompt,
+        maxTokens: 1000,
+        temperature: 0.7
+      });
+
+      return {
+        content: response.content,
+        modelUsed: response.modelUsed,
+        costUSD: response.costUSD,
+        creditsCost: response.creditsCost
+      };
+    } catch (error) {
+      console.error('Error generating content:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const estimateCosts = (inputTokens: number, outputTokens: number) => {
+    return standardizedLLM.estimateCosts(inputTokens, outputTokens);
+  };
+
+  const getAvailableModels = () => {
+    return standardizedLLM.getAvailableModels();
+  };
+
+  return {
+    generateQuote,
+    generateContent,
+    estimateCosts,
+    getAvailableModels,
+    loading
+  };
 };
 
 export default useLLM; 

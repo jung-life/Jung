@@ -18,6 +18,7 @@ import tw from '../lib/tailwind';
 import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { Typography } from '../components/Typography';
+import { SubscriptionDetails } from '../components/SubscriptionStatus';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
 import { 
@@ -744,8 +745,35 @@ export const AccountScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-            
-            
+
+            {/* Subscription Status */}
+            <SubscriptionDetails />
+
+            {/* Subscription Management Card */}
+            <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
+              <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Subscription</Text>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center py-3`}
+                onPress={() => navigation.navigate('MySubscription' as never)}
+              >
+                <Crown size={20} color="#4A3B78" />
+                <Text style={tw`ml-3 text-gray-700`}>View My Subscription</Text>
+                <View style={tw`flex-1`} />
+                <Text style={tw`text-gray-400`}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center py-3`}
+                onPress={() => navigation.navigate('Subscription' as never)}
+              >
+                <CreditCard size={20} color="#4A3B78" />
+                <Text style={tw`ml-3 text-gray-700`}>Upgrade Plan</Text>
+                <View style={tw`flex-1`} />
+                <Text style={tw`text-gray-400`}>→</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Data Management Card */}
             <View style={tw`bg-white rounded-2xl shadow-md p-6 mb-6`}>
               <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Data Management</Text>

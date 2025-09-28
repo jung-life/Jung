@@ -1,4 +1,7 @@
 import { anonymizeText, encryptData } from './security';
+import { standardizedLLM } from './standardizedLLM';
+import { creditService } from './creditService';
+import { supabase } from './supabase';
 
 const rateLimit = (fn, delay) => {
   let lastCall = 0;
@@ -14,40 +17,67 @@ export const processAIRequest = rateLimit(async (userInput: string, userId: stri
   try {
     // 1. Anonymize the user input
     const anonymizedInput = anonymizeText(userInput);
-    
-    // 2. Send to OpenAI with no identifying information
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [
-          { role: "system", content: "You are a Jungian analysis assistant." },
-          { role: "user", content: anonymizedInput }
-        ],
-        temperature: 0.7
-      })
+
+    // 2. Use standardized LLM service with cost optimization
+    const llmResponse = await standardizedLLM.generateQualityFirst(anonymizedInput, {
+      systemPrompt: "You are a Jungian analysis assistant specializing in depth psychology, dream interpretation, and archetypal analysis.",
+      maxTokens: 800,
+      temperature: 0.7
     });
-    
-    const data = await response.json();
-    
-    // 3. Encrypt the response before storing
-    const encryptedResponse = encryptData(data.choices[0].message.content);
-    
-    // 4. Store encrypted response in database
+
+    // 3. Check and spend credits
+    const creditsRequired = llmResponse.creditsCost;
+    const hasSufficientCredits = await creditService.hasSufficientCredits(userId, creditsRequired);
+
+    if (!hasSufficientCredits) {
+      throw new Error('Insufficient credits for this request');
+    }
+
+    const creditSpent = await creditService.spendCredits(
+      userId,
+      creditsRequired,
+      'usage',
+      null,
+      `AI analysis - ${llmResponse.modelUsed}`
+    );
+
+    if (!creditSpent) {
+      throw new Error('Failed to process credit transaction');
+    }
+
+    // 4. Encrypt the response before storing
+    const encryptedResponse = encryptData(llmResponse.content);
+
+    // 5. Store encrypted response with cost tracking
     await supabase
       .from('conversations')
       .insert({
         user_id: userId,
         encrypted_prompt: encryptData(userInput),
         encrypted_response: encryptedResponse,
+        model_used: llmResponse.modelUsed,
+        input_tokens: llmResponse.inputTokens,
+        output_tokens: llmResponse.outputTokens,
+        cost_usd: llmResponse.costUSD,
+        credits_spent: creditsRequired,
         created_at: new Date().toISOString()
       });
-      
-    return data.choices[0].message.content;
+
+    // 6. Record detailed message cost for analytics
+    await creditService.recordMessageCost(
+      `msg_${Date.now()}`,
+      userId,
+      null,
+      'jungian-analyst',
+      llmResponse.inputTokens,
+      llmResponse.outputTokens,
+      creditsRequired,
+      Math.round(llmResponse.costUSD * 100), // Convert to cents
+      llmResponse.provider,
+      llmResponse.modelUsed
+    );
+
+    return llmResponse.content;
   } catch (error) {
     console.error('Error in AI processing:', error);
     throw new Error('Failed to process your request');

@@ -1,17 +1,21 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { 
-  ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh, 
-  SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft, 
-  Wind, Sparkle, Bed, FireSimple, House, X, Plus, ArrowRight
+import {
+  ChatCircleDots, Brain, BookOpen, Heart, User, Smiley, SmileyMeh,
+  SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft,
+  Wind, Sparkle, Bed, FireSimple, House, X, Plus, ArrowRight,
+  FirstAid, TrendUp, ChartLine, TrendDown, Minus, Clock,
+  ArrowsClockwise, Lightbulb, ChatCircle
 } from 'phosphor-react-native';
 
 // Define the icon types we're using
-type IconType = 
-  | 'ChatCircleDots' | 'Brain' | 'BookOpen' | 'Heart' | 'User' 
-  | 'Smiley' | 'SmileyMeh' | 'SmileySad' | 'SmileyXEyes' 
-  | 'CloudLightning' | 'FloppyDisk' | 'ArrowLeft' | 'ArrowRight' | 'Wind' 
-  | 'Sparkle' | 'Bed' | 'FireSimple' | 'House' | 'X' | 'Plus';
+type IconType =
+  | 'ChatCircleDots' | 'Brain' | 'BookOpen' | 'Heart' | 'User'
+  | 'Smiley' | 'SmileyMeh' | 'SmileySad' | 'SmileyXEyes'
+  | 'CloudLightning' | 'FloppyDisk' | 'ArrowLeft' | 'ArrowRight' | 'Wind'
+  | 'Sparkle' | 'Bed' | 'FireSimple' | 'House' | 'X' | 'Plus'
+  | 'FirstAid' | 'TrendUp' | 'ChartLine' | 'TrendDown' | 'Minus' | 'Clock'
+  | 'ArrowsClockwise' | 'Lightbulb' | 'ChatCircle';
 
 interface SafePhosphorIconProps {
   iconType: IconType;
@@ -74,6 +78,24 @@ export const SafePhosphorIcon: React.FC<SafePhosphorIconProps> = ({
         return <Plus size={size} color={color} weight={weight} />;
       case 'ArrowRight':
         return <ArrowRight size={size} color={color} weight={weight} />;
+      case 'FirstAid':
+        return <FirstAid size={size} color={color} weight={weight} />;
+      case 'TrendUp':
+        return <TrendUp size={size} color={color} weight={weight} />;
+      case 'ChartLine':
+        return <ChartLine size={size} color={color} weight={weight} />;
+      case 'TrendDown':
+        return <TrendDown size={size} color={color} weight={weight} />;
+      case 'Minus':
+        return <Minus size={size} color={color} weight={weight} />;
+      case 'Clock':
+        return <Clock size={size} color={color} weight={weight} />;
+      case 'ArrowsClockwise':
+        return <ArrowsClockwise size={size} color={color} weight={weight} />;
+      case 'Lightbulb':
+        return <Lightbulb size={size} color={color} weight={weight} />;
+      case 'ChatCircle':
+        return <ChatCircle size={size} color={color} weight={weight} />;
       default:
         console.warn(`Icon "${iconType}" not supported`);
         return null;

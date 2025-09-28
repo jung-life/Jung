@@ -14,7 +14,10 @@ import { GradientBackground } from '../components/GradientBackground';
 import { SymbolicBackground } from '../components/SymbolicBackground';
 import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 import { useRevenueCat } from '../hooks/useRevenueCat';
+import { useSubscription } from '../hooks/useSubscription';
 import { PurchasesPackage } from 'react-native-purchases';
+import { RevenueCatDebug } from '../components/RevenueCatDebug';
+import { SubscriptionCard } from '../components/SubscriptionStatus';
 import tw from '../lib/tailwind';
 
 
@@ -61,6 +64,7 @@ const subscriptionPlans = [
 export default function SubscriptionScreen() {
   const navigation = useNavigation();
   const [selectedPlan, setSelectedPlan] = useState('org.name.jung.Annual');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Use RevenueCat for subscriptions (with fallback)
   const {
@@ -70,37 +74,68 @@ export default function SubscriptionScreen() {
     error: revenueCatError,
   } = useRevenueCat();
 
+  // Also check subscription status
+  const { isRevenueCatAvailable } = useSubscription();
+
   const handleSubscriptionSelect = async (planId: string) => {
+    if (isProcessing) return;
+
     try {
+      setIsProcessing(true);
       const plan = subscriptionPlans.find(p => p.id === planId);
       if (!plan) return;
 
-      // If we have a real RevenueCat package, use it
-      const revenueCatPackage = currentOffering?.availablePackages?.find(
-        (pkg: PurchasesPackage) => pkg.identifier === planId
-      );
-
-      if (revenueCatPackage) {
-        const success = await purchasePackage(revenueCatPackage);
-        if (success) {
-          Alert.alert(
-            'Purchase Successful! 🎉',
-            'Welcome to Jung Premium! Enjoy unlimited access to all features.',
-            [{ text: 'Start Exploring', onPress: () => navigation.goBack() }]
-          );
-        } else {
-          Alert.alert('Purchase Failed', 'Please try again or contact support.');
-        }
-      } else {
-        // Fallback for StoreKit testing
-        Alert.alert(
-          'Test Mode Active',
-          `You selected the ${plan.title} plan (${plan.price}${plan.period}). This is a test purchase in development mode.`,
-          [{ text: 'Got it' }]
+      // If we have a real RevenueCat package and it's available, use it
+      if (isRevenueCatAvailable && currentOffering) {
+        const revenueCatPackage = currentOffering.availablePackages?.find(
+          (pkg: PurchasesPackage) => pkg.identifier === planId
         );
+
+        if (revenueCatPackage) {
+          console.log('Processing purchase with RevenueCat:', planId);
+          const success = await purchasePackage(revenueCatPackage);
+          if (success) {
+            Alert.alert(
+              'Purchase Successful! 🎉',
+              'Welcome to Jung Premium! Enjoy unlimited access to all features.',
+              [{ text: 'Start Exploring', onPress: () => navigation.goBack() }]
+            );
+            return;
+          } else {
+            Alert.alert('Purchase Failed', 'Please try again or contact support.');
+            return;
+          }
+        }
       }
-    } catch (err) {
-      Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
+
+      // Fallback for development/testing when RevenueCat is not available
+      console.log('RevenueCat not available, showing development mode alert');
+      Alert.alert(
+        'Development Mode',
+        `RevenueCat is not fully configured. Selected: ${plan.title} plan (${plan.price}${plan.period}).`,
+        [
+          { text: 'Cancel' },
+          {
+            text: 'Simulate Purchase',
+            onPress: () => {
+              Alert.alert(
+                'Purchase Simulated! 🎉',
+                'Welcome to Jung Premium! This is a simulated purchase for development.',
+                [{ text: 'Start Exploring', onPress: () => navigation.goBack() }]
+              );
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Subscription error:', error);
+      Alert.alert(
+        'Purchase Error',
+        error instanceof Error ? error.message : 'Failed to process subscription. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -251,6 +286,12 @@ export default function SubscriptionScreen() {
                 </View>
               )}
 
+              {/* Current Subscription Status */}
+              <SubscriptionCard showManageButton={true} />
+
+              {/* Debug Component (Development Only) */}
+              {__DEV__ && <RevenueCatDebug />}
+
               {/* Plans */}
               {subscriptionPlans.map(plan => renderPlanCard(plan))}
 
@@ -303,13 +344,20 @@ export default function SubscriptionScreen() {
             {/* Bottom Purchase Button */}
             <View style={tw`px-6 pb-6 bg-white/90`}>
               <TouchableOpacity
-                style={tw`bg-jung-purple rounded-2xl py-4 px-6 shadow-lg`}
+                style={tw`bg-jung-purple rounded-2xl py-4 px-6 shadow-lg ${(isLoadingRevenueCat || isProcessing) ? 'opacity-70' : ''}`}
                 onPress={() => handleSubscriptionSelect(selectedPlan)}
-                disabled={isLoadingRevenueCat}
+                disabled={isLoadingRevenueCat || isProcessing}
               >
-                <Text style={tw`text-center font-bold text-lg text-white`}>
-                  {isLoadingRevenueCat ? 'Loading...' : 'Continue with Premium'}
-                </Text>
+                <View style={tw`flex-row items-center justify-center`}>
+                  {(isLoadingRevenueCat || isProcessing) && (
+                    <ActivityIndicator size="small" color="#FFFFFF" style={tw`mr-2`} />
+                  )}
+                  <Text style={tw`text-center font-bold text-lg text-white`}>
+                    {isLoadingRevenueCat ? 'Loading...' :
+                     isProcessing ? 'Processing...' :
+                     'Continue with Premium'}
+                  </Text>
+                </View>
                 <Text style={tw`text-center text-jung-light text-sm mt-1`}>
                   {subscriptionPlans.find(p => p.id === selectedPlan)?.price}
                   {subscriptionPlans.find(p => p.id === selectedPlan)?.period}

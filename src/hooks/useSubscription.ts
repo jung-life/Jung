@@ -1,20 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { inAppPurchaseService, SubscriptionStatus } from '../lib/inAppPurchaseService';
+import { revenueCatService } from '../lib/revenueCatService';
 
 export const useSubscription = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRevenueCatAvailable, setIsRevenueCatAvailable] = useState(false);
 
   const checkSubscriptionStatus = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Try RevenueCat first
+      try {
+        const revenueCatSubscribed = await revenueCatService.isUserSubscribed();
+        if (revenueCatSubscribed !== undefined) {
+          setIsRevenueCatAvailable(true);
+          setSubscriptionStatus({
+            isActive: revenueCatSubscribed,
+            expirationDate: await revenueCatService.getSubscriptionExpirationDate(),
+            productId: 'premium',
+            isTrialPeriod: await revenueCatService.isInTrialPeriod(),
+          });
+          return;
+        }
+      } catch (revenueCatError) {
+        console.log('RevenueCat not available, falling back to IAP service:', revenueCatError);
+      }
+
+      // Fallback to IAP service
+      setIsRevenueCatAvailable(false);
       const status = await inAppPurchaseService.getSubscriptionStatus();
       setSubscriptionStatus(status);
     } catch (err) {
       console.error('Error checking subscription status:', err);
       setError('Failed to check subscription status');
+      // Set default free user status on error
+      setSubscriptionStatus({
+        isActive: false,
+        expirationDate: null,
+        productId: null,
+        isTrialPeriod: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -22,7 +51,12 @@ export const useSubscription = () => {
 
   const initializeSubscription = useCallback(async () => {
     try {
-      await inAppPurchaseService.initialize();
+      // Try to initialize both services
+      await Promise.allSettled([
+        revenueCatService.initialize(),
+        inAppPurchaseService.initialize()
+      ]);
+
       await checkSubscriptionStatus();
     } catch (err) {
       console.error('Error initializing subscription:', err);
@@ -46,6 +80,7 @@ export const useSubscription = () => {
     isPremiumUser,
     checkSubscriptionStatus,
     initializeSubscription,
+    isRevenueCatAvailable,
   };
 };
 

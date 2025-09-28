@@ -51,6 +51,10 @@ module.exports = {
         'motivation': '#97C1A9',          // Soft green - growth
         'emotional': '#CEB5CD',           // Soft purple - emotional insight
         'resources': '#D2B48C',           // Earth tone - grounding resources
+        'journaling': '#B8A4D1',          // Soft purple - journaling/reflection
+        'mood': '#A4B4D8',               // Soft indigo - mood tracking
+        'dashboard': '#9DB4C7',           // Soft blue - analytics/dashboard
+        'analytics': '#A8C4A0',           // Sage green - data/insights
       },
     },
   },

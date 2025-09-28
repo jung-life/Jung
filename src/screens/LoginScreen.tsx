@@ -27,6 +27,7 @@ import { useSupabase } from '../contexts/SupabaseContext';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
+import { GoogleSignInTroubleshoot } from '../components/GoogleSignInTroubleshoot';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -39,6 +40,8 @@ export const LoginScreen = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<'default' | 'conversation' | 'motivation' | 'emotional'>('default');
+  const [showGoogleTroubleshoot, setShowGoogleTroubleshoot] = useState(false);
+  const [googleSignInError, setGoogleSignInError] = useState<string>('');
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -254,7 +257,18 @@ export const LoginScreen = () => {
           console.log('🔵 User cancelled Google Sign-In');
           return;
         }
-        Alert.alert('Google Sign-In Error', error.message);
+
+        // Store error for troubleshooting
+        setGoogleSignInError(error.message);
+
+        // Check if it's a configuration error that needs troubleshooting
+        if (error.message.includes('No ID token') ||
+            error.message.includes('configuration') ||
+            error.message.includes('OAuth client')) {
+          setShowGoogleTroubleshoot(true);
+        } else {
+          Alert.alert('Google Sign-In Error', error.message);
+        }
       } else {
         Alert.alert('Error', 'An unexpected error occurred during Google Sign-In');
       }
@@ -601,6 +615,14 @@ export const LoginScreen = () => {
             </Animated.View>
           </View>
         </KeyboardAvoidingView>
+
+        {/* Google Sign-In Troubleshoot Modal */}
+        <GoogleSignInTroubleshoot
+          visible={showGoogleTroubleshoot}
+          onClose={() => setShowGoogleTroubleshoot(false)}
+          onRetry={handleGoogleLogin}
+          error={googleSignInError}
+        />
       </SafeAreaView>
     </GradientBackground>
   );

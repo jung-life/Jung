@@ -24,7 +24,7 @@ import { SupabaseProvider } from './contexts/SupabaseContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import * as Linking from 'expo-linking';
 import { useURL } from 'expo-linking';
-import { navigationRef } from './navigation/navigationService';
+import { navigationRef, processPendingNavigationActions } from './navigation/navigationService';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
@@ -33,6 +33,7 @@ import { initAnalytics } from './lib/analytics';
 import { initializeGoogleSignIn } from './lib/googleSignIn';
 import { revenueCatService } from './lib/revenueCatService';
 import AppNavigator from './navigation/AppNavigator';
+import { NavigationErrorBoundary } from './components/NavigationErrorBoundary';
 
 let mixpanelInstance;
 try {
@@ -143,8 +144,20 @@ const AppContent = () => {
 
   return (
     <ErrorHandler>
-      <NavigationContainer ref={navigationRef} linking={linking}>
-        <AppNavigator />
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        onReady={() => {
+          console.log('NavigationContainer is ready');
+          processPendingNavigationActions();
+        }}
+        onStateChange={(state) => {
+          console.log('Navigation state changed:', state?.routes?.[state.index]?.name);
+        }}
+      >
+        <NavigationErrorBoundary>
+          <AppNavigator />
+        </NavigationErrorBoundary>
       </NavigationContainer>
     </ErrorHandler>
   );

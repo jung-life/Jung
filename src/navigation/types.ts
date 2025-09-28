@@ -29,8 +29,13 @@ export type RootStackParamList = {
   MoodTrackerScreen: undefined; // Add Mood Tracker screen
   LoadingScreen: undefined; // Add LoadingScreen
   JournalingScreen: undefined; // Add Journaling screen
+  JournalInsightsScreen: undefined; // Add Journal Insights screen
   SettingsScreen: undefined; // Add Settings screen
   TransactionHistory: undefined; // Add Transaction History screen
+  PersonalGrowthDashboard: undefined; // Personal Growth Dashboard screen
+  ConversationAnalytics: undefined; // Conversation Analytics screen
+  SupportCenter: undefined; // Support Center screen (crisis + self-help)
+  MySubscription: undefined; // My Subscription screen
 };
 
 // Add these types for navigation

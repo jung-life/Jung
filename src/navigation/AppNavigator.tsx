@@ -24,14 +24,18 @@ import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import MoodTrackerScreen from '../screens/MoodTrackerScreen'; // Import MoodTrackerScreen
 import JournalingScreen from '../screens/JournalingScreen-Simple'; // Import JournalingScreen (Simple version for testing)
+import JournalInsightsScreen from '../screens/JournalInsightsScreen';
 import { ConversationHistoryScreen } from '../screens/ConversationHistoryScreen';
 import { ConversationInsightsScreenEnhanced } from '../screens/ConversationInsightsScreen-enhanced';
 import { navigationRef } from './navigationService';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import SubscriptionScreen from '../screens/SubscriptionScreen'; 
+import SubscriptionScreen from '../screens/SubscriptionScreen';
 import TransactionHistoryScreen from '../screens/TransactionHistoryScreen'; // Import TransactionHistoryScreen
 import { MotivationalSplashScreen } from '../screens/MotivationalSplashScreen'; // Import MotivationalSplashScreen
+import PersonalGrowthDashboardScreen from '../screens/PersonalGrowthDashboardScreen';
+import ConversationAnalyticsScreen from '../screens/ConversationAnalyticsScreen';
+import SupportCenterScreen from '../screens/SupportCenterScreen';
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -86,8 +90,8 @@ const DisclaimerStack = () => (
 // Define Main App Stack - for users who have accepted disclaimer
 const MainAppStack = () => (
   <Stack.Navigator
-    initialRouteName="MotivationalSplashScreen"
-    screenOptions={{ headerShown: false, ...defaultPostLoginOptions }} 
+    initialRouteName="PostLoginScreen"
+    screenOptions={{ headerShown: false, ...defaultPostLoginOptions }}
   >
     {/* Motivational splash screen shown after login */}
     <Stack.Screen
@@ -185,11 +189,18 @@ const MainAppStack = () => (
     <Stack.Screen // Add JournalingScreen
       name="JournalingScreen"
       component={JournalingScreen}
-      options={{ 
-        headerShown: true, 
-        title: 'Journal', 
+      options={{
+        headerShown: true,
+        title: 'Journal',
         headerLeft: () => <HomeButton destination="PostLoginScreen" />,
-        headerBackVisible: false 
+        headerBackVisible: false
+      }}
+    />
+    <Stack.Screen // Add JournalInsightsScreen
+      name="JournalInsightsScreen"
+      component={JournalInsightsScreen}
+      options={{
+        headerShown: false // Screen has its own header
       }}
     />
     <Stack.Screen
@@ -240,6 +251,27 @@ const MainAppStack = () => (
         title: 'Transaction History',
         headerLeft: () => <HomeButton destination="PostLoginScreen" />,
         headerBackVisible: false
+      }}
+    />
+    <Stack.Screen
+      name="PersonalGrowthDashboard"
+      component={PersonalGrowthDashboardScreen}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="ConversationAnalytics"
+      component={ConversationAnalyticsScreen}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="SupportCenter"
+      component={SupportCenterScreen}
+      options={{
+        headerShown: false // Screen has its own header
       }}
     />
   </Stack.Navigator>

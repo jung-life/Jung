@@ -1,5 +1,8 @@
 import { Message } from '../types';
 import { generatePromptForAvatar } from './avatarPrompts';
+import { standardizedLLM, LLMRequest } from './standardizedLLM';
+import { creditService } from './creditService';
+import { getOptimalRoutingStrategy, RoutingContext } from './intelligentRouting';
 
 // Multi-provider AI API with privacy protection and cost optimization
 export const generateAIResponse = async (
@@ -36,31 +39,48 @@ export const generateAIResponse = async (
       anonymizedPrompt
     );
 
-    // Route to appropriate AI provider
-    let finalResponse;
-    switch (provider) {
-      case 'claude':
-        finalResponse = await callClaudeAPI(enhancedPrompt, messages, avatarId);
-        break;
-      case 'openai':
-        finalResponse = await callOpenAIAPI(enhancedPrompt, messages, avatarId);
-        break;
-      case 'auto':
-        // Intelligent routing based on context
-        finalResponse = await callOptimalProvider(enhancedPrompt, messages, avatarId, prompt);
-        break;
-      default:
-        finalResponse = await callClaudeAPI(enhancedPrompt, messages, avatarId);
-    }
+    // Intelligent routing based on conversation context
+    const routingContext: RoutingContext = {
+      messageLength: prompt.length,
+      conversationLength: messages.length,
+      avatarId,
+      userMessage: prompt,
+      subscriptionTier: 'monthly', // TODO: Get from user context
+      urgency: 'medium'
+    };
 
-    // Log privacy and cost metrics
+    const routingDecision = getOptimalRoutingStrategy(routingContext);
+
+    // Use standardized LLM service with intelligent routing
+    const llmRequest: LLMRequest = {
+      prompt: anonymizedPrompt,
+      systemPrompt: enhancedPrompt.split('Here is the conversational history')[0].trim(),
+      previousMessages: messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      })),
+      strategy: routingDecision.strategy
+    };
+
+    const llmResponse = await standardizedLLM.generate(llmRequest);
+
+    // Log comprehensive metrics including routing decision
     console.log('AI Response Generated:', {
-      provider,
+      provider: llmResponse.provider,
+      modelUsed: llmResponse.modelUsed,
+      strategyUsed: routingDecision.strategy,
+      routingReason: routingDecision.reasoning,
+      expectedCost: routingDecision.expectedCost,
+      actualCostUSD: llmResponse.costUSD,
       privacyLevel,
+      creditsCost: llmResponse.creditsCost,
+      inputTokens: llmResponse.inputTokens,
+      outputTokens: llmResponse.outputTokens,
+      processingTimeMs: llmResponse.processingTimeMs,
       timestamp: new Date().toISOString()
     });
 
-    return finalResponse;
+    return llmResponse.content;
 
   } catch (error: any) {
     console.error('Error generating AI response:', error);
@@ -94,126 +114,8 @@ const anonymizeBasicPII = (text: string): string => {
   return anonymized;
 };
 
-// Claude 3.5 Sonnet API call (Primary provider)
-const callClaudeAPI = async (prompt: string, messages: any[], avatarId: string) => {
-  const personality = getEnhancedAvatarPersonality(avatarId);
-  
-  // Format messages for Claude
-  const claudeMessages = messages.map(msg => ({
-    role: msg.role === 'user' ? 'user' : 'assistant',
-    content: msg.content
-  }));
-  
-  claudeMessages.push({
-    role: 'user',
-    content: prompt
-  });
-
-  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error('Anthropic API key not configured');
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1000,
-      temperature: 0.7,
-      system: personality,
-      messages: claudeMessages
-    })
-  });
-
-  const data = await response.json();
-  
-  if (!response.ok) {
-    console.error('Claude API error:', data);
-    throw new Error(data.error?.message || 'Claude API error');
-  }
-
-  // Clean up response by removing any XML-style tags
-  let cleanedResponse = data.content[0].text;
-  
-  // Remove common unwanted tags
-  cleanedResponse = cleanedResponse
-    .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
-    .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
-    .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
-    .trim(); // Remove leading/trailing whitespace
-  
-  return cleanedResponse;
-};
-
-// OpenAI API call (Fallback provider)
-const callOpenAIAPI = async (prompt: string, messages: any[], avatarId: string) => {
-  const personality = getEnhancedAvatarPersonality(avatarId);
-  
-  const openAIMessages = [
-    { role: 'system', content: personality },
-    ...messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    })),
-    { role: 'user', content: prompt }
-  ];
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: openAIMessages,
-      temperature: 0.7,
-      max_tokens: 1000
-    })
-  });
-
-  const data = await response.json();
-  
-  if (!response.ok) {
-    console.error('OpenAI API error:', data);
-    throw new Error(data.error?.message || 'OpenAI API error');
-  }
-
-  // Clean up response by removing any XML-style tags
-  let cleanedResponse = data.choices[0].message.content;
-  
-  // Remove common unwanted tags
-  cleanedResponse = cleanedResponse
-    .replace(/<\/?response>/gi, '')  // Remove <response> and </response> tags
-    .replace(/<\/?thinking>/gi, '')  // Remove <thinking> and </thinking> tags
-    .replace(/<\/?analysis>/gi, '')  // Remove <analysis> and </analysis> tags
-    .trim(); // Remove leading/trailing whitespace
-  
-  return cleanedResponse;
-};
-
-// Intelligent provider routing
-const callOptimalProvider = async (prompt: string, messages: any[], avatarId: string, userMessage: string) => {
-  // Analyze context to choose best provider
-  const isEmotionallyIntense = /overwhelmed|panic|crisis|suicidal|hopeless/.test(userMessage.toLowerCase());
-  const isComplex = userMessage.length > 200 || messages.length > 10;
-  
-  if (isEmotionallyIntense) {
-    // Use Claude for emotionally sensitive content
-    return callClaudeAPI(prompt, messages, avatarId);
-  } else if (isComplex) {
-    // Use Claude for complex therapeutic discussions
-    return callClaudeAPI(prompt, messages, avatarId);
-  } else {
-    // Default to Claude (better for therapy overall)
-    return callClaudeAPI(prompt, messages, avatarId);
-  }
-};
+// DEPRECATED: Legacy API functions replaced by standardizedLLM service
+// These functions are kept for reference but should not be used
 
 // Enhanced avatar personalities with therapeutic focus
 const getEnhancedAvatarPersonality = (avatarId: string) => {

@@ -30,6 +30,8 @@ import { PrivacyConsentDialog } from '../components/PrivacyConsentDialog';
 import { CreditDisplay } from '../components/CreditDisplay';
 import { useCredits } from '../hooks/useCredits';
 import { creditService } from '../lib/creditService';
+import { useUsageTracking } from '../hooks/useUsageTracking';
+import { UsageLimitPrompt } from '../components/UsageLimitPrompt';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -53,7 +55,36 @@ type Conversation = {
 export const ChatScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Chat'>>();
-  const { conversationId, avatarId = 'jung', isNewConversation } = route.params; // Added isNewConversation
+
+  // Safely extract params with proper type checking
+  const params = route.params;
+  if (!params || !params.conversationId) {
+    console.error('ChatScreen: Missing required conversationId parameter');
+    // Show loading state and navigate back
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        Alert.alert(
+          'Error',
+          'Invalid conversation. Returning to conversations.',
+          [{ text: 'OK', onPress: () => navigation.navigate('ConversationsScreen') }]
+        );
+      }, 100);
+      return () => clearTimeout(timer);
+    }, [navigation]);
+
+    return (
+      <GradientBackground>
+        <SafeAreaView style={tw`flex-1 justify-center items-center`}>
+          <Text style={tw`text-jung-deep text-lg text-center px-6`}>
+            Loading conversation...
+          </Text>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  const { conversationId, avatarId = 'jung', isNewConversation } = params;
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -63,11 +94,14 @@ export const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const { hasCredits, spendCredits } = useCredits();
+  const { checkLimits, trackMessage, trackConversation } = useUsageTracking();
+  const [showLimitPrompt, setShowLimitPrompt] = useState(false);
+  const [limitType, setLimitType] = useState<'daily' | 'weekly' | 'monthly' | 'feature'>('daily');
   // Removed analysis-related state
   // const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   // const [analysisContent, setAnalysisContent] = useState('');
   // const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
+
   // Use the avatarId in your chat interface
   const avatar = availableAvatars.find(a => a.id === avatarId) || availableAvatars[0];
   
@@ -348,6 +382,17 @@ export const ChatScreen = () => {
   // Send an initial greeting from the AI
   const sendInitialGreeting = async () => {
     try {
+      // Check conversation limits for free users before starting new conversation
+      const limits = checkLimits();
+      if (!limits.canStartConversation) {
+        const currentLimitType = limits.limitReached;
+        if (currentLimitType) {
+          setLimitType(currentLimitType as 'daily' | 'weekly' | 'monthly' | 'feature');
+          setShowLimitPrompt(true);
+        }
+        return;
+      }
+
       setIsTyping(true);
       
       // Get the avatar's name for personalized greeting
@@ -423,6 +468,9 @@ export const ChatScreen = () => {
         Alert.alert('Error', `Failed to save initial greeting: ${insertError.message}`);
       } else {
         console.log('sendInitialGreeting: Successfully inserted initial message:', insertData);
+
+        // Track new conversation for analytics and limits
+        await trackConversation();
       }
         
     } catch (error) {
@@ -436,7 +484,18 @@ export const ChatScreen = () => {
   
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
-    
+
+    // Check usage limits for free users
+    const limits = checkLimits();
+    if (!limits.canSendMessage) {
+      const currentLimitType = limits.limitReached;
+      if (currentLimitType) {
+        setLimitType(currentLimitType as 'daily' | 'weekly' | 'monthly' | 'feature');
+        setShowLimitPrompt(true);
+      }
+      return;
+    }
+
     // Check if user has credits before sending message
     if (!hasCredits(1)) {
       Alert.alert(
@@ -573,6 +632,9 @@ export const ChatScreen = () => {
         if (!creditSpent) {
           console.warn('Failed to deduct credit, but message was sent successfully');
         }
+
+        // Track message usage for analytics and limits
+        await trackMessage();
         
         // Record message cost for analytics
         try {
@@ -810,6 +872,13 @@ export const ChatScreen = () => {
           )}
         </KeyboardAvoidingView>
         {/* {renderAnalysisModal()}  Removed call to deleted function */}
+
+        {/* Usage Limit Prompt */}
+        <UsageLimitPrompt
+          visible={showLimitPrompt}
+          onClose={() => setShowLimitPrompt(false)}
+          limitType={limitType}
+        />
       </SafeAreaView>
     </GradientBackground>
   );

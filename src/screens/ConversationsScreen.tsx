@@ -39,6 +39,8 @@ import useAuthStore from '../store/useAuthStore';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
 // Removed duplicate import
 import { useErrorReporting } from '../components/ErrorHandler';
+import { SmartTour } from '../components/InteractiveTour';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 type Conversation = {
   id: string;
@@ -76,6 +78,20 @@ export const ConversationsScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+
+  // Onboarding state for conversation tour
+  const { isNewUser, getGuidanceLevel } = useOnboarding();
+  const [showConversationTour, setShowConversationTour] = useState(false);
+
+  // Show conversation tour for new users after they've completed onboarding
+  useEffect(() => {
+    if (isNewUser() && getGuidanceLevel() === 'moderate' && conversations.length === 0) {
+      const timer = setTimeout(() => {
+        setShowConversationTour(true);
+      }, 1000); // Show after 1 second on conversations screen
+      return () => clearTimeout(timer);
+    }
+  }, [conversations.length, isNewUser, getGuidanceLevel]);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
@@ -1114,6 +1130,14 @@ Return only the title text with no additional explanation or formatting.`;
             <Text style={tw`text-white font-semibold text-base ml-2`}>Start New Conversation</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Conversation Tour for new users */}
+        <SmartTour
+          visible={showConversationTour}
+          tourType="conversation"
+          onComplete={() => setShowConversationTour(false)}
+          onSkip={() => setShowConversationTour(false)}
+        />
       </SafeAreaView>
     </GradientBackground>
   );

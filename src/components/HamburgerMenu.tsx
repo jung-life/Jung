@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 // Remove useNavigation import
-import { List, SignOut, Shield, FileText, Info, Crown } from 'phosphor-react-native'; // Added Crown icon
+import { List, SignOut, Shield, FileText, Info, Crown, ChartLine, FirstAid, TrendUp } from 'phosphor-react-native'; // Added new icons
 // Remove direct supabase import
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 // Remove RootStackNavigationProp import if no longer needed directly
@@ -42,6 +42,44 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ showLogout = true 
   };
 
   const menuItems: MenuItem[] = [ // Apply the MenuItem type here
+    // Add premium upgrade option for non-premium users
+    ...(!isPremiumUser ? [{
+      title: 'Upgrade to Premium',
+      icon: <Crown size={20} color="#F59E0B" />,
+      onPress: () => {
+        setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to Subscription pressed');
+        NavigationService.navigate('Subscription'); // Use service
+      },
+      textStyle: { color: '#F59E0B', fontWeight: 'bold' as const },
+    }] : []),
+    {
+      title: 'Growth Dashboard',
+      icon: <TrendUp size={20} color="#4A3B78" />,
+      onPress: () => {
+        setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to PersonalGrowthDashboard pressed');
+        NavigationService.navigate('PersonalGrowthDashboard'); // Use service
+      },
+    },
+    {
+      title: 'Conversation Analytics',
+      icon: <ChartLine size={20} color="#4A3B78" />,
+      onPress: () => {
+        setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to ConversationAnalytics pressed');
+        NavigationService.navigate('ConversationAnalytics'); // Use service
+      },
+    },
+    {
+      title: 'Support Center',
+      icon: <FirstAid size={20} color="#EF4444" />,
+      onPress: () => {
+        setMenuVisible(false);
+        console.log('HamburgerMenu: Navigate to SupportCenter pressed');
+        NavigationService.navigate('SupportCenter'); // Use service
+      },
+    },
     {
       title: 'Account Settings',
       icon: <Shield size={20} color="#4A3B78" />,

@@ -327,7 +327,7 @@ class CreditService {
   }
 
   /**
-   * Record message cost for analytics
+   * Record message cost for analytics with enhanced tracking
    */
   async recordMessageCost(
     messageId: string,
@@ -339,7 +339,9 @@ class CreditService {
     creditsCharged: number = 1,
     apiCostCents: number = 0,
     provider: string = 'claude',
-    modelName: string = 'claude-3-5-sonnet'
+    modelName: string = 'claude-3-5-sonnet',
+    processingTimeMs: number = 0,
+    strategy: string = 'balanced'
   ): Promise<boolean> {
     try {
       const { error } = await supabase
@@ -355,6 +357,9 @@ class CreditService {
           api_cost_cents: apiCostCents,
           provider,
           model_name: modelName,
+          processing_time_ms: processingTimeMs,
+          strategy_used: strategy,
+          total_tokens: inputTokens + outputTokens,
         });
 
       if (error) {

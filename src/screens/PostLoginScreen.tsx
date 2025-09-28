@@ -12,8 +12,12 @@ import * as secureStore from '../lib/secureStorage';
 import * as Location from 'expo-location'; // Added Expo Location
 import { supabase } from '../lib/supabase'; // Added Supabase
 import useAuthStore from '../store/useAuthStore'; // Added AuthStore
-// import { useSubscription } from '../hooks/useSubscription';
-// import PremiumUpgradeButton from '../components/PremiumUpgradeButton';
+import { useSubscription } from '../hooks/useSubscription';
+import { ConversationLimitPrompt, SubscriptionCTA } from '../components/PremiumPrompts';
+import { SubscriptionBanner } from '../components/SubscriptionStatus';
+import PremiumUpgradeButton from '../components/PremiumUpgradeButton';
+import { OnboardingTutorial, FeatureTour } from '../components/OnboardingTutorial';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 // Define types for mood tracking
 type MoodOption = 'Happy' | 'Okay' | 'Sad' | 'Anxious' | 'Angry' | 'Calm' | 'Excited' | 'Tired' | 'Stressed'; // Added new moods
@@ -41,8 +45,19 @@ const moodOptions: { name: MoodOption; icon: React.ReactNode; color: string }[] 
 const PostLoginScreen = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const { user } = useAuthStore(); // Get user from auth store
-  // const { isPremiumUser } = useSubscription(); // Temporarily disabled
-  const isPremiumUser = false; // Temporarily set to false
+  const { isPremiumUser } = useSubscription();
+  const [conversationCount, setConversationCount] = useState(0); // Track conversation usage
+
+  // Onboarding state
+  const {
+    shouldShowOnboarding,
+    shouldShowFeatureTour,
+    isNewUser,
+    markOnboardingComplete,
+    markFeatureTourSeen,
+    incrementSkipCount,
+    canSkip
+  } = useOnboarding();
   
   // Mood tracker state
   const [moodModalVisible, setMoodModalVisible] = useState(false);
@@ -286,8 +301,14 @@ const PostLoginScreen = () => {
             </Text>
           </View>
 
-          {/* Premium section temporarily disabled */}
-          
+          {/* Subscription Status Banner */}
+          <SubscriptionBanner />
+
+          {/* Premium Upgrade CTA - Show after 3 conversations for free users */}
+          {!isPremiumUser && conversationCount >= 3 && (
+            <ConversationLimitPrompt style={tw`mb-4`} />
+          )}
+
           {/* Conversations Button */}
           <SafeTouchableOpacity
             style={tw`bg-conversation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use conversation color
@@ -299,7 +320,7 @@ const PostLoginScreen = () => {
           
           {/* Journaling Button */}
           <SafeTouchableOpacity
-            style={tw`bg-purple-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use purple color for journaling
+            style={tw`bg-journaling rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use journaling color
             onPress={() => navigation.navigate('JournalingScreen')}
           >
             <SafePhosphorIcon iconType="BookOpen" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
@@ -326,21 +347,44 @@ const PostLoginScreen = () => {
 
           {/* Mood Tracker Button */}
           <SafeTouchableOpacity
-            style={tw`bg-indigo-200 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Example color
+            style={tw`bg-mood rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use mood color
             onPress={() => navigation.navigate('MoodTrackerScreen')} // Navigate to MoodTrackerScreen
             >
             <SafePhosphorIcon iconType="Smiley" size={28} color="#2D2B55" weight="fill" />
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Mood Tracker</Text> {/* Use jung-deep for text */}
           </SafeTouchableOpacity>
 
-          {/* Self-Help Resources Button */}
-          <SafeTouchableOpacity 
+          {/* Support Center Button (Crisis + Self-Help) */}
+          <SafeTouchableOpacity
             style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
-            onPress={() => navigation.navigate('SelfHelpResourcesScreen')}
-            >
-            <SafePhosphorIcon iconType="BookOpen" size={28} color="#2D2B55" weight="fill" />
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Self-Help Resources</Text> {/* Use jung-deep for text */}
+            onPress={() => navigation.navigate('SupportCenter')}
+          >
+            <SafePhosphorIcon iconType="FirstAid" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Support Center</Text> {/* Use jung-deep for text */}
           </SafeTouchableOpacity>
+
+          {/* Growth Dashboard Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-dashboard rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use dashboard color
+            onPress={() => navigation.navigate('PersonalGrowthDashboard')}
+          >
+            <SafePhosphorIcon iconType="TrendUp" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Growth Dashboard</Text> {/* Use jung-deep for text */}
+          </SafeTouchableOpacity>
+
+          {/* Conversation Analytics Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-analytics rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use analytics color
+            onPress={() => navigation.navigate('ConversationAnalytics')}
+          >
+            <SafePhosphorIcon iconType="ChartLine" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
+            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversation Analytics</Text> {/* Use jung-deep for text */}
+          </SafeTouchableOpacity>
+
+          {/* Bottom CTA for non-premium users */}
+          {!isPremiumUser && (
+            <SubscriptionCTA style={tw`mt-2`} />
+          )}
 
         </ScrollView>
 
@@ -368,6 +412,20 @@ const PostLoginScreen = () => {
             </SafeAreaView>
           </GradientBackground>
         </Modal>
+
+        {/* Onboarding Tutorial */}
+        <OnboardingTutorial
+          visible={shouldShowOnboarding()}
+          onComplete={markOnboardingComplete}
+          onSkip={canSkip ? incrementSkipCount : markOnboardingComplete}
+        />
+
+        {/* Feature Tour for Updates */}
+        <FeatureTour
+          visible={shouldShowFeatureTour()}
+          onComplete={markFeatureTourSeen}
+          featureType="general"
+        />
       </SafeAreaView>
     </GradientBackground>
   );

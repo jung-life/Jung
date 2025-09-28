@@ -5,36 +5,56 @@ import { supabase } from './supabase';
 // Initialize Google Sign-In
 export const initializeGoogleSignIn = () => {
   try {
+    console.log('🔵 Initializing Google Sign-In...');
+    console.log('🔵 GoogleSignin object:', typeof GoogleSignin);
+    console.log('🔵 Available methods:', Object.getOwnPropertyNames(GoogleSignin));
+
     // Try multiple sources for environment variables (physical devices need Constants)
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
                        Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
                        Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-    
-    console.log('🔵 Initializing Google Sign-In...');
-    console.log('🔵 Web Client ID:', webClientId ? 'Set' : 'Missing');
-    console.log('🔵 iOS Client ID:', iosClientId ? 'Set' : 'Missing');
-    
+
+    console.log('🔵 Web Client ID:', webClientId ? `${webClientId.substring(0, 20)}...` : 'Missing');
+    console.log('🔵 iOS Client ID:', iosClientId ? `${iosClientId.substring(0, 20)}...` : 'Missing');
+
     if (!webClientId) {
       console.error('❌ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not set');
+      console.error('❌ Check your app.json extra section');
       return false;
     }
-    
-    if (!iosClientId) {
-      console.error('❌ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID is not set');
-      return false;
-    }
-    
-    GoogleSignin.configure({
+
+    // Note: For iOS, we can use the same client ID if it's a web OAuth client
+    // The separate iOS client ID is only needed for native iOS OAuth clients
+    const clientIdToUse = iosClientId || webClientId;
+
+    const config = {
       webClientId,
-      iosClientId,
+      iosClientId: clientIdToUse,
       offlineAccess: true,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
+    };
+
+    console.log('🔵 Configuring with:', {
+      webClientId: !!config.webClientId,
+      iosClientId: !!config.iosClientId,
+      offlineAccess: config.offlineAccess,
+      forceCodeForRefreshToken: config.forceCodeForRefreshToken
     });
-    
+
+    GoogleSignin.configure(config);
+
     console.log('✅ Google Sign-In configured successfully');
+
+    // Test API availability after configuration
+    console.log('🔵 Testing API availability...');
+    console.log('🔵 hasPlayServices method:', typeof GoogleSignin.hasPlayServices);
+    console.log('🔵 signIn method:', typeof GoogleSignin.signIn);
+    console.log('🔵 getCurrentUser method:', typeof GoogleSignin.getCurrentUser);
+    console.log('🔵 signOut method:', typeof GoogleSignin.signOut);
+
     return true;
   } catch (error) {
     console.error('❌ Error configuring Google Sign-In:', error);
@@ -45,22 +65,67 @@ export const initializeGoogleSignIn = () => {
 export const signInWithGoogle = async () => {
   try {
     console.log('🔵 Starting Google Sign-In...');
-    
-    // Check if device supports Google Play Services
+
+    // Check if device supports Google Play Services first
     await GoogleSignin.hasPlayServices();
     console.log('🔵 Google Play Services available');
-    
+
+    // Check current user status
+    try {
+      const currentUser = await GoogleSignin.getCurrentUser();
+      if (currentUser) {
+        console.log('🔵 User already signed in:', currentUser.user.email);
+        // Sign out to ensure clean state
+        await GoogleSignin.signOut();
+        console.log('🔵 Cleared previous Google session');
+      }
+    } catch (userError) {
+      console.log('🔵 No previous user session found');
+    }
+
     // Get user info from Google
     const result = await GoogleSignin.signIn();
-    console.log('🔵 Google Sign-In successful:', {
+    console.log('🔵 Google Sign-In result:', {
+      data: !!result.data,
+      user: !!result.data?.user,
+      idToken: !!result.data?.idToken,
+      serverAuthCode: !!result.data?.serverAuthCode,
+      scopes: result.data?.scopes
+    });
+
+    console.log('🔵 User info:', {
       id: result.data?.user.id,
       email: result.data?.user.email,
       name: result.data?.user.name,
-      hasIdToken: !!result.data?.idToken
+      photo: result.data?.user.photo
     });
-    
-    if (!result.data?.idToken) {
-      throw new Error('No ID token received from Google');
+
+    if (!result.data) {
+      throw new Error('No data received from Google Sign-In');
+    }
+
+    if (!result.data.idToken) {
+      console.error('❌ No ID token in result:', result);
+      console.error('❌ Available data keys:', Object.keys(result.data || {}));
+
+      // Try to get tokens explicitly
+      try {
+        const tokens = await GoogleSignin.getTokens();
+        console.log('🔵 Retrieved tokens separately:', {
+          idToken: !!tokens.idToken,
+          accessToken: !!tokens.accessToken
+        });
+
+        if (tokens.idToken) {
+          // Use the separately retrieved token
+          result.data.idToken = tokens.idToken;
+        } else {
+          throw new Error('No ID token available from Google - check OAuth client configuration');
+        }
+      } catch (tokenError) {
+        console.error('❌ Failed to retrieve tokens:', tokenError);
+        throw new Error('No ID token received from Google. This usually means:\n1. OAuth client not properly configured\n2. Incorrect client IDs in app.json\n3. Missing OAuth consent screen setup');
+      }
     }
     
     if (!supabase) {
@@ -112,10 +177,27 @@ export const signOutGoogle = async () => {
 
 export const getCurrentGoogleUser = async () => {
   try {
+    // Try to get current user first (this doesn't require network)
+    const currentUser = await GoogleSignin.getCurrentUser();
+    if (currentUser) {
+      return currentUser;
+    }
+
+    // If no current user, try silent sign in
     const userInfo = await GoogleSignin.signInSilently();
     return userInfo;
   } catch (error) {
-    console.log('No Google user signed in');
+    console.log('No Google user signed in:', error.message);
     return null;
+  }
+};
+
+// Helper function to check if user is signed in
+export const isGoogleUserSignedIn = async () => {
+  try {
+    const user = await getCurrentGoogleUser();
+    return !!user;
+  } catch (error) {
+    return false;
   }
 };

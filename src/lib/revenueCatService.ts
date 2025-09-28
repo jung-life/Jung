@@ -31,20 +31,39 @@ class RevenueCatService {
       return;
     }
 
+    // Check if API keys are properly configured
+    if (Platform.OS === 'ios' && (!REVENUECAT_APPLE_API_KEY || REVENUECAT_APPLE_API_KEY.includes('YourKeyHere'))) {
+      console.warn('RevenueCat iOS API key not configured properly');
+      if (__DEV__) {
+        this.initialized = true;
+        return;
+      }
+    }
+
+    if (Platform.OS === 'android' && (!REVENUECAT_GOOGLE_API_KEY || REVENUECAT_GOOGLE_API_KEY.includes('YourKeyHere'))) {
+      console.warn('RevenueCat Android API key not configured properly');
+      if (__DEV__) {
+        this.initialized = true;
+        return;
+      }
+    }
+
     try {
       // Set log level for debugging (you can change this to LOG_LEVEL.ERROR for production)
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
 
       // Configure RevenueCat based on platform
       if (Platform.OS === 'ios') {
         await Purchases.configure({ apiKey: REVENUECAT_APPLE_API_KEY });
+        console.log('RevenueCat configured for iOS');
       } else if (Platform.OS === 'android') {
         await Purchases.configure({ apiKey: REVENUECAT_GOOGLE_API_KEY });
-        
+        console.log('RevenueCat configured for Android');
+
         // For Amazon builds (uncomment if needed):
-        // await Purchases.configure({ 
-        //   apiKey: REVENUECAT_AMAZON_API_KEY, 
-        //   useAmazon: true 
+        // await Purchases.configure({
+        //   apiKey: REVENUECAT_AMAZON_API_KEY,
+        //   useAmazon: true
         // });
       }
 
@@ -54,7 +73,7 @@ class RevenueCatService {
       console.error('Failed to initialize RevenueCat:', error);
       // Don't throw error in development to prevent app crashes
       if (__DEV__) {
-        console.warn('RevenueCat initialization failed in development. This is expected if running in Expo Go.');
+        console.warn('RevenueCat initialization failed in development. This is expected if running in Expo Go or without proper configuration.');
         this.initialized = true;
       } else {
         throw error;
