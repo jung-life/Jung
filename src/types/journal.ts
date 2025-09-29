@@ -11,7 +11,6 @@ export interface JournalEntry {
   attachments?: JournalAttachment[];
   wordCount: number;
   readingTime: number; // in minutes
-  isPrivate: boolean;
   isFavorite: boolean;
 }
 

@@ -140,6 +140,7 @@ export class JournalService {
       if (supabase) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          console.log('Updating journal entry in database:', { id, updates });
           const { data, error } = await supabase
             .from('journal_entries')
             .update(updatedEntry)
@@ -148,12 +149,24 @@ export class JournalService {
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) {
+            console.warn('Database update failed, falling back to local storage:', error);
+            // Fallback to local storage if database fails
+            const entries = await this.getLocalEntries();
+            const index = entries.findIndex(entry => entry.id === id);
+            if (index === -1) throw new Error('Entry not found');
+
+            entries[index] = { ...entries[index], ...updatedEntry };
+            await this.saveLocalEntries(entries);
+            return entries[index];
+          }
+          console.log('Database update successful:', data);
           return data;
         }
       }
 
       // Fallback to local storage
+      console.log('Using local storage for journal entry update');
       const entries = await this.getLocalEntries();
       const index = entries.findIndex(entry => entry.id === id);
       if (index === -1) throw new Error('Entry not found');
@@ -163,7 +176,23 @@ export class JournalService {
       return entries[index];
     } catch (error) {
       console.error('Error updating journal entry:', error);
-      throw error;
+
+      // Final fallback - try to update local storage even if other methods failed
+      try {
+        console.log('Attempting final fallback to local storage');
+        const entries = await this.getLocalEntries();
+        const index = entries.findIndex(entry => entry.id === id);
+        if (index !== -1) {
+          entries[index] = { ...entries[index], ...updatedEntry };
+          await this.saveLocalEntries(entries);
+          console.log('Local storage fallback successful');
+          return entries[index];
+        }
+      } catch (fallbackError) {
+        console.error('Even local storage fallback failed:', fallbackError);
+      }
+
+      throw new Error(`Failed to update journal entry: ${error.message || 'Unknown error'}`);
     }
   }
 

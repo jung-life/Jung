@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { appLogger, logSupabaseError, logSupabaseSuccess } from './debugger';
 
 // Enhanced environment variable detection for physical devices
 const getEnvironmentVariable = (key: string): string | undefined => {
@@ -25,7 +26,7 @@ const getEnvironmentVariable = (key: string): string | undefined => {
 const supabaseUrl = getEnvironmentVariable('EXPO_PUBLIC_SUPABASE_URL');
 const supabaseAnonKey = getEnvironmentVariable('EXPO_PUBLIC_SUPABASE_ANON_KEY');
 
-// Physical device debugging
+// Physical device debugging with enhanced logging
 console.log('🔍 PHYSICAL DEVICE AUTHENTICATION DEBUG:');
 console.log('- Platform:', Platform.OS);
 console.log('- Is Device:', Constants.isDevice);
@@ -33,6 +34,13 @@ console.log('- Expo Config Available:', !!Constants.expoConfig);
 console.log('- Manifest Available:', !!Constants.manifest);
 console.log('- App Ownership:', Constants.appOwnership);
 console.log('- Execution Environment:', Constants.executionEnvironment);
+
+// Log environment variable status to debugger
+const envVarsStatus = {
+  EXPO_PUBLIC_SUPABASE_URL: !!supabaseUrl,
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: !!supabaseAnonKey
+};
+appLogger.environmentCheck(envVarsStatus);
 
 // Enhanced SecureStore adapter with fallback
 const createSecureStoreAdapter = () => {
@@ -136,10 +144,14 @@ if (supabase) {
 export const enhancedAuth = {
   // Enhanced Apple Sign-In with proper Service ID handling
   signInWithApple: async (identityToken: string, nonce: string) => {
-    console.log('🍎 Enhanced Apple Sign-In starting...');
+    const timer = appLogger.startTiming('Apple Sign-In');
+    appLogger.authAttempt('Apple', { hasToken: !!identityToken, hasNonce: !!nonce });
 
     if (!supabase) {
-      throw new Error('Supabase client not available');
+      const error = new Error('Supabase client not available');
+      logSupabaseError('Apple Sign-In', error);
+      timer.end(false, error);
+      throw error;
     }
 
     try {
@@ -151,32 +163,44 @@ export const enhancedAuth = {
       });
 
       if (error) {
-        console.error('🍎 Apple Sign-In Supabase error:', error);
+        logSupabaseError('Apple Sign-In', error, {
+          hasToken: !!identityToken,
+          tokenLength: identityToken?.length
+        });
 
         // Enhanced error messages for common issues
         if (error.message.includes('Unacceptable audience')) {
-          throw new Error(
+          const configError = new Error(
             'Apple Sign-In configuration error: Service ID mismatch. ' +
             'Please check your Supabase Apple provider settings. ' +
             'The Service ID should match your Bundle ID: org.name.jung'
           );
+          timer.end(false, configError);
+          throw configError;
         } else if (error.message.includes('Invalid token')) {
-          throw new Error(
+          const tokenError = new Error(
             'Apple ID token is invalid. This might be due to app configuration issues.'
           );
+          timer.end(false, tokenError);
+          throw tokenError;
         } else {
+          timer.end(false, error);
           throw error;
         }
       }
 
-      console.log('🍎 Apple Sign-In successful:', {
+      logSupabaseSuccess('Apple Sign-In', {
         userId: data?.user?.id,
         hasSession: !!data?.session
       });
+      appLogger.authSuccess('Apple', data?.user?.id);
+      timer.end(true);
 
       return { data, error: null };
     } catch (error) {
-      console.error('🍎 Enhanced Apple Sign-In error:', error);
+      logSupabaseError('Apple Sign-In', error);
+      appLogger.authFailure('Apple', error);
+      timer.end(false, error);
       throw error;
     }
   },

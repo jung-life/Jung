@@ -90,41 +90,68 @@ export const JournalSearchModal: React.FC<JournalSearchModalProps> = ({
     >
       <SafeAreaView style={tw`flex-1 bg-white`}>
         {/* Header */}
-        <View style={tw`px-6 py-4 border-b border-gray-200 flex-row justify-between items-center`}>
-          <TouchableOpacity onPress={onClose}>
+        <View style={tw`px-6 py-4 border-b border-gray-200 flex-row justify-between items-center bg-purple-50`}>
+          <TouchableOpacity
+            onPress={onClose}
+            accessibilityLabel="Cancel search"
+            accessibilityHint="Close search modal without applying filters"
+            style={tw`px-3 py-2 rounded-lg`}
+            activeOpacity={0.7}
+          >
             <Text style={tw`text-jung-purple font-semibold`}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={tw`text-lg font-bold text-gray-800`}>Search & Filter</Text>
-          <TouchableOpacity onPress={handleSearch}>
-            <Text style={tw`text-jung-purple font-semibold`}>Apply</Text>
+          <View style={tw`flex-row items-center`}>
+            <SafePhosphorIcon iconType="FunnelSimple" size={20} color="#4A3B78" weight="bold" />
+            <Text style={tw`text-lg font-bold text-gray-800 ml-2`}>Search & Filter</Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleSearch}
+            accessibilityLabel="Apply search filters"
+            accessibilityHint="Apply the current search filters to your journal entries"
+            style={tw`bg-jung-purple px-3 py-2 rounded-lg shadow-sm`}
+            activeOpacity={0.8}
+          >
+            <Text style={tw`text-white font-semibold`}>Apply</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={tw`flex-1 p-6`}>
           {/* Text Search */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-gray-700 font-semibold mb-2`}>Search Text</Text>
+          <View style={tw`mb-6 bg-blue-50 rounded-2xl p-4 border border-blue-200`}>
+            <View style={tw`flex-row items-center mb-3`}>
+              <SafePhosphorIcon iconType="MagnifyingGlass" size={18} color="#3B82F6" weight="bold" />
+              <Text style={tw`text-gray-700 font-semibold ml-2`}>Search Text</Text>
+            </View>
             <TextInput
-              style={tw`bg-gray-50 rounded-xl p-4 text-gray-800 border border-gray-200`}
+              style={tw`bg-white rounded-xl p-4 text-gray-800 border border-blue-300 shadow-sm`}
               placeholder="Search in titles and content..."
+              placeholderTextColor="#9CA3AF"
               value={filters.query || ''}
               onChangeText={(text) => setFilters({ ...filters, query: text })}
+              accessibilityLabel="Search text input"
+              accessibilityHint="Enter text to search for in journal entry titles and content"
             />
           </View>
 
           {/* Mood Filter */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-gray-700 font-semibold mb-3`}>Filter by Mood</Text>
+          <View style={tw`mb-6 bg-purple-50 rounded-2xl p-4 border border-purple-200`}>
+            <View style={tw`flex-row items-center mb-3`}>
+              <SafePhosphorIcon iconType="Smiley" size={18} color="#8B5CF6" weight="bold" />
+              <Text style={tw`text-gray-700 font-semibold ml-2`}>Filter by Mood</Text>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={tw`flex-row space-x-3`}>
                 {moodOptions.map((mood) => (
                   <TouchableOpacity
                     key={mood}
-                    style={tw`${filters.mood === mood ? 'bg-jung-purple' : 'bg-gray-100'} rounded-xl p-3 items-center min-w-16`}
+                    style={tw`${filters.mood === mood ? 'bg-jung-purple shadow-md' : 'bg-white border border-purple-300 shadow-sm'} rounded-xl p-3 items-center min-w-16`}
                     onPress={() => setFilters({
                       ...filters,
                       mood: filters.mood === mood ? undefined : mood
                     })}
+                    accessibilityLabel={`Filter by ${mood} mood`}
+                    accessibilityHint={`Tap to ${filters.mood === mood ? 'remove' : 'apply'} ${mood} mood filter`}
+                    activeOpacity={0.8}
                   >
                     <Text style={tw`text-2xl mb-1`}>{getMoodEmoji(mood)}</Text>
                     <Text style={tw`${filters.mood === mood ? 'text-white' : 'text-gray-600'} text-xs font-medium capitalize`}>
@@ -137,19 +164,28 @@ export const JournalSearchModal: React.FC<JournalSearchModalProps> = ({
           </View>
 
           {/* Tags Filter */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-gray-700 font-semibold mb-2`}>Filter by Tags</Text>
+          <View style={tw`mb-6 bg-green-50 rounded-2xl p-4 border border-green-200`}>
+            <View style={tw`flex-row items-center mb-3`}>
+              <SafePhosphorIcon iconType="Plus" size={18} color="#10B981" weight="bold" />
+              <Text style={tw`text-gray-700 font-semibold ml-2`}>Filter by Tags</Text>
+            </View>
             <View style={tw`flex-row items-center mb-3`}>
               <TextInput
-                style={tw`flex-1 bg-gray-50 rounded-xl p-4 text-gray-800 border border-gray-200 mr-2`}
+                style={tw`flex-1 bg-white rounded-xl p-4 text-gray-800 border border-green-300 shadow-sm mr-2`}
                 placeholder="Add tag to filter..."
+                placeholderTextColor="#9CA3AF"
                 value={tagInput}
                 onChangeText={setTagInput}
                 onSubmitEditing={addTag}
+                accessibilityLabel="Tag input field"
+                accessibilityHint="Enter a tag name to add to your search filters"
               />
               <TouchableOpacity
-                style={tw`bg-jung-purple rounded-xl p-4`}
+                style={tw`bg-green-500 rounded-xl p-4 shadow-md`}
                 onPress={addTag}
+                accessibilityLabel="Add tag filter"
+                accessibilityHint="Add the entered tag to your search filters"
+                activeOpacity={0.8}
               >
                 <SafePhosphorIcon iconType="Plus" size={16} color="white" weight="bold" />
               </TouchableOpacity>
@@ -160,11 +196,14 @@ export const JournalSearchModal: React.FC<JournalSearchModalProps> = ({
                 {filters.tags.map((tag, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={tw`bg-jung-purple/10 border border-jung-purple/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center`}
+                    style={tw`bg-green-100 border border-green-300 rounded-full px-3 py-1.5 mr-2 mb-2 flex-row items-center shadow-sm`}
                     onPress={() => removeTag(tag)}
+                    accessibilityLabel={`Remove ${tag} tag filter`}
+                    accessibilityHint={`Tap to remove the ${tag} tag from your search filters`}
+                    activeOpacity={0.7}
                   >
-                    <Text style={tw`text-jung-purple text-sm font-medium mr-1`}>#{tag}</Text>
-                    <SafePhosphorIcon iconType="X" size={12} color="#4A3B78" weight="bold" />
+                    <Text style={tw`text-green-700 text-sm font-medium mr-1`}>#{tag}</Text>
+                    <SafePhosphorIcon iconType="X" size={12} color="#047857" weight="bold" />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -245,10 +284,14 @@ export const JournalSearchModal: React.FC<JournalSearchModalProps> = ({
 
           {/* Clear Filters Button */}
           <TouchableOpacity
-            style={tw`bg-gray-100 border border-gray-200 rounded-xl py-4 px-6 mb-4`}
+            style={tw`bg-red-50 border border-red-300 rounded-xl py-4 px-6 mb-4 shadow-sm flex-row items-center justify-center`}
             onPress={clearFilters}
+            accessibilityLabel="Clear all search filters"
+            accessibilityHint="Remove all current search filters and reset the search form"
+            activeOpacity={0.8}
           >
-            <Text style={tw`text-gray-700 font-bold text-center`}>Clear All Filters</Text>
+            <SafePhosphorIcon iconType="X" size={18} color="#DC2626" weight="bold" />
+            <Text style={tw`text-red-600 font-bold text-center ml-2`}>Clear All Filters</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>

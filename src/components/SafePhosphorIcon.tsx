@@ -5,7 +5,8 @@ import {
   SmileySad, SmileyXEyes, CloudLightning, FloppyDisk, ArrowLeft,
   Wind, Sparkle, Bed, FireSimple, House, X, Plus, ArrowRight,
   FirstAid, TrendUp, ChartLine, TrendDown, Minus, Clock,
-  ArrowsClockwise, Lightbulb, ChatCircle
+  ArrowsClockwise, Lightbulb, ChatCircle, FunnelSimple, CaretRight,
+  Lock, LockOpen, MagnifyingGlass, PenNib
 } from 'phosphor-react-native';
 
 // Define the icon types we're using
@@ -15,7 +16,8 @@ type IconType =
   | 'CloudLightning' | 'FloppyDisk' | 'ArrowLeft' | 'ArrowRight' | 'Wind'
   | 'Sparkle' | 'Bed' | 'FireSimple' | 'House' | 'X' | 'Plus'
   | 'FirstAid' | 'TrendUp' | 'ChartLine' | 'TrendDown' | 'Minus' | 'Clock'
-  | 'ArrowsClockwise' | 'Lightbulb' | 'ChatCircle';
+  | 'ArrowsClockwise' | 'Lightbulb' | 'ChatCircle' | 'FunnelSimple' | 'CaretRight'
+  | 'Lock' | 'LockOpen' | 'MagnifyingGlass' | 'PenNib';
 
 interface SafePhosphorIconProps {
   iconType: IconType;
@@ -96,6 +98,18 @@ export const SafePhosphorIcon: React.FC<SafePhosphorIconProps> = ({
         return <Lightbulb size={size} color={color} weight={weight} />;
       case 'ChatCircle':
         return <ChatCircle size={size} color={color} weight={weight} />;
+      case 'FunnelSimple':
+        return <FunnelSimple size={size} color={color} weight={weight} />;
+      case 'CaretRight':
+        return <CaretRight size={size} color={color} weight={weight} />;
+      case 'Lock':
+        return <Lock size={size} color={color} weight={weight} />;
+      case 'LockOpen':
+        return <LockOpen size={size} color={color} weight={weight} />;
+      case 'MagnifyingGlass':
+        return <MagnifyingGlass size={size} color={color} weight={weight} />;
+      case 'PenNib':
+        return <PenNib size={size} color={color} weight={weight} />;
       default:
         console.warn(`Icon "${iconType}" not supported`);
         return null;

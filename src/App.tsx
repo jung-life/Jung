@@ -32,6 +32,7 @@ import { supabase, storeAuthData } from './lib/supabase';
 import { initAnalytics } from './lib/analytics';
 import { initializeGoogleSignIn } from './lib/googleSignIn';
 import { revenueCatService } from './lib/revenueCatService';
+import { initializeDebugging } from './lib/initDebugger';
 import AppNavigator from './navigation/AppNavigator';
 import { NavigationErrorBoundary } from './components/NavigationErrorBoundary';
 
@@ -165,9 +166,12 @@ const AppContent = () => {
 
 export default function App() {
   useEffect(() => {
+    // Initialize debugging system first
+    initializeDebugging();
+
     // Initialize Google Sign-In when the app starts
     initializeGoogleSignIn();
-    
+
     // Initialize RevenueCat when the app starts
     revenueCatService.initialize();
   }, []);
