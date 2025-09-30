@@ -385,7 +385,7 @@ export class JournalService {
           'What would I do differently?'
         ],
         category: 'daily',
-        icon: 'Sun',
+        icon: 'Lightbulb',
       },
       {
         id: 'gratitude',
@@ -413,7 +413,7 @@ export class JournalService {
           'How I\'ll celebrate when I achieve this goal:'
         ],
         category: 'goals',
-        icon: 'Target',
+        icon: 'TrendUp',
       },
       {
         id: 'emotional-processing',
@@ -441,7 +441,7 @@ export class JournalService {
           'What might this dream be telling me?'
         ],
         category: 'dreams',
-        icon: 'Moon',
+        icon: 'Bed',
       }
     ];
   }

@@ -25,11 +25,9 @@ const JournalingScreen = () => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [showNewEntryModal, setShowNewEntryModal] = useState(false);
   const [showEditEntryModal, setShowEditEntryModal] = useState(false);
-  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<JournalTemplate | null>(null);
   const [searchFilters, setSearchFilters] = useState<JournalSearchFilters>({});
   const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
@@ -62,6 +60,7 @@ const JournalingScreen = () => {
   useEffect(() => {
     applyFilters();
   }, [entries, searchFilters]);
+
 
   // Sort entries with favorites first, then by date (newest first)
   const sortedEntries = [...entries].sort((a, b) => {
@@ -152,7 +151,6 @@ const JournalingScreen = () => {
       tags: [],
       isFavorite: false,
     });
-    setSelectedTemplate(null);
     setNewTagInput('');
   };
 
@@ -263,24 +261,6 @@ const JournalingScreen = () => {
     );
   };
 
-  const handleTemplateSelect = (template: JournalTemplate) => {
-    console.log('Template selected:', template.name);
-    setSelectedTemplate(template);
-
-    // Create formatted content with prompts
-    const formattedContent = template.prompts.map((prompt, index) =>
-      `${index + 1}. ${prompt}\n\n`
-    ).join('');
-
-    setNewEntry({
-      ...newEntry,
-      title: template.name,
-      content: formattedContent,
-    });
-
-    setShowTemplatesModal(false);
-    console.log('Template applied successfully');
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -574,27 +554,99 @@ const JournalingScreen = () => {
             </View>
 
             <ScrollView style={tw`flex-1 p-6`}>
-              {/* Template Selection */}
-              <TouchableOpacity
-                style={tw`bg-jung-purple/10 border border-jung-purple/20 rounded-xl p-4 mb-6`}
-                onPress={() => {
-                  console.log('Opening templates modal');
-                  setShowTemplatesModal(true);
-                }}
-              >
-                <View style={tw`flex-row items-center justify-between`}>
-                  <View style={tw`flex-row items-center`}>
-                    <SafePhosphorIcon iconType="Sparkle" size={20} color="#4A3B78" weight="bold" />
-                    <Text style={tw`text-jung-purple font-semibold ml-2`}>
-                      {selectedTemplate ? selectedTemplate.name : 'Journaling Coach'}
-                    </Text>
-                  </View>
-                  <SafePhosphorIcon iconType="CaretRight" size={16} color="#4A3B78" weight="bold" />
+              {/* Journaling Coach - Direct Template Selection */}
+              <View style={tw`mb-6`}>
+                <View style={tw`flex-row items-center mb-3`}>
+                  <SafePhosphorIcon iconType="Sparkle" size={20} color="#4A3B78" weight="bold" />
+                  <Text style={tw`text-jung-purple font-bold text-lg ml-2`}>
+                    Journaling Coach
+                  </Text>
                 </View>
-                <Text style={tw`text-jung-purple/70 text-sm mt-1`}>
-                  Get personalized writing guidance and prompts
+                <Text style={tw`text-gray-600 text-sm mb-4`}>
+                  Get started with guided prompts and structured templates
                 </Text>
-              </TouchableOpacity>
+
+                {/* Template Buttons */}
+                <View style={tw`gap-3`}>
+                  {/* Daily Reflection */}
+                  <TouchableOpacity
+                    style={tw`bg-blue-500 rounded-xl p-4 shadow-sm`}
+                    onPress={() => {
+                      console.log('🎯 Daily Reflection selected!');
+                      setNewEntry({
+                        ...newEntry,
+                        title: 'Daily Reflection',
+                        content: '1. What was the highlight of my day?\n\n2. What challenged me today?\n\n3. What am I grateful for today?\n\n4. How did I grow today?\n\n5. What would I do differently?\n\n'
+                      });
+                      setShowNewEntryModal(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={tw`flex-row items-center justify-between`}>
+                      <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-2xl mr-3`}>📝</Text>
+                        <View>
+                          <Text style={tw`text-white font-bold text-base`}>Daily Reflection</Text>
+                          <Text style={tw`text-blue-100 text-sm`}>5 thoughtful prompts</Text>
+                        </View>
+                      </View>
+                      <SafePhosphorIcon iconType="CaretRight" size={16} color="white" weight="bold" />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Gratitude Journal */}
+                  <TouchableOpacity
+                    style={tw`bg-green-500 rounded-xl p-4 shadow-sm`}
+                    onPress={() => {
+                      console.log('🎯 Gratitude Journal selected!');
+                      setNewEntry({
+                        ...newEntry,
+                        title: 'Gratitude Journal',
+                        content: '1. Three things I\'m grateful for today:\n\n2. Someone who made my day better:\n\n3. A small moment that brought me joy:\n\n4. Something about myself I appreciate:\n\n5. A lesson I\'m thankful to have learned:\n\n'
+                      });
+                      setShowNewEntryModal(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={tw`flex-row items-center justify-between`}>
+                      <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-2xl mr-3`}>🙏</Text>
+                        <View>
+                          <Text style={tw`text-white font-bold text-base`}>Gratitude Journal</Text>
+                          <Text style={tw`text-green-100 text-sm`}>Focus on the positive</Text>
+                        </View>
+                      </View>
+                      <SafePhosphorIcon iconType="CaretRight" size={16} color="white" weight="bold" />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Goal Setting */}
+                  <TouchableOpacity
+                    style={tw`bg-purple-500 rounded-xl p-4 shadow-sm`}
+                    onPress={() => {
+                      console.log('🎯 Goal Setting selected!');
+                      setNewEntry({
+                        ...newEntry,
+                        title: 'Goal Setting',
+                        content: '1. What do I want to achieve this week?\n\n2. What steps will I take to get there?\n\n3. What obstacles might I face and how will I overcome them?\n\n4. How will I know when I\'ve succeeded?\n\n5. What support or resources do I need?\n\n'
+                      });
+                      setShowNewEntryModal(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={tw`flex-row items-center justify-between`}>
+                      <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-2xl mr-3`}>🎯</Text>
+                        <View>
+                          <Text style={tw`text-white font-bold text-base`}>Goal Setting</Text>
+                          <Text style={tw`text-purple-100 text-sm`}>Plan your success</Text>
+                        </View>
+                      </View>
+                      <SafePhosphorIcon iconType="CaretRight" size={16} color="white" weight="bold" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               {/* Title Input */}
               <View style={tw`mb-4`}>
@@ -860,41 +912,6 @@ const JournalingScreen = () => {
           </SafeAreaView>
         </Modal>
 
-        {/* Templates Modal */}
-        <Modal
-          visible={showTemplatesModal}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
-          <SafeAreaView style={tw`flex-1 bg-white`}>
-            <View style={tw`px-6 py-4 border-b border-gray-200 flex-row justify-between items-center`}>
-              <TouchableOpacity onPress={() => setShowTemplatesModal(false)}>
-                <Text style={tw`text-jung-purple font-semibold`}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={tw`text-lg font-bold text-gray-800`}>Journaling Coach</Text>
-              <View style={tw`w-16`} />
-            </View>
-
-            <ScrollView style={tw`flex-1 p-6`}>
-              {journalService.getTemplates().map((template) => (
-                <TouchableOpacity
-                  key={template.id}
-                  style={tw`bg-white border border-gray-200 rounded-xl p-4 mb-4`}
-                  onPress={() => handleTemplateSelect(template)}
-                >
-                  <View style={tw`flex-row items-center mb-2`}>
-                    <SafePhosphorIcon iconType={template.icon as any} size={24} color="#4A3B78" weight="bold" />
-                    <Text style={tw`text-lg font-bold text-gray-800 ml-3`}>{template.name}</Text>
-                  </View>
-                  <Text style={tw`text-gray-600 mb-3`}>{template.description}</Text>
-                  <Text style={tw`text-jung-purple text-sm font-medium`}>
-                    {template.prompts.length} prompts • {template.category}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </SafeAreaView>
-        </Modal>
 
         {/* Search Modal */}
         <JournalSearchModal

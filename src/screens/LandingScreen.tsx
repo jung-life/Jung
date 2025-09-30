@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   highlightG: {
-    color: '#4D7CC8',
+    color: '#FF6B35',
     fontWeight: 'bold',
   },
   button: {
