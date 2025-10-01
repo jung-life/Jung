@@ -54,17 +54,25 @@ class RevenueCatService {
 
       // Configure RevenueCat based on platform
       if (Platform.OS === 'ios') {
+        console.log('🔧 Configuring RevenueCat for iOS...');
+        console.log('🔑 API Key:', REVENUECAT_APPLE_API_KEY ? 'Present' : 'MISSING');
+        console.log('🆔 Entitlement ID:', ENTITLEMENT_ID);
+
         await Purchases.configure({ apiKey: REVENUECAT_APPLE_API_KEY });
-        console.log('RevenueCat configured for iOS');
+        console.log('✅ RevenueCat configured for iOS successfully');
+
+        // Test connection immediately
+        try {
+          const customerInfo = await Purchases.getCustomerInfo();
+          console.log('✅ RevenueCat connection test successful');
+          console.log('👤 Customer ID:', customerInfo.originalAppUserId);
+        } catch (connectionError) {
+          console.error('❌ RevenueCat connection test failed:', connectionError);
+        }
+
       } else if (Platform.OS === 'android') {
         await Purchases.configure({ apiKey: REVENUECAT_GOOGLE_API_KEY });
         console.log('RevenueCat configured for Android');
-
-        // For Amazon builds (uncomment if needed):
-        // await Purchases.configure({
-        //   apiKey: REVENUECAT_AMAZON_API_KEY,
-        //   useAmazon: true
-        // });
       }
 
       this.initialized = true;
