@@ -13,10 +13,11 @@ export const useSubscription = () => {
       setLoading(true);
       setError(null);
 
-      // Try RevenueCat first
+      // Try RevenueCat first (Primary system)
       try {
         const revenueCatSubscribed = await revenueCatService.isUserSubscribed();
         if (revenueCatSubscribed !== undefined) {
+          console.log('✅ Using RevenueCat for subscription management');
           setIsRevenueCatAvailable(true);
           setSubscriptionStatus({
             isActive: revenueCatSubscribed,
@@ -27,10 +28,11 @@ export const useSubscription = () => {
           return;
         }
       } catch (revenueCatError) {
-        console.log('RevenueCat not available, falling back to IAP service:', revenueCatError);
+        console.log('⚠️ RevenueCat unavailable, falling back to native IAP');
       }
 
-      // Fallback to IAP service
+      // Fallback to native IAP service
+      console.log('🛡️ Using native IAP as fallback');
       setIsRevenueCatAvailable(false);
       const status = await inAppPurchaseService.getSubscriptionStatus();
       setSubscriptionStatus(status);

@@ -16,8 +16,8 @@ import { SafePhosphorIcon } from '../components/SafePhosphorIcon';
 import { useRevenueCat } from '../hooks/useRevenueCat';
 import { useSubscription } from '../hooks/useSubscription';
 import { PurchasesPackage } from 'react-native-purchases';
-import { RevenueCatDebug } from '../components/RevenueCatDebug';
 import { SubscriptionCard } from '../components/SubscriptionStatus';
+import { inAppPurchaseService } from '../lib/inAppPurchaseService';
 import tw from '../lib/tailwind';
 
 
@@ -65,6 +65,24 @@ export default function SubscriptionScreen() {
   // Also check subscription status
   const { isRevenueCatAvailable } = useSubscription();
 
+  // Native IAP fallback function
+  const attemptNativeIAPPurchase = async (productId: string): Promise<boolean> => {
+    try {
+      // Initialize IAP service if not already done
+      await inAppPurchaseService.initialize();
+
+      // Attempt subscription purchase directly
+      await inAppPurchaseService.purchaseSubscription(productId);
+
+      // Check if purchase was successful by getting updated status
+      const status = await inAppPurchaseService.getSubscriptionStatus();
+      return status.isActive;
+    } catch (error) {
+      console.error('Native IAP purchase failed:', error);
+      return false;
+    }
+  };
+
   const handleSubscriptionSelect = async (planId: string) => {
     if (isProcessing) return;
 
@@ -73,16 +91,17 @@ export default function SubscriptionScreen() {
       const plan = subscriptionPlans.find(p => p.id === planId);
       if (!plan) return;
 
-      // If we have a real RevenueCat package and it's available, use it
+      // Primary: Try RevenueCat first
       if (isRevenueCatAvailable && currentOffering) {
+        console.log('🎯 Attempting RevenueCat purchase for:', planId);
         const revenueCatPackage = currentOffering.availablePackages?.find(
           (pkg: PurchasesPackage) => pkg.identifier === planId
         );
 
         if (revenueCatPackage) {
-          console.log('Processing purchase with RevenueCat:', planId);
           const success = await purchasePackage(revenueCatPackage);
           if (success) {
+            console.log('✅ RevenueCat purchase successful');
             Alert.alert(
               'Purchase Successful! 🎉',
               'Welcome to Jung Premium! Enjoy unlimited access to all features.',
@@ -90,33 +109,44 @@ export default function SubscriptionScreen() {
             );
             return;
           } else {
+            console.log('❌ RevenueCat purchase failed');
             Alert.alert('Purchase Failed', 'Please try again or contact support.');
             return;
           }
+        } else {
+          console.log('⚠️ RevenueCat package not found, falling back to native IAP');
         }
+      } else {
+        console.log('⚠️ RevenueCat not available, using native IAP fallback');
       }
 
-      // Fallback for development/testing when RevenueCat is not available
-      console.log('RevenueCat not available, showing development mode alert');
-      Alert.alert(
-        'Development Mode',
-        `RevenueCat is not fully configured. Selected: ${plan.title} plan (${plan.price}${plan.period}).`,
-        [
-          { text: 'Cancel' },
-          {
-            text: 'Simulate Purchase',
-            onPress: () => {
-              Alert.alert(
-                'Purchase Simulated! 🎉',
-                'Welcome to Jung Premium! This is a simulated purchase for development.',
-                [{ text: 'Start Exploring', onPress: () => navigation.goBack() }]
-              );
-            }
-          }
-        ]
-      );
+      // Fallback: Use native IAP when RevenueCat is not available
+      console.log('🛡️ Attempting native IAP purchase for:', planId);
+
+      // Try native IAP purchase
+      try {
+        const iapSuccess = await attemptNativeIAPPurchase(planId);
+        if (iapSuccess) {
+          Alert.alert(
+            'Purchase Successful! 🎉',
+            'Welcome to Jung Premium! Enjoy unlimited access to all features.',
+            [{ text: 'Start Exploring', onPress: () => navigation.goBack() }]
+          );
+        } else {
+          Alert.alert(
+            'Purchase Failed',
+            'Unable to process subscription. Please try again or contact support.',
+            [{ text: 'OK' }]
+          );
+        }
+      } catch (iapError) {
+        Alert.alert(
+          'Subscription Service',
+          'Subscription features are currently being set up. Please try again later.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (error) {
-      console.error('Subscription error:', error);
       Alert.alert(
         'Purchase Error',
         error instanceof Error ? error.message : 'Failed to process subscription. Please try again.',
@@ -277,8 +307,6 @@ export default function SubscriptionScreen() {
               {/* Current Subscription Status */}
               <SubscriptionCard showManageButton={true} />
 
-              {/* Debug Component (Development Only) */}
-              {__DEV__ && <RevenueCatDebug />}
 
               {/* Plans */}
               {subscriptionPlans.map(plan => renderPlanCard(plan))}

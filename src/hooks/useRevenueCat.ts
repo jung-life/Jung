@@ -58,11 +58,6 @@ export const useRevenueCat = (entitlementId: string = ENTITLEMENT_ID): UseRevenu
       const inTrial = await revenueCatService.isInTrialPeriod(entitlementId);
       setIsInTrialPeriod(inTrial);
 
-      console.log('RevenueCat status updated:', {
-        subscribed,
-        expirationDate: expDate,
-        inTrial
-      });
     } catch (err) {
       console.error('Failed to check subscription status:', err);
       setError(err instanceof Error ? err.message : 'Failed to check subscription status');
@@ -76,7 +71,6 @@ export const useRevenueCat = (entitlementId: string = ENTITLEMENT_ID): UseRevenu
     try {
       // If already loading, return the existing promise
       if (currentOfferingPromise) {
-        console.log('RevenueCat offering request already in progress, waiting...');
         const offering = await currentOfferingPromise;
         setCurrentOffering(offering);
         return;
@@ -89,7 +83,6 @@ export const useRevenueCat = (entitlementId: string = ENTITLEMENT_ID): UseRevenu
     } catch (err) {
       // Handle the "cancelled" error gracefully
       if (err instanceof Error && err.message.includes('Previous request was cancelled')) {
-        console.log('RevenueCat offering request was cancelled - this is normal behavior');
         return;
       }
       console.error('Failed to fetch current offering:', err);
