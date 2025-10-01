@@ -24,36 +24,24 @@ import tw from '../lib/tailwind';
 // Subscription data with correct App Store pricing
 const subscriptionPlans = [
   {
-    id: 'org.name.jung.Weekly',
-    title: 'Weekly',
-    subtitle: 'Perfect for trying out',
-    price: '$4.99',
-    period: '/week',
-    features: ['Unlimited conversations', 'Basic insights', 'Weekly reports'],
-    isPopular: false,
-    color: ['#E8F4FD', '#DBEAFE'],
-    textColor: '#1E40AF',
-    savings: null,
-  },
-  {
-    id: 'org.name.jung.Monthly',
+    id: 'org.name.jung.premium.monthly',
     title: 'Monthly',
     subtitle: 'Great for regular users',
     price: '$12.99',
     period: '/month',
-    features: ['Everything in Weekly', 'Advanced insights', 'Priority support', 'Export conversations'],
+    features: ['Unlimited conversations', 'Advanced insights', 'Priority support', 'Export conversations'],
     isPopular: false,
     color: ['#F3E8FF', '#EDE9FE'],
     textColor: '#7C3AED',
-    savings: 'Save 35% vs Weekly',
+    savings: null,
   },
   {
-    id: 'org.name.jung.Annual',
+    id: 'org.name.jung.premium.yearly',
     title: 'Annual',
     subtitle: 'Most popular choice',
     price: '$99.99',
     period: '/year',
-    features: ['Everything in Monthly', 'Premium analytics', 'Custom avatars', 'Unlimited exports'],
+    features: ['Everything in Monthly', 'Premium analytics', 'Custom avatars', 'Unlimited exports', 'Best value - Save 36%'],
     isPopular: true,
     color: ['#6366F1', '#4F46E5'],
     textColor: '#FFFFFF',
@@ -63,7 +51,7 @@ const subscriptionPlans = [
 
 export default function SubscriptionScreen() {
   const navigation = useNavigation();
-  const [selectedPlan, setSelectedPlan] = useState('org.name.jung.Annual');
+  const [selectedPlan, setSelectedPlan] = useState('org.name.jung.premium.monthly');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Use RevenueCat for subscriptions (with fallback)

@@ -32,9 +32,8 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
 
   // Subscription plan mapping
   const subscriptionPlans = {
-    'org.name.jung.Weekly': { title: 'Weekly', price: '$4.99', period: 'week' },
-    'org.name.jung.Monthly': { title: 'Monthly', price: '$12.99', period: 'month' },
-    'org.name.jung.Annual': { title: 'Annual', price: '$99.99', period: 'year' },
+    'org.name.jung.premium.monthly': { title: 'Monthly', price: '$12.99', period: 'month' },
+    'org.name.jung.premium.yearly': { title: 'Annual', price: '$99.99', period: 'year' },
     'premium': { title: 'Premium', price: 'Premium', period: 'subscription' },
   };
 

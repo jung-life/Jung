@@ -85,17 +85,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Set loading state
     setLoading(true);
     
-    // Check current session
+    // Check current session with better error handling for TestFlight
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
         console.log("AuthContext: Initial session check:", !!session);
+
+        if (error) {
+          console.log("❌ Initial session check failed:", error);
+          // Clear any corrupted auth data
+          if (error.message.includes('Invalid Refresh Token')) {
+            console.log("🔄 Clearing corrupted auth tokens");
+            supabase.auth.signOut().catch(() => {
+              // Silent fail - we just want to clear state
+            });
+          }
+        }
+
         setSession(session);
         updateUserState(session?.user ?? null); // Update both user states
-        
+
         if (session?.user) {
           checkUserDisclaimerStatus(session.user);
         }
-        
+
+        setLoading(false);
+      }).catch((sessionError) => {
+        console.log("❌ Session check error:", sessionError);
+        setSession(null);
+        updateUserState(null);
         setLoading(false);
       });
     } else {
@@ -111,27 +128,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         async (event, session) => {
           console.log('Auth state changed:', event);
           console.log('Auth state change session:', session ? `User ID: ${session.user.id}` : 'No session');
-          
+
+          // Handle auth errors gracefully
+          if (event === 'SIGNED_OUT' && !session) {
+            console.log("AuthContext: User signed out.");
+            setSession(null);
+            updateUserState(null);
+            setIsNewUser(false); // Reset disclaimer status on sign out
+            setLoading(false);
+            return;
+          }
+
           setSession(session);
           updateUserState(session?.user ?? null); // Update both user states
-          
+
           // Update state based on event
           if (event === 'SIGNED_IN') {
             console.log("AuthContext: User signed in via auth state change.");
-            
+
             // Check disclaimer status for ALL sign-ins (including OAuth like Google)
             if (session?.user) {
               console.log("AuthContext: Checking disclaimer status for signed-in user");
               await checkUserDisclaimerStatus(session.user);
             }
-          } else if (event === 'SIGNED_OUT') {
-            console.log("AuthContext: User signed out.");
-            setIsNewUser(false); // Reset disclaimer status on sign out
           } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
              console.log(`AuthContext: Event ${event} received.`);
              // Don't re-check disclaimer on token refresh to avoid unnecessary calls
           }
-          
+
           setLoading(false);
         }
       );

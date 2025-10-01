@@ -30,28 +30,20 @@ export default function MySubscriptionScreen() {
 
   // Subscription plan mapping with full details
   const subscriptionPlans = {
-    'org.name.jung.Weekly': {
-      title: 'Weekly Premium',
-      price: '$4.99',
-      period: 'week',
-      billingCycle: 'Billed weekly',
-      features: ['Unlimited conversations', 'Basic insights', 'Weekly reports'],
-      savings: null,
-    },
-    'org.name.jung.Monthly': {
+    'org.name.jung.premium.monthly': {
       title: 'Monthly Premium',
       price: '$12.99',
       period: 'month',
       billingCycle: 'Billed monthly',
-      features: ['Everything in Weekly', 'Advanced insights', 'Priority support', 'Export conversations'],
-      savings: 'Save 35% vs Weekly',
+      features: ['Unlimited conversations', 'Advanced insights', 'Priority support', 'Export conversations'],
+      savings: null,
     },
-    'org.name.jung.Annual': {
+    'org.name.jung.premium.yearly': {
       title: 'Annual Premium',
       price: '$99.99',
       period: 'year',
       billingCycle: 'Billed yearly',
-      features: ['Everything in Monthly', 'Premium analytics', 'Custom avatars', 'Unlimited exports'],
+      features: ['Everything in Monthly', 'Premium analytics', 'Custom avatars', 'Unlimited exports', 'Best value'],
       savings: 'Save 36% vs Monthly',
     },
     'premium': {
