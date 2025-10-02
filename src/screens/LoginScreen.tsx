@@ -274,13 +274,6 @@ export const LoginScreen = () => {
             }
           } catch (enhancedError) {
             console.error('🔵 Enhanced Google auth failed, using fallback:', enhancedError);
-            console.error('🔵 Enhanced error details:', {
-              name: enhancedError?.name,
-              message: enhancedError?.message,
-              isTestFlight: Constants.isDevice,
-              hasProviderToken: !!result.data.session.provider_token
-            });
-
             // Fallback to original result
             await storeAuthData(result.data.session);
             console.log('🔵 Google login completed with fallback');

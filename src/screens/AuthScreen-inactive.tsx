@@ -27,7 +27,7 @@ export const AuthScreen = () => {
   
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: '478933387478-6vg33n8ph627csrvi6rg929i014ta5mm.apps.googleusercontent.com',
+      clientId: '478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com',
       redirectUri: AuthSession.makeRedirectUri({
         scheme: 'jung'
       }),

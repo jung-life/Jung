@@ -35,6 +35,8 @@ export const initializeGoogleSignIn = () => {
       offlineAccess: true,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
+      // Add web behavior for better iOS compatibility
+      useWebView: true,
     };
 
     console.log('🔵 Configuring with:', {
@@ -42,6 +44,12 @@ export const initializeGoogleSignIn = () => {
       iosClientId: !!config.iosClientId,
       offlineAccess: config.offlineAccess,
       forceCodeForRefreshToken: config.forceCodeForRefreshToken
+    });
+
+    console.log('🔵 Full config details for URL scheme debugging:', {
+      webClientId: config.webClientId,
+      iosClientId: config.iosClientId,
+      expectedURLScheme: `com.googleusercontent.apps.${config.iosClientId?.split('.')[0]}`
     });
 
     GoogleSignin.configure(config);
@@ -83,7 +91,8 @@ export const signInWithGoogle = async () => {
       console.log('🔵 No previous user session found');
     }
 
-    // Get user info from Google
+    // Get user info from Google with enhanced configuration for TestFlight
+    console.log('🔵 Attempting Google Sign-In with enhanced config...');
     const result = await GoogleSignin.signIn();
     console.log('🔵 Google Sign-In result:', {
       data: !!result.data,
