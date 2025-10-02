@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "19",
+      "buildNumber": "21",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io",
@@ -28,6 +28,23 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
         "NSLocationAlwaysUsageDescription": "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.",
         "NSMicrophoneUsageDescription": "This app needs microphone access for voice messages and audio recording features.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "osmhesmrvxusckjfxugr.supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSIncludesSubdomains": true
+            },
+            "supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        },
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "google",

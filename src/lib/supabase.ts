@@ -115,27 +115,74 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
         detectSessionInUrl: true,
         flowType: 'pkce', // Use PKCE flow for better security on mobile
       },
+      global: {
+        headers: {
+          'X-Client-Info': 'jung-app@2.0.0',
+        },
+      },
+      // Add retry logic for TestFlight network issues
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     })
   : null;
 
-// Test basic connectivity on initialization
+// Test basic connectivity on initialization with TestFlight-specific handling
 if (supabase) {
   console.log('✅ Supabase client created successfully');
+  console.log('🔗 Supabase URL:', supabaseUrl);
+  console.log('🔑 Supabase Key:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING');
 
-  // Test connectivity
-  fetch(supabaseUrl + '/auth/v1/health')
-    .then(res => res.text())
-    .then(data => console.log('✅ Supabase health check:', data))
-    .catch(err => console.error('❌ Supabase health check failed:', err));
+  // Enhanced connectivity test for TestFlight
+  const testConnectivity = async () => {
+    try {
+      console.log('🔍 Testing Supabase connectivity...');
 
-  // Test session retrieval
-  supabase.auth.getSession().then(({ data, error }) => {
-    if (error) {
-      console.error('❌ Initial session check failed:', error);
-    } else {
-      console.log('✅ Initial session check:', data.session ? 'Has session' : 'No session');
+      // Test basic fetch to Supabase
+      const healthResponse = await fetch(supabaseUrl + '/auth/v1/health', {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+      });
+
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.text();
+        console.log('✅ Supabase health check successful:', healthData);
+      } else {
+        console.error('❌ Supabase health check failed:', healthResponse.status, healthResponse.statusText);
+      }
+    } catch (fetchError) {
+      console.error('❌ Supabase connectivity test failed:', fetchError);
+
+      // Additional diagnostics for TestFlight
+      if (fetchError instanceof Error) {
+        console.error('❌ Error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          stack: fetchError.stack?.substring(0, 200)
+        });
+      }
     }
-  });
+
+    // Test session retrieval
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('❌ Initial session check failed:', error);
+      } else {
+        console.log('✅ Initial session check:', data.session ? 'Has session' : 'No session');
+      }
+    } catch (sessionError) {
+      console.error('❌ Session check error:', sessionError);
+    }
+  };
+
+  // Run connectivity test with delay for TestFlight
+  setTimeout(testConnectivity, 1000);
 } else {
   console.error('❌ Failed to create Supabase client - missing environment variables');
 }
