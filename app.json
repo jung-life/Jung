@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "29",
+      "buildNumber": "23",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io",
@@ -49,7 +49,7 @@
           {
             "CFBundleURLName": "google",
             "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"
+              "com.googleusercontent.apps.478933387478-6vg33n8ph627csrvi6rg929i014ta5mm"
             ]
           }
         ]
@@ -92,14 +92,14 @@
       "favicon": "./assets/jung-app-logo-1024.png",
       "bundler": "metro"
     },
-    "scheme": ["jung", "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h", "org.name.jung"],
+    "scheme": ["jung", "com.googleusercontent.apps.478933387478-6vg33n8ph627csrvi6rg929i014ta5mm", "org.name.jung"],
     "extra": {
       "eas": {
         "projectId": "c4f0be2f-a422-489b-acda-4d2be4769a36"
       },
       "EXPO_PUBLIC_SUPABASE_URL": "https://osmhesmrvxusckjfxugr.supabase.co",
       "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zbWhlc21ydnh1c2NramZ4dWdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3Njc4NTUsImV4cCI6MjA1NTM0Mzg1NX0.E-Camc8evN4ZxY3SFqJe8WDjIRdfImKJaxDhi_JHRGM",
-      "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
+      "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "478933387478-6vg33n8ph627csrvi6rg929i014ta5mm.apps.googleusercontent.com",
       "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com"
     },
     "owner": "infinitydata.ai",
@@ -109,7 +109,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"
+          "iosUrlScheme": "com.googleusercontent.apps.478933387478-6vg33n8ph627csrvi6rg929i014ta5mm"
         }
       ]
     ]
