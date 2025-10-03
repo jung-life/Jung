@@ -21,6 +21,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "enterpriseProvisioning": "adhoc"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://osmhesmrvxusckjfxugr.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zbWhlc21ydnh1c2NramZ4dWdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3Njc4NTUsImV4cCI6MjA1NTM0Mzg1NX0.E-Camc8evN4ZxY3SFqJe8WDjIRdfImKJaxDhi_JHRGM",

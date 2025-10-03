@@ -25,31 +25,27 @@ export const initializeGoogleSignIn = () => {
       return false;
     }
 
-    // Note: For iOS, we can use the same client ID if it's a web OAuth client
-    // The separate iOS client ID is only needed for native iOS OAuth clients
-    const clientIdToUse = iosClientId || webClientId;
-
+    // Follow Supabase documentation pattern exactly with TestFlight enhancements
     const config = {
-      webClientId,
-      iosClientId: clientIdToUse,
+      webClientId, // This should be the web client ID for Supabase
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'], // As per Supabase docs
       offlineAccess: true,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
-      // Add web behavior for better iOS compatibility
-      useWebView: true,
+      // Add TestFlight specific configuration
+      profileImageSize: 120,
     };
 
-    console.log('🔵 Configuring with:', {
+    console.log('🔵 Configuring with Supabase pattern:', {
       webClientId: !!config.webClientId,
-      iosClientId: !!config.iosClientId,
       offlineAccess: config.offlineAccess,
-      forceCodeForRefreshToken: config.forceCodeForRefreshToken
+      forceCodeForRefreshToken: config.forceCodeForRefreshToken,
+      scopes: config.scopes
     });
 
     console.log('🔵 Full config details for URL scheme debugging:', {
       webClientId: config.webClientId,
-      iosClientId: config.iosClientId,
-      expectedURLScheme: `com.googleusercontent.apps.${config.iosClientId?.split('.')[0]}`
+      expectedURLScheme: `com.googleusercontent.apps.${config.webClientId?.split('.')[0]}`
     });
 
     GoogleSignin.configure(config);

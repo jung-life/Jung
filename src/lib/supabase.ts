@@ -115,15 +115,57 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
         detectSessionInUrl: true,
         flowType: 'pkce', // Use PKCE flow for better security on mobile
       },
+      // Enhanced configuration for TestFlight network reliability
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+      // Add custom fetch with retry logic for TestFlight
       global: {
         headers: {
           'X-Client-Info': 'jung-app@2.0.0',
         },
-      },
-      // Add retry logic for TestFlight network issues
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
+        fetch: async (url, options = {}) => {
+          const maxRetries = 3;
+          let lastError;
+
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              console.log(`🌐 Supabase fetch attempt ${attempt}/${maxRetries} to ${url}`);
+
+              const fetchOptions = {
+                ...options,
+                headers: {
+                  'X-Client-Info': 'jung-app@2.0.0',
+                  ...options.headers,
+                },
+                // Add timeout for TestFlight
+                signal: AbortSignal.timeout(30000), // 30 second timeout
+              };
+
+              const response = await fetch(url, fetchOptions);
+
+              if (response.ok) {
+                console.log(`✅ Supabase fetch successful on attempt ${attempt}`);
+                return response;
+              } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+            } catch (error) {
+              lastError = error;
+              console.error(`❌ Supabase fetch attempt ${attempt} failed:`, error);
+
+              if (attempt < maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+                console.log(`⏳ Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+              }
+            }
+          }
+
+          console.error(`❌ All Supabase fetch attempts failed. Last error:`, lastError);
+          throw lastError;
         },
       },
     })
@@ -873,4 +915,94 @@ export const checkAuthState = async () => {
   console.log('Current auth state:', data?.session ? 'Authenticated' : 'Not authenticated');
   if (error) console.error('Auth state error:', error);
   return data;
+};
+
+// TestFlight-specific network diagnostics
+export const testFlightNetworkDiagnostics = async () => {
+  console.log('🔍 Running TestFlight network diagnostics...');
+
+  const results = {
+    basicConnectivity: false,
+    supabaseAuth: false,
+    supabaseRest: false,
+    googleApis: false,
+    errors: []
+  };
+
+  // Test basic internet connectivity
+  try {
+    console.log('🔍 Testing basic connectivity...');
+    const basicResponse = await fetch('https://www.google.com', {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(10000)
+    });
+    results.basicConnectivity = basicResponse.ok;
+    console.log('✅ Basic connectivity:', results.basicConnectivity);
+  } catch (error) {
+    console.error('❌ Basic connectivity failed:', error);
+    results.errors.push(`Basic connectivity: ${error.message}`);
+  }
+
+  // Test Supabase auth endpoint
+  try {
+    console.log('🔍 Testing Supabase auth endpoint...');
+    const authResponse = await fetch(`${supabaseUrl}/auth/v1/health`, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+    results.supabaseAuth = authResponse.ok;
+    console.log('✅ Supabase auth:', results.supabaseAuth, authResponse.status);
+  } catch (error) {
+    console.error('❌ Supabase auth failed:', error);
+    results.errors.push(`Supabase auth: ${error.message}`);
+  }
+
+  // Test Supabase REST endpoint
+  try {
+    console.log('🔍 Testing Supabase REST endpoint...');
+    const restResponse = await fetch(`${supabaseUrl}/rest/v1/`, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+    results.supabaseRest = restResponse.ok;
+    console.log('✅ Supabase REST:', results.supabaseRest, restResponse.status);
+  } catch (error) {
+    console.error('❌ Supabase REST failed:', error);
+    results.errors.push(`Supabase REST: ${error.message}`);
+  }
+
+  // Test Google APIs connectivity
+  try {
+    console.log('🔍 Testing Google APIs connectivity...');
+    const googleResponse = await fetch('https://www.googleapis.com/', {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(10000)
+    });
+    results.googleApis = googleResponse.ok;
+    console.log('✅ Google APIs:', results.googleApis);
+  } catch (error) {
+    console.error('❌ Google APIs failed:', error);
+    results.errors.push(`Google APIs: ${error.message}`);
+  }
+
+  // Log environment details
+  console.log('🔍 Environment details:', {
+    platform: Platform.OS,
+    isDevice: Constants.isDevice,
+    appOwnership: Constants.appOwnership,
+    executionEnvironment: Constants.executionEnvironment,
+    supabaseUrl: supabaseUrl ? 'configured' : 'missing',
+    supabaseKey: supabaseAnonKey ? 'configured' : 'missing'
+  });
+
+  console.log('🔍 Network diagnostics complete:', results);
+  return results;
 };

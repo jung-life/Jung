@@ -23,7 +23,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>23.0.0</string>
+    <string>24.0.0</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -33,7 +33,7 @@
         <string>google</string>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h</string>
+          <string>com.googleusercontent.apps.478933387478-6vg33n8ph627csrvi6rg929i014ta5mm</string>
         </array>
       </dict>
       <dict>
@@ -44,7 +44,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>23</string>
+    <string>24</string>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
     <key>LSRequiresIPhoneOS</key>

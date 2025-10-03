@@ -28,7 +28,7 @@ import { navigationRef, processPendingNavigationActions } from './navigation/nav
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useFonts } from 'expo-font';
-import { supabase, storeAuthData } from './lib/supabase';
+import { supabase, storeAuthData, testFlightNetworkDiagnostics } from './lib/supabase';
 import { initAnalytics } from './lib/analytics';
 import { initializeGoogleSignIn } from './lib/googleSignIn';
 import { revenueCatService } from './lib/revenueCatService';
@@ -168,6 +168,9 @@ export default function App() {
   useEffect(() => {
     // Initialize debugging system first
     initializeDebugging();
+
+    // Run TestFlight network diagnostics for troubleshooting
+    testFlightNetworkDiagnostics();
 
     // Initialize Google Sign-In when the app starts
     initializeGoogleSignIn();

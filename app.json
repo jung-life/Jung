@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "23",
+      "buildNumber": "31",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io",
@@ -30,14 +30,27 @@
         "NSMicrophoneUsageDescription": "This app needs microphone access for voice messages and audio recording features.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true,
           "NSExceptionDomains": {
             "osmhesmrvxusckjfxugr.supabase.co": {
               "NSExceptionAllowsInsecureHTTPLoads": false,
               "NSExceptionMinimumTLSVersion": "TLSv1.2",
               "NSExceptionRequiresForwardSecrecy": true,
-              "NSIncludesSubdomains": true
+              "NSIncludesSubdomains": true,
+              "NSThirdPartyExceptionAllowsInsecureHTTPLoads": false,
+              "NSThirdPartyExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSThirdPartyExceptionRequiresForwardSecrecy": true
             },
             "supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSIncludesSubdomains": true,
+              "NSThirdPartyExceptionAllowsInsecureHTTPLoads": false,
+              "NSThirdPartyExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSThirdPartyExceptionRequiresForwardSecrecy": true
+            },
+            "googleapis.com": {
               "NSExceptionAllowsInsecureHTTPLoads": false,
               "NSExceptionMinimumTLSVersion": "TLSv1.2",
               "NSExceptionRequiresForwardSecrecy": true,
