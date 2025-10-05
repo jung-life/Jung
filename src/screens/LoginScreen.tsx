@@ -373,19 +373,17 @@ export const LoginScreen = () => {
               console.log('🍎 Enhanced Apple login completed successfully');
             }
           } else if (supabase) {
-            // Fallback for simulator
+            // Fallback for simulator using enhanced auth
             console.log('🍎 Using standard Apple auth for simulator...');
-            const { data, error } = await supabase.auth.signInWithIdToken({
-              provider: 'apple',
-              token: credential.identityToken,
-              nonce,
-            });
+            const result = await enhancedAuth.signInWithApple(credential.identityToken, nonce);
 
-            if (error) {
-              console.error('🍎 Supabase Apple auth error:', error);
-              Alert.alert('Login Error', `Supabase authentication failed: ${error.message}`);
+            if (result.error) {
+              console.error('🍎 Supabase Apple auth error:', result.error);
+              Alert.alert('Login Error', `Supabase authentication failed: ${result.error.message}`);
               return;
             }
+
+            const { data, error } = result;
 
             console.log('🍎 Supabase authentication successful:', {
               userId: data?.user?.id,

@@ -36,6 +36,8 @@ import { MotivationalSplashScreen } from '../screens/MotivationalSplashScreen'; 
 import PersonalGrowthDashboardScreen from '../screens/PersonalGrowthDashboardScreen';
 import ConversationAnalyticsScreen from '../screens/ConversationAnalyticsScreen';
 import SupportCenterScreen from '../screens/SupportCenterScreen';
+import { CognitiveDistortionChecker } from '../screens/CognitiveDistortionChecker';
+import { ThoughtInsights } from '../screens/ThoughtInsights';
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -270,6 +272,20 @@ const MainAppStack = () => (
     <Stack.Screen
       name="SupportCenter"
       component={SupportCenterScreen}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="CognitiveDistortionChecker"
+      component={CognitiveDistortionChecker}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="ThoughtInsights"
+      component={ThoughtInsights}
       options={{
         headerShown: false // Screen has its own header
       }}

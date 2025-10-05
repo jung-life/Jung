@@ -146,8 +146,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (event === 'SIGNED_IN') {
             console.log("AuthContext: User signed in via auth state change.");
 
-            // Check disclaimer status for ALL sign-ins (including OAuth like Google)
+            // Identify user with RevenueCat
             if (session?.user) {
+              try {
+                await revenueCatService.identifyUser(session.user.id);
+                console.log('✅ User identified with RevenueCat:', session.user.id);
+              } catch (rcError) {
+                console.error('Failed to identify user with RevenueCat:', rcError);
+                // Don't fail the sign-in process if RevenueCat identification fails
+              }
+
+              // Check disclaimer status for ALL sign-ins (including OAuth like Google)
               console.log("AuthContext: Checking disclaimer status for signed-in user");
               await checkUserDisclaimerStatus(session.user);
             }

@@ -381,6 +381,30 @@ const PostLoginScreen = () => {
             <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversation Analytics</Text> {/* Use jung-deep for text */}
           </SafeTouchableOpacity>
 
+          {/* Thought Helper Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-purple-100 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            onPress={() => navigation.navigate('CognitiveDistortionChecker')}
+          >
+            <SafePhosphorIcon iconType="Brain" size={28} color="#2D2B55" weight="fill" />
+            <View style={tw`ml-4 flex-1`}>
+              <Text style={tw`text-jung-deep text-lg font-semibold`}>Thought Helper</Text>
+              <Text style={tw`text-gray-600 text-sm`}>Challenge unhelpful thinking patterns</Text>
+            </View>
+          </SafeTouchableOpacity>
+
+          {/* Thought Insights Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-purple-50 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            onPress={() => navigation.navigate('ThoughtInsights')}
+          >
+            <SafePhosphorIcon iconType="TrendUp" size={28} color="#2D2B55" weight="fill" />
+            <View style={tw`ml-4 flex-1`}>
+              <Text style={tw`text-jung-deep text-lg font-semibold`}>Your Insights</Text>
+              <Text style={tw`text-gray-600 text-sm`}>Track your wellness journey</Text>
+            </View>
+          </SafeTouchableOpacity>
+
           {/* Bottom CTA for non-premium users */}
           {!isPremiumUser && (
             <SubscriptionCTA style={tw`mt-2`} />

@@ -36,6 +36,8 @@ export type RootStackParamList = {
   ConversationAnalytics: undefined; // Conversation Analytics screen
   SupportCenter: undefined; // Support Center screen (crisis + self-help)
   MySubscription: undefined; // My Subscription screen
+  CognitiveDistortionChecker: undefined; // Cognitive Distortion Checker screen
+  ThoughtInsights: undefined; // Thought Insights and Analytics screen
 };
 
 // Add these types for navigation

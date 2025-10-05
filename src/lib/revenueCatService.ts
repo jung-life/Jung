@@ -141,6 +141,15 @@ class RevenueCatService {
     }
 
     try {
+      // Check if user is anonymous before attempting logout
+      const customerInfo = await Purchases.getCustomerInfo();
+      const isAnonymous = customerInfo.originalAppUserId.startsWith('$RCAnonymousID');
+
+      if (isAnonymous) {
+        console.log('ℹ️ User is anonymous in RevenueCat, skipping logout');
+        return;
+      }
+
       await Purchases.logOut();
       console.log('User logged out from RevenueCat');
     } catch (error) {
@@ -148,6 +157,10 @@ class RevenueCatService {
       if (error instanceof Error) {
         if (error.message.includes('singleton instance') || error.message.includes('configuring-sdk')) {
           console.log('RevenueCat not configured for logout - this is normal in development');
+          return;
+        }
+        if (error.message.includes('anonymous')) {
+          console.log('ℹ️ RevenueCat user was anonymous, logout not needed');
           return;
         }
       }

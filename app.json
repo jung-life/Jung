@@ -51,6 +51,12 @@
             "CFBundleURLSchemes": [
               "com.googleusercontent.apps.478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h"
             ]
+          },
+          {
+            "CFBundleURLName": "supabase",
+            "CFBundleURLSchemes": [
+              "org.name.jung"
+            ]
           }
         ]
       },

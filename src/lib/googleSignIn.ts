@@ -1,6 +1,6 @@
  import { GoogleSignin, GoogleSigninButton, statusCodes } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
-import { supabase } from './supabase';
+import { supabase, enhancedAuth } from './supabase';
 
 // Initialize Google Sign-In
 export const initializeGoogleSignIn = () => {
@@ -147,11 +147,11 @@ export const signInWithGoogle = async () => {
     
     console.log('🔵 Authenticating with Supabase...');
     
-    // Sign in to Supabase with Google ID token
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token: result.data.idToken,
-    });
+    // Sign in to Supabase with Google using enhanced auth method
+    const { data, error } = await enhancedAuth.signInWithGoogle(
+      result.data.idToken,
+      result.data.accessToken
+    );
     
     if (error) {
       console.error('❌ Supabase authentication error:', error);
