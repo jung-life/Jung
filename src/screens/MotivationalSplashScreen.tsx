@@ -20,10 +20,10 @@ export const MotivationalSplashScreen = () => {
   };
 
   useEffect(() => {
-    // Show the motivational image for 3 seconds, then navigate to PostLoginScreen
+    // Show the motivational image for 20 seconds, then navigate to PostLoginScreen
     const timer = setTimeout(() => {
       navigateToPostLogin();
-    }, 3000);
+    }, 20000);
 
     return () => clearTimeout(timer);
   }, [navigation]);

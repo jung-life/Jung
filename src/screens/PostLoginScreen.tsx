@@ -311,97 +311,339 @@ const PostLoginScreen = () => {
 
           {/* Conversations Button */}
           <SafeTouchableOpacity
-            style={tw`bg-conversation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use conversation color
+            style={tw`bg-conversation rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('ConversationsScreen', { refresh: true })}
           >
-            <SafePhosphorIcon iconType="ChatCircleDots" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversations</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="ChatCircleDots" size={40} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-4 right-8`}>
+                <SafePhosphorIcon iconType="Heart" size={24} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="ChatCircleDots" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  AI Conversations
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Get personalized mental health support
+                </Text>
+                <View style={tw`flex-row items-center`}>
+                  <View style={tw`w-2 h-2 bg-green-500 rounded-full mr-2`} />
+                  <Text style={tw`text-xs text-jung-deep/60`}>Available 24/7</Text>
+                </View>
+              </View>
+            </View>
           </SafeTouchableOpacity>
           
           {/* Journaling Button */}
           <SafeTouchableOpacity
-            style={tw`bg-journaling rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use journaling color
+            style={tw`bg-journaling rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('JournalingScreen')}
           >
-            <SafePhosphorIcon iconType="BookOpen" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Journal</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-3 right-6`}>
+                <SafePhosphorIcon iconType="BookOpen" size={36} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-12 rotate-12`}>
+                <SafePhosphorIcon iconType="PencilSimple" size={20} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="BookOpen" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Personal Journal
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Reflect on your thoughts and emotions
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>✍️ Private & secure writing space</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
           
           {/* Daily Motivation Button */}
-          <SafeTouchableOpacity 
-            style={tw`bg-motivation rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use motivation color
+          <SafeTouchableOpacity
+            style={tw`bg-motivation rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('DailyMotivationScreen')}
           >
-            <SafePhosphorIcon iconType="Brain" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Daily Motivation</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-5`}>
+                <SafePhosphorIcon iconType="Bolt" size={32} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-3 left-8 -rotate-12`}>
+                <SafePhosphorIcon iconType="Star" size={18} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-14 h-14 bg-gradient-to-br from-yellow-200 to-orange-300 rounded-full items-center justify-center mr-4 relative border-2 border-white/40 shadow-lg`}>
+                <View style={tw`w-10 h-10 bg-orange-500/90 rounded-full items-center justify-center relative`}>
+                  <SafePhosphorIcon iconType="Sunrise" size={20} color="#FFFFFF" weight="fill" />
+                  <View style={tw`absolute -top-1 -right-1`}>
+                    <SafePhosphorIcon iconType="Sparkle" size={12} color="#FEF08A" weight="fill" />
+                  </View>
+                </View>
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Daily Motivation
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Start your day with inspiring insights
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>⚡ Fresh content updated daily</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
           
           {/* Emotional Assessment Button */}
-          <SafeTouchableOpacity 
-            style={tw`bg-emotional rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use emotional color
+          <SafeTouchableOpacity
+            style={tw`bg-emotional rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('EmotionalAssessmentScreen')}
           >
-            <SafePhosphorIcon iconType="Heart" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Emotional Assessment</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="Heart" size={38} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-10 rotate-45`}>
+                <SafePhosphorIcon iconType="Pulse" size={22} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="Heart" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Emotional Check-In
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Understand your emotional well-being
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>💝 Quick & insightful assessment</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
 
           {/* Mood Tracker Button */}
           <SafeTouchableOpacity
-            style={tw`bg-mood rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use mood color
-            onPress={() => navigation.navigate('MoodTrackerScreen')} // Navigate to MoodTrackerScreen
-            >
-            <SafePhosphorIcon iconType="Smiley" size={28} color="#2D2B55" weight="fill" />
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Mood Tracker</Text> {/* Use jung-deep for text */}
+            style={tw`bg-mood rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
+            onPress={() => navigation.navigate('MoodTrackerScreen')}
+          >
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-1 right-3`}>
+                <SafePhosphorIcon iconType="Smiley" size={34} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-1 left-6`}>
+                <SafePhosphorIcon iconType="TrendUp" size={20} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="Smiley" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Mood Tracker
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Monitor your emotional patterns daily
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>📊 Track trends over time</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
 
           {/* Support Center Button (Crisis + Self-Help) */}
           <SafeTouchableOpacity
-            style={tw`bg-resources rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use resources color
+            style={tw`bg-resources rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('SupportCenter')}
           >
-            <SafePhosphorIcon iconType="FirstAid" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Support Center</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="FirstAid" size={36} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-3 left-8`}>
+                <SafePhosphorIcon iconType="HandHeart" size={18} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="FirstAid" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Support Center
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Crisis resources & helpful tools
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>🆘 Always here when you need help</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
 
           {/* Growth Dashboard Button */}
           <SafeTouchableOpacity
-            style={tw`bg-dashboard rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use dashboard color
+            style={tw`bg-dashboard rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('PersonalGrowthDashboard')}
           >
-            <SafePhosphorIcon iconType="TrendUp" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Growth Dashboard</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={36} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-10 rotate-12`}>
+                <SafePhosphorIcon iconType="Target" size={20} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Growth Dashboard
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Visualize your personal development
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>📈 Track your progress journey</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
 
           {/* Conversation Analytics Button */}
           <SafeTouchableOpacity
-            style={tw`bg-analytics rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`} // Use analytics color
+            style={tw`bg-analytics rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('ConversationAnalytics')}
           >
-            <SafePhosphorIcon iconType="ChartLine" size={28} color="#2D2B55" weight="fill" /> {/* Use jung-deep for icon */}
-            <Text style={tw`ml-4 text-jung-deep text-lg font-semibold`}>Conversation Analytics</Text> {/* Use jung-deep for text */}
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-3`}>
+                <SafePhosphorIcon iconType="ChartLine" size={38} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-3 left-8 -rotate-12`}>
+                <SafePhosphorIcon iconType="ChatCircle" size={18} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="ChartLine" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Chat Analytics
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Insights from your conversations
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>💬 Discover patterns & themes</Text>
+              </View>
+            </View>
           </SafeTouchableOpacity>
 
           {/* Thought Helper Button */}
           <SafeTouchableOpacity
-            style={tw`bg-purple-100 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            style={tw`bg-purple-100 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('CognitiveDistortionChecker')}
           >
-            <SafePhosphorIcon iconType="Brain" size={28} color="#2D2B55" weight="fill" />
-            <View style={tw`ml-4 flex-1`}>
-              <Text style={tw`text-jung-deep text-lg font-semibold`}>Thought Helper</Text>
-              <Text style={tw`text-gray-600 text-sm`}>Challenge unhelpful thinking patterns</Text>
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-1 right-2 rotate-12`}>
+                <SafePhosphorIcon iconType="Lightbulb" size={32} color="#7C3AED" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-8 -rotate-12`}>
+                <SafePhosphorIcon iconType="Brain" size={20} color="#7C3AED" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-purple-200 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="Lightbulb" size={24} color="#7C3AED" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
+                  Thought Helper
+                </Text>
+                <Text style={tw`text-purple-700 text-sm mb-2`}>
+                  Challenge unhelpful thinking patterns
+                </Text>
+                <Text style={tw`text-xs text-purple-600`}>✨ Science-based CBT techniques</Text>
+              </View>
             </View>
           </SafeTouchableOpacity>
 
           {/* Thought Insights Button */}
           <SafeTouchableOpacity
-            style={tw`bg-purple-50 rounded-xl p-6 w-full mb-4 flex-row items-center shadow-sm`}
+            style={tw`bg-purple-50 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
             onPress={() => navigation.navigate('ThoughtInsights')}
           >
-            <SafePhosphorIcon iconType="TrendUp" size={28} color="#2D2B55" weight="fill" />
-            <View style={tw`ml-4 flex-1`}>
-              <Text style={tw`text-jung-deep text-lg font-semibold`}>Your Insights</Text>
-              <Text style={tw`text-gray-600 text-sm`}>Track your wellness journey</Text>
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={34} color="#7C3AED" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-6 rotate-45`}>
+                <SafePhosphorIcon iconType="Sparkle" size={18} color="#7C3AED" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-purple-100 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={24} color="#7C3AED" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
+                  Your Insights
+                </Text>
+                <Text style={tw`text-purple-700 text-sm mb-2`}>
+                  Track your wellness journey
+                </Text>
+                <Text style={tw`text-xs text-purple-600`}>📊 Progress & achievements</Text>
+              </View>
             </View>
           </SafeTouchableOpacity>
 

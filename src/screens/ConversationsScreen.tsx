@@ -1088,9 +1088,19 @@ Return only the title text with no additional explanation or formatting.`;
                         
                         {/* Action buttons section */}
                         <View style={tw`mt-3`}>
-                          {/* Get Insights button */}
+                          {/* Continue chat button - bigger and prominent */}
                           <TouchableOpacity
-                            style={tw`flex-row items-center bg-jung-purple px-4 py-3 rounded-full shadow-md self-start`}
+                            style={tw`flex-row items-center bg-jung-purple px-6 py-3 rounded-full shadow-md w-full mb-2`}
+                            onPress={() => handleSelectConversation(item.id)}
+                            activeOpacity={0.8}
+                          >
+                            <SafePhosphorIcon iconType="ArrowRight" size={20} color="white" weight="bold" />
+                            <Text style={tw`text-white font-semibold text-base ml-2 flex-1 text-center`}>Continue Chat</Text>
+                          </TouchableOpacity>
+
+                          {/* Get Insights button - similar to continue chat */}
+                          <TouchableOpacity
+                            style={tw`flex-row items-center bg-blue-500 px-6 py-3 rounded-full shadow-md w-full`}
                             onPress={() => handleAnalyzeChat(item.id, item.title)}
                             disabled={analyzing === item.id}
                             activeOpacity={0.8}
@@ -1098,18 +1108,12 @@ Return only the title text with no additional explanation or formatting.`;
                             {analyzing === item.id ? (
                               <ActivityIndicator size="small" color="white" />
                             ) : (
-                              <SafePhosphorIcon iconType="Brain" size={18} color="white" weight="fill" />
+                              <SafePhosphorIcon iconType="Brain" size={20} color="white" weight="fill" />
                             )}
-                            <Text style={tw`text-white font-semibold text-sm ml-2`}>
+                            <Text style={tw`text-white font-semibold text-base ml-2 flex-1 text-center`}>
                               {analyzing === item.id ? 'Analyzing...' : 'Get Insights'}
                             </Text>
                           </TouchableOpacity>
-
-                          {/* Continue chat link */}
-                          <View style={tw`flex-row items-center mt-2 ml-2`}>
-                            <SafePhosphorIcon iconType="ArrowRight" size={16} color="#4A3B78" weight="bold" />
-                            <Text style={tw`text-jung-purple font-medium text-sm ml-1 underline`}>Continue chat</Text>
-                          </View>
                         </View>
                       </View>
                     </View>

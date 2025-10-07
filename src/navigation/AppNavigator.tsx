@@ -92,7 +92,7 @@ const DisclaimerStack = () => (
 // Define Main App Stack - for users who have accepted disclaimer
 const MainAppStack = () => (
   <Stack.Navigator
-    initialRouteName="PostLoginScreen"
+    initialRouteName="MotivationalSplashScreen"
     screenOptions={{ headerShown: false, ...defaultPostLoginOptions }}
   >
     {/* Motivational splash screen shown after login */}

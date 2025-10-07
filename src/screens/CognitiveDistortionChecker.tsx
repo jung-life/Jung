@@ -212,8 +212,8 @@ export const CognitiveDistortionChecker: React.FC = () => {
       </View>
 
       <View style={tw`flex-row justify-between items-center mb-6`}>
-        <Text style={tw`text-sm text-gray-600`}>Calm</Text>
         <Text style={tw`text-sm text-gray-600`}>Distressed</Text>
+        <Text style={tw`text-sm text-gray-600`}>Calm</Text>
       </View>
 
       <View style={tw`flex-row justify-between mb-8`}>
