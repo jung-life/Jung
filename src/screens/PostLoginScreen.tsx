@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useCallback and useRef
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Modal, TextInput, Alert, FlatList, TouchableOpacity } from 'react-native'; // Added FlatList
 import { SafeTouchableOpacity } from '../components/SafeTouchableOpacity';
 import { useNavigation } from '@react-navigation/native';
@@ -58,13 +58,14 @@ const PostLoginScreen = () => {
     incrementSkipCount,
     canSkip
   } = useOnboarding();
-  
+
   // Mood tracker state
   const [moodModalVisible, setMoodModalVisible] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MoodOption | null>(null);
   const [note, setNote] = useState('');
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true); // For mood history loading
+
 
   // Location fetching logic
   const requestAndSaveLocation = useCallback(async () => {
@@ -292,13 +293,16 @@ const PostLoginScreen = () => {
         
         {/* Header space - removed hamburger menu as it's now in the navigation header */}
         <View style={tw`h-2`}></View>
-        
+
         <ScrollView style={tw`flex-1 px-4`}>
-          <View style={tw`mt-4 mb-6`}>
-            <Text style={tw`text-2xl font-bold text-jung-deep mb-1`}>Welcome</Text>
-            <Text style={tw`text-base text-gray-600`}>
-              Explore yourself with Jung
-            </Text>
+          <View style={tw`mt-4 mb-6 flex-row justify-between items-center`}>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-2xl font-bold text-jung-deep mb-1`}>Welcome</Text>
+              <Text style={tw`text-base text-gray-600`}>
+                Explore yourself with Jung
+              </Text>
+            </View>
+
           </View>
 
           {/* Subscription Status Banner */}
@@ -343,8 +347,9 @@ const PostLoginScreen = () => {
                 </View>
               </View>
             </View>
+
           </SafeTouchableOpacity>
-          
+
           {/* Journaling Button */}
           <SafeTouchableOpacity
             style={tw`bg-journaling rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
@@ -376,8 +381,9 @@ const PostLoginScreen = () => {
                 <Text style={tw`text-xs text-jung-deep/60`}>✍️ Private & secure writing space</Text>
               </View>
             </View>
+
           </SafeTouchableOpacity>
-          
+
           {/* Daily Motivation Button */}
           <SafeTouchableOpacity
             style={tw`bg-motivation rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
@@ -414,8 +420,9 @@ const PostLoginScreen = () => {
                 <Text style={tw`text-xs text-jung-deep/60`}>⚡ Fresh content updated daily</Text>
               </View>
             </View>
+
           </SafeTouchableOpacity>
-          
+
           {/* Emotional Assessment Button */}
           <SafeTouchableOpacity
             style={tw`bg-emotional rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
@@ -692,6 +699,8 @@ const PostLoginScreen = () => {
           onComplete={markFeatureTourSeen}
           featureType="general"
         />
+
+
       </SafeAreaView>
     </GradientBackground>
   );

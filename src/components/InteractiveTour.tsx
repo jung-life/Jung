@@ -146,31 +146,45 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
           {/* Dark background */}
           <View style={tw`absolute inset-0 bg-black/70`} />
 
-          {/* Spotlight cutout */}
+          {/* Enhanced spotlight cutout with glow */}
           <View
             style={[
-              tw`absolute bg-transparent border-4 border-white/50 rounded-lg`,
+              tw`absolute bg-transparent border-4 rounded-xl`,
               {
-                left: currentStepData.targetArea.x - 4,
-                top: currentStepData.targetArea.y - 4,
-                width: currentStepData.targetArea.width + 8,
-                height: currentStepData.targetArea.height + 8,
+                left: currentStepData.targetArea.x - 6,
+                top: currentStepData.targetArea.y - 6,
+                width: currentStepData.targetArea.width + 12,
+                height: currentStepData.targetArea.height + 12,
+                borderColor: '#FDE047',
+                shadowColor: '#FDE047',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 10,
+                elevation: 8,
               },
             ]}
           />
 
-          {/* Animated pulse effect */}
+          {/* Animated pulse effect with better colors */}
           <Animated.View
             style={[
-              tw`absolute rounded-lg`,
+              tw`absolute rounded-xl`,
               {
-                left: currentStepData.targetArea.x - 8,
-                top: currentStepData.targetArea.y - 8,
-                width: currentStepData.targetArea.width + 16,
-                height: currentStepData.targetArea.height + 16,
-                borderWidth: 2,
-                borderColor: '#667eea',
-                opacity: tooltipAnim,
+                left: currentStepData.targetArea.x - 12,
+                top: currentStepData.targetArea.y - 12,
+                width: currentStepData.targetArea.width + 24,
+                height: currentStepData.targetArea.height + 24,
+                borderWidth: 3,
+                borderColor: '#4A3B78',
+                opacity: tooltipAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.3, 0.8],
+                }),
+                shadowColor: '#4A3B78',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+                elevation: 6,
               },
             ]}
           />
@@ -193,19 +207,25 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
               },
             ]}
           >
-            <View style={tw`bg-white rounded-2xl p-6 shadow-2xl max-w-sm`}>
+            <View style={tw`bg-white rounded-2xl p-6 shadow-2xl max-w-sm border-2 border-jung-purple/20`}>
               {/* Header */}
               <View style={tw`flex-row justify-between items-start mb-4`}>
                 <View style={tw`flex-1 pr-4`}>
-                  <Text style={tw`text-lg font-bold text-gray-800 mb-2`}>
-                    {currentStepData.title}
-                  </Text>
-                  <Text style={tw`text-gray-600 leading-6`}>
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <View style={tw`w-2 h-2 bg-jung-purple rounded-full mr-2`} />
+                    <Text style={tw`text-lg font-bold text-jung-deep`}>
+                      {currentStepData.title}
+                    </Text>
+                  </View>
+                  <Text style={tw`text-gray-700 leading-6 text-base`}>
                     {currentStepData.description}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={onSkip}>
-                  <SafePhosphorIcon iconType="X" size={20} color="#6B7280" weight="bold" />
+                <TouchableOpacity
+                  onPress={onSkip}
+                  style={tw`bg-gray-100 rounded-full p-2`}
+                >
+                  <SafePhosphorIcon iconType="X" size={16} color="#6B7280" weight="bold" />
                 </TouchableOpacity>
               </View>
 
@@ -229,19 +249,25 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
                 {currentStep > 0 && (
                   <TouchableOpacity
                     onPress={handlePrevious}
-                    style={tw`bg-gray-100 rounded-xl py-3 px-4 flex-1`}
+                    style={tw`bg-gray-100 rounded-xl py-3 px-4 flex-1 flex-row items-center justify-center`}
                   >
-                    <Text style={tw`text-gray-700 font-medium text-center`}>Previous</Text>
+                    <SafePhosphorIcon iconType="ArrowLeft" size={16} color="#6B7280" weight="bold" />
+                    <Text style={tw`text-gray-700 font-medium ml-2`}>Previous</Text>
                   </TouchableOpacity>
                 )}
 
                 <TouchableOpacity
                   onPress={handleNext}
-                  style={tw`bg-jung-purple rounded-xl py-3 px-4 flex-1`}
+                  style={tw`bg-jung-purple rounded-xl py-3 px-4 flex-1 flex-row items-center justify-center shadow-lg`}
                 >
-                  <Text style={tw`text-white font-medium text-center`}>
-                    {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+                  <Text style={tw`text-white font-semibold mr-2`}>
+                    {currentStep === steps.length - 1 ? 'Finish Tour' : 'Next'}
                   </Text>
+                  {currentStep === steps.length - 1 ? (
+                    <SafePhosphorIcon iconType="CheckCircle" size={16} color="white" weight="fill" />
+                  ) : (
+                    <SafePhosphorIcon iconType="ArrowRight" size={16} color="white" weight="bold" />
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -313,10 +339,62 @@ export const createInsightsTour = (): TourStep[] => [
   },
 ];
 
+export const createAppFeatureTour = (): TourStep[] => [
+  {
+    id: 'welcome',
+    title: 'Welcome to Jung!',
+    description: 'Your personal AI-powered companion for self-discovery and emotional well-being. Let me show you the powerful tools available to help you grow.',
+    targetArea: { x: 20, y: 120, width: width - 100, height: 60 },
+    position: 'bottom',
+  },
+  {
+    id: 'conversations',
+    title: 'AI Psychology Conversations',
+    description: 'Chat with legendary psychologists like Carl Jung, Freud, and Rogers. Each AI guide offers unique insights and therapeutic approaches to help you understand yourself better.',
+    targetArea: { x: 16, y: 240, width: width - 32, height: 120 },
+    position: 'bottom',
+  },
+  {
+    id: 'journaling',
+    title: 'Secure Personal Journal',
+    description: 'Express your thoughts in complete privacy. Your journal entries are encrypted and stored securely. Writing helps process emotions and track personal growth over time.',
+    targetArea: { x: 16, y: 380, width: width - 32, height: 120 },
+    position: 'bottom',
+  },
+  {
+    id: 'daily-motivation',
+    title: 'Daily Wisdom & Inspiration',
+    description: 'Start each day with carefully curated psychological insights and motivational content. Fresh inspiration delivered daily to keep you motivated on your journey.',
+    targetArea: { x: 16, y: 520, width: width - 32, height: 120 },
+    position: 'top',
+  },
+  {
+    id: 'emotional-assessment',
+    title: 'Emotional Intelligence Tools',
+    description: 'Take guided assessments to understand your emotional patterns and triggers. Get personalized insights based on psychological frameworks to improve self-awareness.',
+    targetArea: { x: 16, y: 660, width: width - 32, height: 120 },
+    position: 'top',
+  },
+  {
+    id: 'mood-tracker',
+    title: 'Mood Analytics & Patterns',
+    description: 'Quick daily mood check-ins help you identify patterns in your emotional well-being. Visual charts show trends over time to support your mental health journey.',
+    targetArea: { x: 16, y: 800, width: width - 32, height: 120 },
+    position: 'top',
+  },
+  {
+    id: 'advanced-features',
+    title: 'Advanced Psychology Tools',
+    description: 'Access the menu for cognitive distortion checking, thought analysis, conversation insights, and premium features designed by psychology experts.',
+    targetArea: { x: width - 60, y: 60, width: 50, height: 50 },
+    position: 'left',
+  },
+];
+
 // Smart tour component that adapts to user context
 interface SmartTourProps {
   visible: boolean;
-  tourType: 'conversation' | 'insights' | 'subscription';
+  tourType: 'conversation' | 'insights' | 'subscription' | 'app-features';
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -333,6 +411,8 @@ export const SmartTour: React.FC<SmartTourProps> = ({
         return createConversationTour();
       case 'insights':
         return createInsightsTour();
+      case 'app-features':
+        return createAppFeatureTour();
       default:
         return [];
     }
