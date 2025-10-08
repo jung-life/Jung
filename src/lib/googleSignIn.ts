@@ -14,7 +14,9 @@ export const initializeGoogleSignIn = () => {
                        Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
-                       Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+                       Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+                       process.env.EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID ||
+                       Constants.expoConfig?.extra?.EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID;
 
     console.log('🔵 Web Client ID:', webClientId ? `${webClientId.substring(0, 20)}...` : 'Missing');
     console.log('🔵 iOS Client ID:', iosClientId ? `${iosClientId.substring(0, 20)}...` : 'Missing');
@@ -25,8 +27,8 @@ export const initializeGoogleSignIn = () => {
       return false;
     }
 
-    // Note: For iOS, we can use the same client ID if it's a web OAuth client
-    // The separate iOS client ID is only needed for native iOS OAuth clients
+    // For physical devices, we need to use different client IDs
+    // Use the iOS client ID if available, otherwise fall back to web client ID
     const clientIdToUse = iosClientId || webClientId;
 
     const config = {
@@ -35,8 +37,8 @@ export const initializeGoogleSignIn = () => {
       offlineAccess: true,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
-      // Add web behavior for better iOS compatibility
-      useWebView: true,
+      // For physical devices, don't use webView - use native flow
+      useWebView: false,
     };
 
     console.log('🔵 Configuring with:', {
