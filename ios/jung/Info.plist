@@ -37,9 +37,11 @@
         </array>
       </dict>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>supabase</string>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+jung</string>
+          <string>org.name.jung</string>
         </array>
       </dict>
     </array>
