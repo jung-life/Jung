@@ -20,12 +20,6 @@ if (shouldInitializeSentry) {
       environment: __DEV__ ? 'development' : 'production',
     });
     console.log('✅ Sentry initialized successfully with DSN:', sentryDsn.substring(0, 50) + '...');
-
-    // Test that Sentry is working immediately
-    setTimeout(() => {
-      console.log('🧪 Sending test initialization event...');
-      Sentry.captureMessage('Sentry initialized - Jung app started', 'info');
-    }, 1000);
   } catch (initError) {
     console.error('❌ Sentry initialization failed:', initError);
   }
