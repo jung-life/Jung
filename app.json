@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.name.jung",
-      "buildNumber": "30",
+      "buildNumber": "31",
       "icon": "./assets/jung-app-logo-1024.png",
       "associatedDomains": [
         "applinks:auth.expo.io",
