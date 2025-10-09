@@ -701,9 +701,21 @@ export const LoginScreen = () => {
                   style={tw`mt-4 bg-red-500 py-2 px-4 rounded-lg`}
                   onPress={() => {
                     console.log('🧪 Testing Sentry error capture...');
-                    const sent = safeSentryCapture(new Error('First error - Sentry test from Jung app'));
+                    console.log('🔍 Sentry DSN:', process.env.EXPO_PUBLIC_SENTRY_DSN);
+
+                    // Test with both manual and safe capture
+                    try {
+                      Sentry.captureException(new Error('MANUAL TEST - Sentry test from Jung app'));
+                      console.log('✅ Manual Sentry capture called');
+                    } catch (manualError) {
+                      console.log('❌ Manual Sentry capture failed:', manualError);
+                    }
+
+                    const sent = safeSentryCapture(new Error('SAFE TEST - Sentry test from Jung app'));
+                    console.log('🔍 Safe capture result:', sent);
+
                     if (!sent) {
-                      console.log('💡 To enable Sentry: Add real DSN to app.json');
+                      console.log('💡 Sentry DSN check failed - debugging info above');
                     }
                   }}
                 >

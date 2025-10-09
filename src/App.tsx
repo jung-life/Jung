@@ -7,15 +7,33 @@ import * as Sentry from '@sentry/react-native';
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 const shouldInitializeSentry = sentryDsn && !sentryDsn.includes('placeholder') && sentryDsn.includes('sentry.io');
 
+console.log('🔍 SENTRY DEBUG:');
+console.log('  - DSN from env:', sentryDsn);
+console.log('  - Should initialize:', shouldInitializeSentry);
+console.log('  - DEV mode:', __DEV__);
+
 if (shouldInitializeSentry) {
-  Sentry.init({
-    dsn: sentryDsn,
-    debug: __DEV__,
-    environment: __DEV__ ? 'development' : 'production',
-  });
-  console.log('✅ Sentry initialized successfully');
+  try {
+    Sentry.init({
+      dsn: sentryDsn,
+      debug: __DEV__,
+      environment: __DEV__ ? 'development' : 'production',
+    });
+    console.log('✅ Sentry initialized successfully with DSN:', sentryDsn.substring(0, 50) + '...');
+
+    // Test that Sentry is working immediately
+    setTimeout(() => {
+      console.log('🧪 Sending test initialization event...');
+      Sentry.captureMessage('Sentry initialized - Jung app started', 'info');
+    }, 1000);
+  } catch (initError) {
+    console.error('❌ Sentry initialization failed:', initError);
+  }
 } else {
-  console.log('⚠️  Sentry disabled: Add real DSN to enable error tracking');
+  console.log('⚠️  Sentry disabled. DSN status:');
+  console.log('  - Has DSN:', !!sentryDsn);
+  console.log('  - Contains placeholder:', sentryDsn?.includes('placeholder'));
+  console.log('  - Contains sentry.io:', sentryDsn?.includes('sentry.io'));
 }
 
 // Initialize Reactotron for debugging
