@@ -28,6 +28,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
 import { GoogleSignInTroubleshoot } from '../components/GoogleSignInTroubleshoot';
+import * as Sentry from '@sentry/react-native';
 
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -229,6 +230,21 @@ export const LoginScreen = () => {
     }
 
     setLoading(true);
+
+    // Enhanced logging for debugging production issues
+    const debugInfo = {
+      email: email,
+      hasPassword: !!password,
+      isDevice: Constants.isDevice,
+      platform: Platform.OS,
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      executionEnvironment: Constants.executionEnvironment
+    };
+
+    console.log('🔍 LOGIN DEBUG: Starting login with:', debugInfo);
+    console.tron?.log('LOGIN ATTEMPT', debugInfo);
+
     try {
       console.log('📧 Attempting enhanced email login...');
 
@@ -245,7 +261,34 @@ export const LoginScreen = () => {
       }
     } catch (error) {
       console.error('📧 Login error:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.tron?.error('LOGIN ERROR', error);
+
+      // Send error to Sentry
+      Sentry.captureException(error, {
+        tags: {
+          component: 'LoginScreen',
+          action: 'handleLogin'
+        },
+        contexts: {
+          device: debugInfo
+        }
+      });
+
+      // Show detailed error information in production
+      const errorDetails = {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack?.substring(0, 200) : 'No stack trace'
+      };
+
+      console.log('🔍 DETAILED ERROR:', errorDetails);
+      console.tron?.error('DETAILED LOGIN ERROR', errorDetails);
+
+      Alert.alert(
+        'Login Error',
+        `${errorDetails.message}\n\nDebug Info: ${JSON.stringify(debugInfo, null, 2)}`,
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -631,7 +674,22 @@ export const LoginScreen = () => {
                   />
                 </>
               )}
-              
+
+              {/* Sentry Test Button (Development Only) */}
+              {__DEV__ && (
+                <TouchableOpacity
+                  style={tw`mt-4 bg-red-500 py-2 px-4 rounded-lg`}
+                  onPress={() => {
+                    console.log('🧪 Testing Sentry error capture...');
+                    Sentry.captureException(new Error('First error - Sentry test from Jung app'));
+                  }}
+                >
+                  <Text style={tw`text-white text-center font-medium`}>
+                    🧪 Test Sentry Error Tracking
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               {/* Motivational Success Stories */}
               <View style={tw`mt-4 mb-4 px-2`}>
                 <Text style={tw`text-xs text-center text-gray-500 mb-2`}>

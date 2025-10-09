@@ -73,6 +73,8 @@
     "@types/node": "^22.13.5",
     "@types/react": "~18.3.12",
     "@types/uuid": "^10.0.0",
+    "reactotron-react-native": "^5.1.17",
+    "reactotron-redux": "^3.2.1",
     "typescript": "^5.3.3"
   },
   "private": true
