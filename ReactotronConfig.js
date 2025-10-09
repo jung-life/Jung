@@ -1,10 +1,8 @@
 import Reactotron from 'reactotron-react-native';
-import { reactotronRedux } from 'reactotron-redux';
-
-let reactotron;
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 if (__DEV__) {
-  reactotron = Reactotron
+  Reactotron.setAsyncStorageHandler(AsyncStorage)
     .configure({
       name: 'Jung App',
     })
@@ -12,20 +10,19 @@ if (__DEV__) {
       asyncStorage: false, // there are more options to the async storage.
       networking: {
         // optionally, you can turn it off with false.
-        ignoreUrls: /symbolicate/
+        ignoreUrls: /symbolicate/,
       },
       editor: false, // there are more options to editor
       errors: { veto: (stackFrame) => false }, // or turn it off with false
       overlay: false, // just turning off overlay
     })
-    .use(reactotronRedux())
     .connect();
 
   // Let's clear Reactotron on every time we load the app
-  reactotron.clear();
+  Reactotron.clear();
 
   // Reactotron logging
-  console.tron = reactotron;
+  console.tron = Reactotron;
 } else {
   // Release builds
   console.tron = {
@@ -36,5 +33,3 @@ if (__DEV__) {
     image: () => {},
   };
 }
-
-export default reactotron;

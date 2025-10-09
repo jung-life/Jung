@@ -3,12 +3,20 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ErrorHandler } from './components/ErrorHandler';
 import * as Sentry from '@sentry/react-native';
 
-// Initialize Sentry for error tracking
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '', // You'll need to add this to your .env
-  debug: __DEV__,
-  environment: __DEV__ ? 'development' : 'production',
-});
+// Initialize Sentry for error tracking only if real DSN is available
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+const shouldInitializeSentry = sentryDsn && !sentryDsn.includes('placeholder') && sentryDsn.includes('sentry.io');
+
+if (shouldInitializeSentry) {
+  Sentry.init({
+    dsn: sentryDsn,
+    debug: __DEV__,
+    environment: __DEV__ ? 'development' : 'production',
+  });
+  console.log('✅ Sentry initialized successfully');
+} else {
+  console.log('⚠️  Sentry disabled: Add real DSN to enable error tracking');
+}
 
 // Initialize Reactotron for debugging
 if (__DEV__) {

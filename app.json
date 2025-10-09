@@ -112,7 +112,8 @@
       "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
       "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
       "EXPO_PUBLIC_IOS_GOOGLE_CLIENT_ID": "478933387478-p4lgnk2bet20h01olhh9kj033d3l1i2h.apps.googleusercontent.com",
-      "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Premium"
+      "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "Premium",
+      "EXPO_PUBLIC_SENTRY_DSN": "https://764bd8dc199280a8ca908f22f27fd64f@o4510156912656384.ingest.us.sentry.io/4510156916195328"
     },
     "owner": "infinitydata.ai",
     "plugins": [

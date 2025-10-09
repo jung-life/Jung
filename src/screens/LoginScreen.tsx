@@ -30,6 +30,26 @@ import { initializeGoogleSignIn, signInWithGoogle } from '../lib/googleSignIn';
 import { GoogleSignInTroubleshoot } from '../components/GoogleSignInTroubleshoot';
 import * as Sentry from '@sentry/react-native';
 
+// Safe Sentry wrapper
+const safeSentryCapture = (error: any, context?: any) => {
+  try {
+    const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+    const isSentryEnabled = sentryDsn && !sentryDsn.includes('placeholder') && sentryDsn.includes('sentry.io');
+
+    if (isSentryEnabled) {
+      Sentry.captureException(error, context);
+      console.log('📊 Error sent to Sentry');
+      return true;
+    } else {
+      console.log('⚠️  Sentry not configured, error logged locally only');
+      return false;
+    }
+  } catch (sentryError) {
+    console.log('⚠️  Sentry capture failed:', sentryError);
+    return false;
+  }
+};
+
 // Define the navigation prop type
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -263,8 +283,8 @@ export const LoginScreen = () => {
       console.error('📧 Login error:', error);
       console.tron?.error('LOGIN ERROR', error);
 
-      // Send error to Sentry
-      Sentry.captureException(error, {
+      // Send error to Sentry (if configured)
+      safeSentryCapture(error, {
         tags: {
           component: 'LoginScreen',
           action: 'handleLogin'
@@ -681,7 +701,10 @@ export const LoginScreen = () => {
                   style={tw`mt-4 bg-red-500 py-2 px-4 rounded-lg`}
                   onPress={() => {
                     console.log('🧪 Testing Sentry error capture...');
-                    Sentry.captureException(new Error('First error - Sentry test from Jung app'));
+                    const sent = safeSentryCapture(new Error('First error - Sentry test from Jung app'));
+                    if (!sent) {
+                      console.log('💡 To enable Sentry: Add real DSN to app.json');
+                    }
                   }}
                 >
                   <Text style={tw`text-white text-center font-medium`}>
