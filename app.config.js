@@ -62,12 +62,22 @@ export default ({ config }) => {
   ];
 
   // For iOS:
-  config.ios.infoPlist.NSLocationWhenInUseUsageDescription = 
+  config.ios.infoPlist.NSLocationWhenInUseUsageDescription =
     "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments.";
-  config.ios.infoPlist.NSLocationAlwaysAndWhenInUseUsageDescription = 
+  config.ios.infoPlist.NSLocationAlwaysAndWhenInUseUsageDescription =
     "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.";
-  config.ios.infoPlist.NSLocationAlwaysUsageDescription = 
+  config.ios.infoPlist.NSLocationAlwaysUsageDescription =
     "Jung needs your location to provide personalized mental health support and track your mood patterns in different environments, even when the app is in the background.";
+
+  // Add App Transport Security exception for Supabase
+  config.ios.infoPlist.NSAppTransportSecurity = {
+    NSExceptionDomains: {
+      "supabase.co": {
+        NSIncludesSubdomains: true,
+        NSExceptionAllowsInsecureHTTPLoads: false
+      }
+    }
+  };
 
 
   // Enhanced extra config for physical device environment variable access
