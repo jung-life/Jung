@@ -92,12 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (error) {
           console.log("❌ Initial session check failed:", error);
-          // Clear any corrupted auth data
-          if (error.message.includes('Invalid Refresh Token')) {
+          // Only clear corrupted auth data for specific persistent errors, not temporary network issues
+          if (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found')) {
             console.log("🔄 Clearing corrupted auth tokens");
             supabase.auth.signOut().catch(() => {
               // Silent fail - we just want to clear state
             });
+          } else {
+            console.log("⚠️  Temporary auth error, not clearing session:", error.message);
           }
         }
 

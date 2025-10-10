@@ -50,6 +50,15 @@ const createSecureStoreAdapter = () => {
         console.log(`🔐 SecureStore: Getting item ${key}`);
         const value = await SecureStore.getItemAsync(key);
         console.log(`🔐 SecureStore: ${key} ${value ? 'found' : 'not found'}`);
+
+        // For TestFlight, also try AsyncStorage if SecureStore returns null
+        if (!value) {
+          console.log(`🔐 SecureStore empty, trying AsyncStorage fallback for ${key}`);
+          const fallbackValue = await AsyncStorage.getItem(key);
+          console.log(`🔐 AsyncStorage fallback: ${key} ${fallbackValue ? 'found' : 'not found'}`);
+          return fallbackValue;
+        }
+
         return value;
       } catch (error) {
         console.error(`🔐 SecureStore: Error getting ${key}:`, error);
