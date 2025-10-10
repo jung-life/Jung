@@ -74,14 +74,20 @@ const createSecureStoreAdapter = () => {
       }
     },
     setItem: async (key: string, value: string) => {
+      console.log(`🔐 Attempting to save auth token for key: ${key}`);
       try {
         console.log(`🔐 SecureStore: Setting item ${key}`);
         await SecureStore.setItemAsync(key, value);
         console.log(`🔐 SecureStore: Successfully set ${key}`);
 
-        // Also store in AsyncStorage as backup
-        await AsyncStorage.setItem(key, value);
-        console.log(`🔐 AsyncStorage backup: Successfully set ${key}`);
+        // Also store in AsyncStorage as backup for TestFlight
+        try {
+          await AsyncStorage.setItem(key, value);
+          console.log(`🔐 AsyncStorage backup: Successfully set ${key}`);
+        } catch (backupError) {
+          console.warn(`🔐 AsyncStorage backup failed for ${key}:`, backupError);
+          // Don't throw - SecureStore succeeded
+        }
       } catch (error) {
         console.error(`🔐 SecureStore: Error setting ${key}:`, error);
         // Fallback to AsyncStorage only
