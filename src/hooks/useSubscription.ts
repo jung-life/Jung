@@ -54,9 +54,9 @@ export const useSubscription = () => {
   const initializeSubscription = useCallback(async () => {
     try {
       // Try to initialize both services
-      await Promise.allSettled([
-        revenueCatService.initialize(),
-        inAppPurchaseService.initialize()
+      await Promise.all([
+        revenueCatService.initialize().catch(e => console.warn('RevenueCat init failed:', e)),
+        inAppPurchaseService.initialize().catch(e => console.warn('InAppPurchase init failed:', e))
       ]);
 
       await checkSubscriptionStatus();
