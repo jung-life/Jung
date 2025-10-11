@@ -23,7 +23,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>9.9.9</string>
+    <string>999.999.999</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -59,7 +59,7 @@
       <true/>
       <key>NSExceptionDomains</key>
       <dict>
-        <key>osmhesmrvxusckjfxugr.supabase.co</key>
+        <key>api.jungian.life</key>
         <dict>
           <key>NSExceptionAllowsInsecureHTTPLoads</key>
           <false/>

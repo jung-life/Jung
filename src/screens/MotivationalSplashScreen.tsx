@@ -91,7 +91,7 @@ export const MotivationalSplashScreen = () => {
           ) : (
             <Image
               source={{ 
-                uri: 'https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/logo//lighthouse.png' 
+                uri: 'https://api.jungian.life/storage/v1/object/public/logo//lighthouse.png' 
               }}
               style={[
                 tw`rounded-2xl`,

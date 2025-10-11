@@ -488,7 +488,7 @@ export const getAvatarUrl = (filename: string): string => {
   if (!storageUrl) {
     console.error('EXPO_PUBLIC_SUPABASE_STORAGE_URL is not defined in environment variables');
     // Fallback to hardcoded URL only if environment variable is missing
-    return `https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars/${filename}`;
+    return `https://api.jungian.life/storage/v1/object/public/avatars/${filename}`;
   }
   
   // Fix: Add /object/public/ to the URL path for Supabase storage

@@ -6,7 +6,7 @@ import { RobustStorage } from './storage-fix';
 import * as SecureStore from 'expo-secure-store';
 
 // Default fallback values in case environment variables are not set
-const DEFAULT_SUPABASE_URL = 'https://osmhesmrvxusckjfxugr.supabase.co';
+const DEFAULT_SUPABASE_URL = 'https://api.jungian.life';
 const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zbWhlc21ydnh1c2NramZ4dWdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODA0NTY2MzAsImV4cCI6MTk5NjAzMjYzMH0.SZHqIFjXIx8qBMpI7xWB4yrEyB1DM4qzQtTI4ufZEXE';
 
 // Get environment variables with fallbacks

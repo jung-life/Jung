@@ -61,7 +61,7 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
       
       if (!supabase) {
         console.log('Supabase not available, using default avatar');
-        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+        setUserAvatarUrl('https://api.jungian.life/storage/v1/object/public/avatars//user.png');
         setLoading(false);
         return;
       }
@@ -71,7 +71,7 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
       if (!user) {
         console.log('No authenticated user found, using default avatar');
         // Use the default user avatar
-        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+        setUserAvatarUrl('https://api.jungian.life/storage/v1/object/public/avatars//user.png');
         setLoading(false);
         return;
       }
@@ -87,7 +87,7 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
         // If there's an error or no avatar_url, use default avatar
         if (error || !data || !data.avatar_url) {
           console.log('No custom avatar found, using default avatar');
-          setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+          setUserAvatarUrl('https://api.jungian.life/storage/v1/object/public/avatars//user.png');
           setLoading(false);
           return;
         }
@@ -104,12 +104,12 @@ export const SimpleAvatar: React.FC<SimpleAvatarProps> = ({
       } catch (error) {
         console.log('Error fetching user avatar, using default:', error);
         // Use the default user avatar on error
-        setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+        setUserAvatarUrl('https://api.jungian.life/storage/v1/object/public/avatars//user.png');
       }
     } catch (error) {
       console.log('Error in fetchUserAvatar, using default:', error);
       // Use the default user avatar on error
-      setUserAvatarUrl('https://osmhesmrvxusckjfxugr.supabase.co/storage/v1/object/public/avatars//user.png');
+      setUserAvatarUrl('https://api.jungian.life/storage/v1/object/public/avatars//user.png');
     } finally {
       setLoading(false);
     }
