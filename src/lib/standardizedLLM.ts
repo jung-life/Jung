@@ -5,6 +5,7 @@ import {
   getProviderConfig,
   estimateTokenCost,
   calculateCreditCost,
+  getModelKeyByConfig,
   ModelStrategy,
   ModelConfig
 } from '../config/models';
@@ -92,14 +93,16 @@ class StandardizedLLMService {
       .replace(/<\/?analysis>/gi, '')
       .trim();
 
+    const modelKey = getModelKeyByConfig(model) || 'claude-3.5-sonnet';
+
     return {
       content: cleanedContent,
       modelUsed: model.modelId,
       inputTokens,
       outputTokens,
       totalTokens,
-      costUSD: estimateTokenCost(model.name, inputTokens, outputTokens),
-      creditsCost: calculateCreditCost(model.name, inputTokens, outputTokens),
+      costUSD: estimateTokenCost(modelKey, inputTokens, outputTokens),
+      creditsCost: calculateCreditCost(modelKey, inputTokens, outputTokens),
       provider: 'anthropic',
       processingTimeMs
     };
@@ -159,14 +162,16 @@ class StandardizedLLMService {
       .replace(/<\/?analysis>/gi, '')
       .trim();
 
+    const modelKey = getModelKeyByConfig(model) || 'gpt-4o';
+
     return {
       content: cleanedContent,
       modelUsed: model.modelId,
       inputTokens,
       outputTokens,
       totalTokens,
-      costUSD: estimateTokenCost(model.name, inputTokens, outputTokens),
-      creditsCost: calculateCreditCost(model.name, inputTokens, outputTokens),
+      costUSD: estimateTokenCost(modelKey, inputTokens, outputTokens),
+      creditsCost: calculateCreditCost(modelKey, inputTokens, outputTokens),
       provider: 'openai',
       processingTimeMs
     };
@@ -287,9 +292,10 @@ class StandardizedLLMService {
 
     for (const strategy of strategies) {
       const model = getOptimalModel(strategy);
+      const modelKey = getModelKeyByConfig(model) || 'claude-3.5-sonnet';
       results[strategy] = {
-        usd: estimateTokenCost(model.name, inputTokens, outputTokens),
-        credits: calculateCreditCost(model.name, inputTokens, outputTokens),
+        usd: estimateTokenCost(modelKey, inputTokens, outputTokens),
+        credits: calculateCreditCost(modelKey, inputTokens, outputTokens),
         model: model.name
       };
     }

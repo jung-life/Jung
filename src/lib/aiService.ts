@@ -15,6 +15,12 @@ const rateLimit = (fn, delay) => {
 
 export const processAIRequest = rateLimit(async (userInput: string, userId: string) => {
   try {
+    // Development bypass - return mock response in development
+    if (__DEV__) {
+      console.log('🚀 Development mode: returning mock AI response');
+      return "This is a mock AI response for development testing. The actual AI service is bypassed in development mode to prevent API costs and errors.";
+    }
+
     // 1. Anonymize the user input
     const anonymizedInput = anonymizeText(userInput);
 

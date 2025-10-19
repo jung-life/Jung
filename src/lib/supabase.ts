@@ -135,10 +135,23 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
           'X-Client-Info': 'jung-app@2.0.0',
         },
       },
-      // Add retry logic for TestFlight network issues
+      // Enhanced realtime configuration for custom domain and mobile
       realtime: {
         params: {
           eventsPerSecond: 10,
+        },
+        timeout: 30000, // 30 second timeout
+        reconnectAfterMs: (tries: number) => {
+          // Exponential backoff: 1s, 2s, 4s, 8s, then 10s
+          if (tries < 4) {
+            return Math.pow(2, tries) * 1000;
+          }
+          return 10000;
+        },
+        logger: (kind: string, msg: string, data?: any) => {
+          if (__DEV__) {
+            console.log(`Realtime ${kind}: ${msg}`, data);
+          }
         },
       },
     })
@@ -521,8 +534,8 @@ export const checkPremiumAccess = async (): Promise<boolean> => {
   }
 };
 
-// Current disclaimer version
-export const CURRENT_DISCLAIMER_VERSION = 1;
+// Current disclaimer version - Updated for medical disclaimer compliance
+export const CURRENT_DISCLAIMER_VERSION = 2;
 
 // Function to check if user has seen disclaimer
 export const checkDisclaimerStatus = async () => {
@@ -878,6 +891,44 @@ export const checkDisclaimerStatusDirect = async () => {
     return data || false;
   } catch (error) {
     console.error('Error in checkDisclaimerStatusDirect:', error);
+    return false;
+  }
+};
+
+// Function to record medical disclaimer acceptance
+export const recordMedicalDisclaimerAcceptance = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.error('No authenticated user found when recording disclaimer acceptance');
+      return false;
+    }
+
+    console.log('Recording medical disclaimer acceptance for user:', user.id);
+
+    // Use upsert to insert or update the disclaimer acceptance
+    const { error } = await supabase
+      .from('user_preferences')
+      .upsert({
+        user_id: user.id,
+        has_seen_disclaimer: true,
+        disclaimer_version: CURRENT_DISCLAIMER_VERSION,
+        medical_disclaimer_accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) {
+      console.error('Error recording medical disclaimer acceptance:', error);
+      return false;
+    }
+
+    console.log('Successfully recorded medical disclaimer acceptance');
+    return true;
+  } catch (error) {
+    console.error('Exception recording medical disclaimer acceptance:', error);
     return false;
   }
 };

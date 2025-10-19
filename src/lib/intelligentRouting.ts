@@ -81,11 +81,11 @@ export class IntelligentModelRouter {
       };
     }
 
-    // Default balanced approach
+    // Default cost-optimized approach with Claude 3.5 Haiku
     return {
-      strategy: 'balanced',
-      reasoning: 'Standard therapeutic conversation with balanced cost/quality',
-      expectedCost: 0.003,
+      strategy: 'cost-optimized',
+      reasoning: 'Standard conversation using cost-effective Claude 3.5 Haiku',
+      expectedCost: 0.001,
       qualityLevel: 'good'
     };
   }
@@ -165,12 +165,15 @@ export class IntelligentModelRouter {
   static getAvatarOptimalStrategy(avatarId: string): ModelStrategy {
     const avatarStrategies = {
       'depthdelver': 'quality-first',     // Complex psychological analysis
-      'flourishingguide': 'balanced',     // Growth-focused, good balance
+      'flourishingguide': 'cost-optimized', // Growth-focused with cost efficiency
       'oracle': 'quality-first',         // Wisdom requires quality
-      'morpheus': 'balanced'              // Challenging but not always complex
+      'morpheus': 'cost-optimized',      // Challenging but cost-effective
+      'jung': 'cost-optimized',          // Default Jung with Haiku
+      'freud': 'cost-optimized',         // Default Freud with Haiku
+      'rogers': 'cost-optimized'         // Default Rogers with Haiku
     };
 
-    return (avatarStrategies[avatarId] as ModelStrategy) || 'balanced';
+    return (avatarStrategies[avatarId] as ModelStrategy) || 'cost-optimized';
   }
 }
 

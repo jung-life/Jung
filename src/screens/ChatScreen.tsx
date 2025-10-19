@@ -32,6 +32,7 @@ import { useCredits } from '../hooks/useCredits';
 import { creditService } from '../lib/creditService';
 import { useUsageTracking } from '../hooks/useUsageTracking';
 import { UsageLimitPrompt } from '../components/UsageLimitPrompt';
+import { MedicalReminder } from '../components/MedicalReminder';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -346,7 +347,21 @@ export const ChatScreen = () => {
             console.log(`Successfully subscribed to ${channelName}`);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(`Subscription error on ${channelName}: ${status}`, err);
-            // Optionally, try to resubscribe or notify user
+
+            // Automatic retry logic for timeouts and errors
+            if (status === 'TIMED_OUT' && isActive) {
+              console.log(`Retrying subscription for ${channelName} after timeout...`);
+              setTimeout(() => {
+                if (isActive && conversationId) {
+                  console.log(`Attempting to resubscribe to ${channelName}`);
+                  // Remove the failed channel and create a new one
+                  supabase.removeChannel(channel).then(() => {
+                    // Refresh the messages and restart subscription
+                    fetchMessages().catch(console.error);
+                  }).catch(console.error);
+                }
+              }, 5000); // Wait 5 seconds before retry
+            }
           } else {
             console.log(`Subscription status on ${channelName}: ${status}`);
           }
@@ -806,7 +821,10 @@ export const ChatScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-        
+
+        {/* Medical Reminder */}
+        <MedicalReminder />
+
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={tw`flex-1`}

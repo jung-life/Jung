@@ -62,6 +62,7 @@ export const generateAIResponse = async (
       strategy: routingDecision.strategy
     };
 
+    console.log('🎯 Selected strategy:', llmRequest.strategy);
     const llmResponse = await standardizedLLM.generate(llmRequest);
 
     // Log comprehensive metrics including routing decision

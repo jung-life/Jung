@@ -13,23 +13,23 @@ export type Avatar = {
 export const availableAvatars: Avatar[] = [
   {
     id: 'depthdelver',
-    name: 'The Depth Delver',
-    description: 'An AI guide into the profound depths of the psyche, illuminating the landscapes of the unconscious, interpreting dreams, and revealing the power of archetypes and symbols to unlock self-understanding.',
+    name: 'The Deep Thinker',
+    description: 'An AI guide for profound self-reflection, exploring life patterns, understanding personal symbolism, and uncovering deeper meanings in your experiences.',
   },
   {
     id: 'flourishingguide',
-    name: 'Inner Work Companion',
-    description: 'An AI companion dedicated to fostering holistic well-being. It champions empathy, guides users in discovering their unique potential, finding meaning in their experiences, building strong community connections, and navigating cultural influences for authentic self-realization.',
+    name: 'The Life Coach',
+    description: 'An AI mentor dedicated to personal development and goal achievement. Focuses on building confidence, creating action plans, and helping you unlock your potential through proven growth strategies.',
   },
   {
     id: 'oracle',
-    name: 'Sage',
-    description: 'Wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding of life situations.',
+    name: 'The Wise Sage',
+    description: 'Ancient wisdom meets modern insights. Specializes in intuitive guidance, life philosophy, and helping you see the bigger picture in your personal journey.',
   },
   {
     id: 'morpheus',
-    name: 'Awakener',
-    description: 'Transformative approach that challenges perceptions, encourages critical thinking, and promotes personal liberation.',
+    name: 'The Breakthrough Coach',
+    description: 'Transformative mentor that challenges limiting beliefs, encourages bold thinking, and helps you break through barriers to create positive life changes.',
   }
 ];
 

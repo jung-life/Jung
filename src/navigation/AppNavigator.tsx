@@ -38,6 +38,7 @@ import ConversationAnalyticsScreen from '../screens/ConversationAnalyticsScreen'
 import SupportCenterScreen from '../screens/SupportCenterScreen';
 import { CognitiveDistortionChecker } from '../screens/CognitiveDistortionChecker';
 import { ThoughtInsights } from '../screens/ThoughtInsights';
+import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
 
 // Stack for AuthScreen and MainAppScreen flow
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -295,7 +296,14 @@ const MainAppStack = () => (
 
 
 const AppNavigator = () => {
-  const { session, isNewUser, loading } = useAuth();
+  const {
+    session,
+    isNewUser,
+    loading,
+    showMedicalDisclaimer,
+    handleMedicalDisclaimerAccepted,
+    handleMedicalDisclaimerDeclined
+  } = useAuth();
   const user = session?.user;
 
   useEffect(() => {
@@ -360,7 +368,18 @@ const AppNavigator = () => {
     return <DisclaimerStack />;
   } else {
     // User authenticated and has accepted disclaimer - show main app
-    return <MainAppStack />;
+    return (
+      <>
+        <MainAppStack />
+        {showMedicalDisclaimer && (
+          <MedicalDisclaimer
+            visible={showMedicalDisclaimer}
+            onAccept={handleMedicalDisclaimerAccepted}
+            onDecline={handleMedicalDisclaimerDeclined}
+          />
+        )}
+      </>
+    );
   }
 };
 

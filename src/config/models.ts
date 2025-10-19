@@ -22,9 +22,9 @@ export interface ProviderConfig {
   defaultHeaders: Record<string, string>;
 }
 
-// Model configurations with latest 2025 pricing
+// Model configurations with working Claude models only
 export const MODEL_CONFIGS: Record<string, ModelConfig> = {
-  // Primary models (recommended)
+  // Primary model - best quality/cost balance
   'claude-3.5-sonnet': {
     name: 'Claude 3.5 Sonnet',
     provider: 'anthropic',
@@ -34,10 +34,41 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     maxTokens: 1000,
     contextWindow: 200000,
     temperature: 0.7,
-    description: 'Best for therapeutic conversations, balanced cost/quality',
-    features: ['200K context', 'excellent reasoning', 'cost-effective'],
+    description: 'Excellent for therapeutic conversations, proven reliable',
+    features: ['200K context', 'excellent reasoning', 'reliable'],
     isActive: true,
     priority: 1
+  },
+
+  // Cost-optimized models
+  'claude-3.5-haiku': {
+    name: 'Claude 3.5 Haiku',
+    provider: 'anthropic',
+    modelId: 'claude-3-5-haiku-20241022',
+    inputCostPer1M: 1.00,
+    outputCostPer1M: 5.00,
+    maxTokens: 1000,
+    contextWindow: 200000,
+    temperature: 0.7,
+    description: 'Fast and cost-effective for simple conversations',
+    features: ['200K context', 'fast responses', 'very cheap'],
+    isActive: true,
+    priority: 2
+  },
+
+  'claude-3-haiku': {
+    name: 'Claude 3 Haiku',
+    provider: 'anthropic',
+    modelId: 'claude-3-haiku-20240307',
+    inputCostPer1M: 0.25,
+    outputCostPer1M: 1.25,
+    maxTokens: 1000,
+    contextWindow: 200000,
+    temperature: 0.7,
+    description: 'Ultra-cheap option for basic conversations',
+    features: ['200K context', 'very fast', 'cheapest', 'reliable'],
+    isActive: true,
+    priority: 3
   },
 
   'gpt-4o': {
@@ -67,7 +98,7 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     temperature: 0.7,
     description: 'Ultra-low cost option for high-volume usage',
     features: ['128K context', 'very cheap', 'good for simple queries'],
-    isActive: true,
+    isActive: false, // Temporarily disabled due to model name issues
     priority: 3
   },
 
@@ -131,10 +162,10 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
 export type ModelStrategy = 'cost-optimized' | 'balanced' | 'quality-first' | 'fallback';
 
 export const MODEL_STRATEGIES: Record<ModelStrategy, string[]> = {
-  'cost-optimized': ['gpt-4o-mini', 'gpt-4.1', 'claude-3.5-sonnet'],
-  'balanced': ['gpt-4.1', 'claude-3.5-sonnet', 'gpt-4o'],
-  'quality-first': ['claude-3.5-sonnet', 'gpt-4.1', 'gpt-4o'],
-  'fallback': ['gpt-4o', 'gpt-4.1', 'claude-3.5-sonnet', 'gpt-4o-mini']
+  'cost-optimized': ['claude-3-haiku', 'claude-3.5-haiku', 'claude-3.5-sonnet'],
+  'balanced': ['claude-3.5-haiku', 'claude-3.5-sonnet', 'gpt-4o'],
+  'quality-first': ['claude-3.5-sonnet', 'claude-3.5-haiku', 'gpt-4o'],
+  'fallback': ['claude-3.5-sonnet', 'claude-3.5-haiku', 'claude-3-haiku']
 };
 
 // Utility functions
@@ -146,6 +177,15 @@ export function getActiveModels(): ModelConfig[] {
 
 export function getModelById(modelId: string): ModelConfig | undefined {
   return MODEL_CONFIGS[modelId];
+}
+
+export function getModelKeyByConfig(config: ModelConfig): string | undefined {
+  for (const [key, model] of Object.entries(MODEL_CONFIGS)) {
+    if (model.modelId === config.modelId) {
+      return key;
+    }
+  }
+  return undefined;
 }
 
 export function getModelsByProvider(provider: string): ModelConfig[] {

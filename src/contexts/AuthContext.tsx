@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuthData, ensureUserPreferences } from '../lib/supabase';
+import { supabase, checkDisclaimerStatus, checkDisclaimerStatusDirect, storeAuthData, ensureUserPreferences, recordMedicalDisclaimerAcceptance } from '../lib/supabase';
 import { Alert } from 'react-native';
 import { Session, User } from '@supabase/supabase-js'; // Import types
 import useAuthStore from '../store/useAuthStore'; // Import the Zustand store
@@ -13,8 +13,11 @@ interface AuthContextType {
   isNewUser: boolean;
   setIsNewUser: (value: boolean) => void;
   handleDisclaimerAccepted: () => void;
+  showMedicalDisclaimer: boolean;
+  handleMedicalDisclaimerAccepted: () => void;
+  handleMedicalDisclaimerDeclined: () => void;
   // Update signIn return type to match implementation
-  signIn: (email: string, password: string) => Promise<{ success: boolean; isNewUser?: boolean; error?: string }>; 
+  signIn: (email: string, password: string) => Promise<{ success: boolean; isNewUser?: boolean; error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -26,6 +29,9 @@ export const AuthContext = createContext<AuthContextType>({
   isNewUser: false,
   setIsNewUser: () => {},
   handleDisclaimerAccepted: () => {},
+  showMedicalDisclaimer: false,
+  handleMedicalDisclaimerAccepted: () => {},
+  handleMedicalDisclaimerDeclined: () => {},
   signIn: async () => ({ success: false, error: 'Not implemented' }), // Provide matching default
   signOut: async () => {}
 });
@@ -41,6 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showMedicalDisclaimer, setShowMedicalDisclaimer] = useState(false);
   const setAuthStoreUser = useAuthStore(state => state.setUser); // Get the setUser function from the Zustand store
 
   // Function to check disclaimer status
@@ -56,16 +63,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const hasSeenDisclaimer = await checkDisclaimerStatusDirect();
         console.log("AuthContext: User has seen disclaimer (direct method):", hasSeenDisclaimer);
+
+        // Show medical disclaimer if user hasn't seen the latest version
+        if (!hasSeenDisclaimer) {
+          setShowMedicalDisclaimer(true);
+        }
+
         setIsNewUser(!hasSeenDisclaimer);
         return;
       } catch (directError) {
         console.error("AuthContext: Error checking disclaimer with direct method:", directError);
         // Fall back to the regular method
       }
-      
+
       // Fall back to regular method
       const hasSeenDisclaimer = await checkDisclaimerStatus();
       console.log("AuthContext: User has seen disclaimer (regular method):", hasSeenDisclaimer);
+
+      // Show medical disclaimer if user hasn't seen the latest version
+      if (!hasSeenDisclaimer) {
+        setShowMedicalDisclaimer(true);
+      }
+
       setIsNewUser(!hasSeenDisclaimer);
     } catch (error) {
       console.error("AuthContext: Error checking disclaimer:", error);
@@ -79,6 +98,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(newUser);
     setAuthStoreUser(newUser); // Also update the Zustand store
     console.log("AuthContext: User state updated in both Context and Zustand store:", newUser?.id);
+  };
+
+  // Medical disclaimer handlers
+  const handleMedicalDisclaimerAccepted = async () => {
+    console.log("AuthContext: Medical disclaimer accepted");
+    try {
+      const success = await recordMedicalDisclaimerAcceptance();
+      if (success) {
+        setShowMedicalDisclaimer(false);
+        setIsNewUser(false);
+        console.log("AuthContext: Medical disclaimer acceptance recorded successfully");
+      } else {
+        console.error("AuthContext: Failed to record medical disclaimer acceptance");
+        Alert.alert("Error", "Failed to save disclaimer acceptance. Please try again.");
+      }
+    } catch (error) {
+      console.error("AuthContext: Error recording medical disclaimer acceptance:", error);
+      Alert.alert("Error", "Failed to save disclaimer acceptance. Please try again.");
+    }
+  };
+
+  const handleMedicalDisclaimerDeclined = async () => {
+    console.log("AuthContext: Medical disclaimer declined");
+    Alert.alert(
+      "Disclaimer Required",
+      "You must accept the medical disclaimer to use this app. The app will now close.",
+      [
+        {
+          text: "Review Again",
+          style: "default",
+          onPress: () => {
+            // Keep the disclaimer visible
+          }
+        },
+        {
+          text: "Exit App",
+          style: "destructive",
+          onPress: () => {
+            // Sign out the user and close the app
+            signOut();
+          }
+        }
+      ]
+    );
   };
 
   useEffect(() => {
@@ -280,13 +343,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
       isNewUser,
       setIsNewUser,
       handleDisclaimerAccepted,
+      showMedicalDisclaimer,
+      handleMedicalDisclaimerAccepted,
+      handleMedicalDisclaimerDeclined,
       signIn,
       signOut
     }}>
