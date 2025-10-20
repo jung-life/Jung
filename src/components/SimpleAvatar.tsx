@@ -22,13 +22,18 @@ const Image = RNImage; // Force RNImage for diagnostics
 
 // Define available avatars with their details - metadata only
 export const availableAvatars = [
-  { id: 'jung', name: 'Jung', filename: 'jung.png', premium: false },
-  { id: 'freud', name: 'Freud', filename: 'frued.png', premium: false }, // Note: Filename has a typo "frued" to match actual file
-  { id: 'adler', name: 'Adler', filename: 'alfredadler.png', premium: false },
-  { id: 'rogers', name: 'Carl Rogers', filename: 'carl_rogers.png', premium: false },
-  { id: 'depthdelver', name: 'Depth Delver', filename: 'depth_delver.png', premium: false },
-  { id: 'morpheus', name: 'Morpheus', filename: 'awakener.png', premium: true },
-  { id: 'oracle', name: 'Oracle', filename: 'sage.png', premium: true },
+  { id: 'depthdelver', name: 'The Deep Thinker', filename: 'Deepthinker.png', premium: false },
+  { id: 'flourishingguide', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
+  { id: 'oracle', name: 'The Wise Sage', filename: 'sage_new.png', premium: false },
+  { id: 'morpheus', name: 'The Breakthrough Coach', filename: 'breakthroughcoach.png', premium: false },
+  // Legacy avatar support for backward compatibility
+  { id: 'jung', name: 'The Deep Thinker', filename: 'Deepthinker.png', premium: false },
+  { id: 'freud', name: 'The Deep Thinker', filename: 'Deepthinker.png', premium: false },
+  { id: 'adler', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
+  { id: 'rogers', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
+  { id: 'frankl', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
+  { id: 'maslow', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
+  { id: 'horney', name: 'The Life Coach', filename: 'lifecoach.png', premium: false },
 ];
 
 interface SimpleAvatarProps {

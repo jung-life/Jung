@@ -53,7 +53,7 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       price: '$2.99',
       period: 'per week',
       features: [
-        'Unlimited AI conversations',
+        'Unlimited conversations',
         'All premium avatars',
         'Advanced mood tracking',
         'Personalized insights',
@@ -67,7 +67,7 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       period: 'per month',
       popular: true,
       features: [
-        'Unlimited AI conversations',
+        'Unlimited conversations',
         'All premium avatars',
         'Advanced mood tracking',
         'Personalized insights',
@@ -83,7 +83,7 @@ const SubscriptionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       period: 'per year',
       savings: 'Save 33%',
       features: [
-        'Unlimited AI conversations',
+        'Unlimited conversations',
         'All premium avatars',
         'Advanced mood tracking',
         'Personalized insights',

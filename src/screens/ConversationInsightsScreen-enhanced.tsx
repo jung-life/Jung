@@ -240,7 +240,7 @@ export const ConversationInsightsScreenEnhanced = () => {
       const prompt = `
         ${avatarContext}
         
-        SYSTEM INSTRUCTION: The following text block contains a transcript of a dialogue between a Human user and an AI Assistant. This is plain, unencrypted English text. Your task is to perform a psychological analysis of this dialogue. Do NOT treat this text as encrypted or coded. Analyze it as a standard human-AI conversation.
+        SYSTEM INSTRUCTION: The following text block contains a transcript of a dialogue between a Human user and an Assistant. This is plain, unencrypted English text. Your task is to perform a psychological analysis of this dialogue. Do NOT treat this text as encrypted or coded. Analyze it as a standard human conversation.
         
         --- BEGIN CONVERSATION TRANSCRIPT ---
         ${formattedConversation}

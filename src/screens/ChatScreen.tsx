@@ -424,30 +424,38 @@ export const ChatScreen = () => {
       // Ideally, currentAvatarId should already be the new creative key.
       const keyMap: Record<string, string> = {
         // New keys map to themselves
-        'deepseer': 'deepseer', // Renamed
+        'depthdelver': 'depthdelver',
         'flourishingguide': 'flourishingguide',
         'oracle': 'oracle',
-        'morpheus': 'morpheus'
+        'morpheus': 'morpheus',
+        // Legacy support
+        'deepseer': 'depthdelver',
+        'jung': 'depthdelver',
+        'freud': 'depthdelver',
+        'adler': 'flourishingguide',
+        'rogers': 'flourishingguide',
+        'frankl': 'flourishingguide',
+        'maslow': 'flourishingguide',
+        'horney': 'flourishingguide'
       };
       const displayKey = keyMap[normalizedAvatarId] || normalizedAvatarId;
 
       switch (displayKey) {
-        case 'deepseer': // Renamed
-          greeting = "Greetings. I am Deepseer, an AI guide into the profound depths of your psyche. Together, we can explore the landscapes of the unconscious, interpret dreams, and understand the power of archetypes and early experiences. What is on your mind?"; // Renamed
+        case 'depthdelver':
+          greeting = "Welcome! I'm The Deep Thinker, your personal development guide specializing in deep reflection and philosophical exploration. I help people explore life patterns, personal symbolism, and uncover deeper meanings in their experiences.\n\n*Please note: I provide educational content for self-improvement purposes only. For mental health concerns, please consult qualified healthcare professionals.*\n\nWhat patterns or meanings would you like to explore today?";
           break;
         case 'flourishingguide':
-          greeting = "Welcome! I am The Flourishing Guide, your AI companion for holistic well-being. I'm here to help you discover your potential, find meaning, build connections, and navigate life's journey with empathy. How can I support you today?";
+          greeting = "Hello! I'm The Life Coach, your personal development guide dedicated to helping you achieve your goals and unlock your potential. I focus on building confidence, creating action plans, and supporting your growth journey through proven development strategies.\n\n*Please note: I provide educational content for self-improvement purposes only. For mental health concerns, please consult qualified healthcare professionals.*\n\nWhat goal or challenge would you like to tackle together?";
           break;
-        case 'oracle': // Stays Sage/Oracle
-          greeting = "Welcome, I'm the Sage Guide AI assistant. I use a wisdom-based approach focusing on intuition, pattern recognition, and holistic understanding. I can help you see connections and possibilities you might have missed. What guidance do you seek today?";
+        case 'oracle':
+          greeting = "Welcome, I'm The Wise Sage, your personal development guide with a wisdom-based perspective. I help you see beyond immediate concerns to deeper patterns and possibilities using intuition, pattern recognition, and holistic understanding.\n\n*Please note: I provide educational content for self-improvement purposes only. For mental health concerns, please consult qualified healthcare professionals.*\n\nWhat guidance do you seek on your journey today?";
           break;
-        case 'morpheus': // Stays Awakener/Morpheus
-          greeting = "Welcome. I'm the Awakener AI assistant. My approach is to help you question assumptions, think critically about your beliefs, and discover new perspectives. What limitations or beliefs are you ready to examine?";
+        case 'morpheus':
+          greeting = "Greetings. I'm The Breakthrough Coach, your personal development guide focused on challenging limiting beliefs and creating positive life changes. I help you question assumptions, think critically, and discover new perspectives for personal transformation.\n\n*Please note: I provide educational content for self-improvement purposes only. For mental health concerns, please consult qualified healthcare professionals.*\n\nWhat limitations or beliefs are you ready to examine?";
           break;
         default:
           console.warn(`Unknown avatar ID for greeting: '${currentAvatarId}' (normalized to '${normalizedAvatarId}', displayKey '${displayKey}'). Using default greeting.`);
-          // Default to a generic greeting or Depth Delver's greeting if preferred
-          greeting = "Hello, I'm an AI assistant here to support your journey of self-discovery and personal growth. How can I help you today?";
+          greeting = "Hello! I'm your personal development guide here to support your journey of self-discovery and personal growth.\n\n*Please note: I provide educational content for self-improvement purposes only. For mental health concerns, please consult qualified healthcare professionals.*\n\nHow can I help you today?";
       }
       
       const aiMessage: Message = {

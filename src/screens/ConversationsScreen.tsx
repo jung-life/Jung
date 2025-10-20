@@ -339,7 +339,7 @@ export const ConversationsScreen = () => {
       
       // Format messages for analysis
       const formattedConversation = messages.map(msg => 
-        `${msg.role === 'user' ? 'You' : 'Jung'}: ${msg.content}`
+        `${msg.role === 'user' ? 'You' : 'Guide'}: ${msg.content}`
       ).join('\n\n');
       
       // Generate analysis using AI
@@ -478,7 +478,7 @@ export const ConversationsScreen = () => {
       // Share directly as text
       await Share.share({
         message: currentAnalysis.content,
-        title: 'Jung Analysis'
+        title: 'Personal Growth Analysis'
       });
     } catch (error) {
       console.error('Error sharing analysis:', error);
@@ -585,24 +585,19 @@ export const ConversationsScreen = () => {
       setLoading(true);
       
       // Get the selected avatar's name
-      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'The Deep Thinker';
       
       // Create a prompt for the LLM to generate a creative title
-      const prompt = `Generate a creative, engaging title for a conversation with ${avatarName}, a psychological guide. 
-The title should reflect ${avatarName}'s unique psychological approach and personality.
+      const prompt = `Generate a creative, engaging title for a conversation with ${avatarName}, a personal development guide.
+The title should reflect ${avatarName}'s unique approach and personality.
 
 For context:
-- Carl Jung focuses on archetypes, the collective unconscious, and individuation
-- Sigmund Freud focuses on psychoanalysis, the unconscious mind, and dream interpretation
-- Alfred Adler focuses on social interest, inferiority feelings, and striving for superiority
-- Karen Horney focuses on cultural influences, neurotic needs, and self-realization
-- Carl Rogers focuses on person-centered therapy, unconditional positive regard, and authenticity
-- Viktor Frankl focuses on finding meaning in life, even in suffering
-- Abraham Maslow focuses on self-actualization and the hierarchy of needs
-- The Oracle focuses on mystical guidance and seeing deeper patterns
-- Morpheus focuses on questioning reality and breaking free from limiting beliefs
+- The Deep Thinker focuses on profound self-reflection, life patterns, and exploring deeper meanings
+- The Life Coach focuses on personal development, goal achievement, and building confidence
+- The Wise Sage focuses on ancient wisdom, intuitive guidance, and seeing the bigger picture
+- The Breakthrough Coach focuses on challenging limiting beliefs and creating positive life changes
 
-Generate a single, concise title (3-6 words) that would appeal to someone seeking psychological insight from ${avatarName}.
+Generate a single, concise title (3-6 words) that would appeal to someone seeking personal growth insight from ${avatarName}.
 The title should be creative but not overly abstract, and should hint at the transformative nature of the conversation.
 Return only the title text with no additional explanation or formatting.`;
 
@@ -614,68 +609,82 @@ Return only the title text with no additional explanation or formatting.`;
       
       // Fallback titles in case the AI fails
       const fallbackTitles = {
+        'depthdelver': [
+          'Exploring Inner Depths',
+          'Patterns & Meanings',
+          'Journey to Self-Discovery',
+          'Deep Reflection Session',
+          'Unveiling Life Patterns'
+        ],
+        'flourishingguide': [
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
+        ],
         'jung': [
-          'Exploring the Shadow',
-          'Archetypes & Individuation',
-          'Journey to the Self',
-          'Collective Unconscious Dialogue',
-          'Jungian Reflection'
+          'Exploring Inner Depths',
+          'Patterns & Meanings',
+          'Journey to Self-Discovery',
+          'Deep Reflection Session',
+          'Unveiling Life Patterns'
         ],
         'freud': [
-          'Dream Analysis Session',
-          'Exploring the Unconscious',
-          'Id, Ego & Superego',
-          'Psychoanalytic Dialogue',
-          'Freudian Introspection'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'adler': [
-          'Finding Purpose',
-          'Social Interest Reflection',
-          'Overcoming Inferiority',
-          'Adlerian Life Goals',
-          'Striving for Superiority'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'rogers': [
-          'Authentic Self Dialogue',
-          'Unconditional Acceptance',
-          'Person-Centered Journey',
-          'Empathic Understanding',
-          'Genuine Connection'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'frankl': [
-          'Finding Life\'s Meaning',
-          'Transcending Suffering',
-          'Logotherapy Session',
-          'Purpose in Adversity',
-          'Existential Freedom'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'maslow': [
-          'Path to Self-Actualization',
-          'Hierarchy of Needs',
-          'Peak Experience Journey',
-          'Human Potential Dialogue',
-          'Growth Motivation'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'horney': [
-          'Neurotic Needs Exploration',
-          'Self-Realization Path',
-          'Moving Toward Growth',
-          'Cultural Influences Dialogue',
-          'Real Self Discovery'
+          'Goal Achievement Journey',
+          'Building Your Confidence',
+          'Personal Growth Session',
+          'Unlocking Your Potential',
+          'Life Coaching Dialogue'
         ],
         'oracle': [
-          'Prophecy & Potential',
-          'Fate vs. Choice',
-          'Oracle\'s Wisdom',
-          'Seeing Beyond Time',
-          'Crossroads Guidance'
+          'Ancient Wisdom Session',
+          'Seeing the Bigger Picture',
+          'Intuitive Guidance Journey',
+          'Life Philosophy Dialogue',
+          'Wisdom & Insight'
         ],
         'morpheus': [
-          'Red Pill Conversation',
-          'Reality Deconstruction',
-          'Awakening Dialogue',
-          'Beyond the Matrix',
-          'Truth Seeker\'s Journey'
+          'Breaking Through Barriers',
+          'Transformative Breakthrough',
+          'Challenging Beliefs Session',
+          'Bold Change Journey',
+          'Positive Life Transformation'
         ]
       };
       
@@ -697,7 +706,7 @@ Return only the title text with no additional explanation or formatting.`;
       console.error('Error generating title:', error);
       
       // Fallback to a simple title if AI fails
-      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'The Deep Thinker';
       return `Conversation with ${avatarName}`;
     } finally {
       setLoading(false);
@@ -1074,7 +1083,7 @@ Return only the title text with no additional explanation or formatting.`;
                         </Text>
                         <View style={tw`flex-row items-center mb-3`}>
                           <Text style={tw`text-sm font-medium text-jung-purple`}>
-                            {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'Jung'}
+                            {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'The Deep Thinker'}
                           </Text>
                           <Text style={tw`text-sm text-gray-400 mx-2`}>•</Text>
                           <Text style={tw`text-sm text-gray-500`}>

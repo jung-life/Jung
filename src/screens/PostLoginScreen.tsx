@@ -336,7 +336,7 @@ const PostLoginScreen = () => {
 
               <View style={tw`flex-1`}>
                 <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
-                  AI Conversations
+                  Conversations
                 </Text>
                 <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
                   Get personalized mental health support

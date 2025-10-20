@@ -129,7 +129,7 @@ export const ConversationsScreen = () => {
           } else if (conversation.title && conversation.title.length > 30 && /[^\w\s]/.test(conversation.title)) {
             // If title looks like it might be encrypted but doesn't have the expected prefix
             // or is a random string (long with special characters), use a fallback title
-            const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'Jung';
+            const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'The Deep Thinker';
             return {
               ...conversation,
               title: `Conversation with ${avatarName}`
@@ -139,7 +139,7 @@ export const ConversationsScreen = () => {
         } catch (decryptError) {
           console.error('Error decrypting conversation title:', decryptError);
           // Use a fallback title if decryption fails
-          const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'Jung';
+          const avatarName = availableAvatars.find((a) => a.id === conversation.avatar_id)?.name || 'The Deep Thinker';
           return {
             ...conversation,
             title: `Conversation with ${avatarName}`
@@ -342,7 +342,7 @@ export const ConversationsScreen = () => {
       
       // Format messages for analysis
       const formattedConversation = messages.map(msg => 
-        `${msg.role === 'user' ? 'You' : 'Jung'}: ${msg.content}`
+        `${msg.role === 'user' ? 'You' : 'Guide'}: ${msg.content}`
       ).join('\n\n');
       
       // Generate analysis using AI
@@ -520,7 +520,7 @@ export const ConversationsScreen = () => {
       // Share directly as text
       await Share.share({
         message: currentAnalysis.content,
-        title: 'Jung Analysis'
+        title: 'Personal Growth Analysis'
       });
     } catch (error) {
       console.error('Error sharing analysis:', error);
@@ -631,7 +631,7 @@ export const ConversationsScreen = () => {
       setLoading(true);
       
       // Get the selected avatar's name
-      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'The Deep Thinker';
       
       // Create a prompt for the LLM to generate a creative title
       let philosophyContext = '';
@@ -805,7 +805,7 @@ Return only the title text with no additional explanation or formatting.`;
       console.error('Error generating title:', error);
       
       // Fallback to a simple title if AI fails
-      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'Jung';
+      const avatarName = availableAvatars.find((a: Avatar) => a.id === selectedAvatar)?.name || 'The Deep Thinker';
       return `Conversation with ${avatarName}`;
     } finally {
       setLoading(false);
@@ -1154,7 +1154,7 @@ Return only the title text with no additional explanation or formatting.`;
                         <View style={tw`flex-row items-center ml-2`}>
                           <Text style={tw`text-sm text-gray-400 mx-1`}>•</Text>
                           <Text style={tw`text-sm text-gray-500`}>
-                            {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'Jung'}
+                            {availableAvatars.find((a: Avatar) => a.id === item.avatar_id)?.name || 'The Deep Thinker'}
                           </Text>
                         </View>
                       )}
