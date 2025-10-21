@@ -6,7 +6,8 @@ import {
   Wind, Sparkle, Bed, FireSimple, House, X, Plus, ArrowRight,
   FirstAid, TrendUp, ChartLine, TrendDown, Minus, Clock,
   ArrowsClockwise, Lightbulb, ChatCircle, FunnelSimple, CaretRight,
-  Lock, LockOpen, MagnifyingGlass, PenNib
+  Lock, LockOpen, MagnifyingGlass, PenNib, Microphone, SpeakerHigh,
+  Stop, Play, Pause, Trash, Pulse, HandHeart, Target
 } from 'phosphor-react-native';
 
 // Define the icon types we're using
@@ -17,7 +18,8 @@ type IconType =
   | 'Sparkle' | 'Bed' | 'FireSimple' | 'House' | 'X' | 'Plus'
   | 'FirstAid' | 'TrendUp' | 'ChartLine' | 'TrendDown' | 'Minus' | 'Clock'
   | 'ArrowsClockwise' | 'Lightbulb' | 'ChatCircle' | 'FunnelSimple' | 'CaretRight'
-  | 'Lock' | 'LockOpen' | 'MagnifyingGlass' | 'PenNib';
+  | 'Lock' | 'LockOpen' | 'MagnifyingGlass' | 'PenNib' | 'Microphone' | 'SpeakerHigh'
+  | 'Stop' | 'Play' | 'Pause' | 'Trash' | 'Pulse' | 'HandHeart' | 'Target';
 
 interface SafePhosphorIconProps {
   iconType: IconType;
@@ -110,6 +112,24 @@ export const SafePhosphorIcon: React.FC<SafePhosphorIconProps> = ({
         return <MagnifyingGlass size={size} color={color} weight={weight} />;
       case 'PenNib':
         return <PenNib size={size} color={color} weight={weight} />;
+      case 'Microphone':
+        return <Microphone size={size} color={color} weight={weight} />;
+      case 'SpeakerHigh':
+        return <SpeakerHigh size={size} color={color} weight={weight} />;
+      case 'Stop':
+        return <Stop size={size} color={color} weight={weight} />;
+      case 'Play':
+        return <Play size={size} color={color} weight={weight} />;
+      case 'Pause':
+        return <Pause size={size} color={color} weight={weight} />;
+      case 'Trash':
+        return <Trash size={size} color={color} weight={weight} />;
+      case 'Pulse':
+        return <Pulse size={size} color={color} weight={weight} />;
+      case 'HandHeart':
+        return <HandHeart size={size} color={color} weight={weight} />;
+      case 'Target':
+        return <Target size={size} color={color} weight={weight} />;
       default:
         console.warn(`Icon "${iconType}" not supported`);
         return null;

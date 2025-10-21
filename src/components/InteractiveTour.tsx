@@ -378,7 +378,7 @@ export const createAppFeatureTour = (): TourStep[] => [
   {
     id: 'mood-tracker',
     title: 'Mood Analytics & Patterns',
-    description: 'Quick daily mood check-ins help you identify patterns in your emotional well-being. Visual charts show trends over time to support your mental health journey.',
+    description: 'Quick daily mood check-ins help you identify patterns in your emotional well-being. Visual charts show trends over time to support your personal wellness journey.',
     targetArea: { x: 16, y: 800, width: width - 32, height: 120 },
     position: 'top',
   },

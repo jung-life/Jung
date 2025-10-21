@@ -177,7 +177,7 @@ export const DisclaimerScreen = () => {
                   </Text>
                 </View>
                 <Text style={tw`text-base leading-6 text-gray-700`}>
-                  Jung is designed for self-reflection and personal growth. It is not a substitute for professional mental health services, medical advice, diagnosis, or treatment.
+                  Jung is designed for self-reflection and personal growth. It is not a substitute for professional coaching services, medical advice, diagnosis, or treatment.
                 </Text>
               </View>
               
@@ -189,7 +189,7 @@ export const DisclaimerScreen = () => {
                   </Text>
                 </View>
                 <Text style={tw`text-base leading-6 text-gray-700`}>
-                  If you're experiencing a mental health emergency, please contact emergency services immediately or reach out to a mental health professional. Jung is not equipped to handle crisis situations.
+                  If you're experiencing a wellness emergency, please contact emergency services immediately or reach out to a healthcare professional. Jung is not equipped to handle crisis situations.
                 </Text>
               </View>
               
@@ -242,7 +242,7 @@ export const DisclaimerScreen = () => {
             </TouchableOpacity>
             <Text style={tw`flex-1 text-gray-700`}>
               I understand that Jung is not a healthcare provider and does not offer medical advice. 
-              I will seek professional help for any mental health concerns.
+              I will seek professional help for any wellness concerns.
             </Text>
           </View>
           

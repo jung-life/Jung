@@ -208,7 +208,7 @@ export const getMoodByValue = (value: number): MoodState | undefined => {
 
 // Wellness-focused disclaimers and educational content
 export const WELLNESS_DISCLAIMERS = {
-  main: "This tool is for educational and self-reflection purposes only. It is not intended to diagnose, treat, cure, or prevent any medical condition. If you're experiencing persistent distress, please consult a qualified mental health professional.",
+  main: "This tool is for educational and self-reflection purposes only. It is not intended to diagnose, treat, cure, or prevent any medical condition. If you're experiencing persistent distress, please consult a qualified personal development coach or healthcare professional.",
 
   privacy: "Your thoughts and reflections are private and stored securely on your device. This information is for your personal wellness journey.",
 

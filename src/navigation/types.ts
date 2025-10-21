@@ -38,6 +38,8 @@ export type RootStackParamList = {
   MySubscription: undefined; // My Subscription screen
   CognitiveDistortionChecker: undefined; // Cognitive Distortion Checker screen
   ThoughtInsights: undefined; // Thought Insights and Analytics screen
+  VoiceNotesScreen: undefined; // Voice Notes screen
+  VoiceInsightsScreen: undefined; // Voice Insights screen
 };
 
 // Add these types for navigation

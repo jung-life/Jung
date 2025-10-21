@@ -62,7 +62,7 @@ export const TermsOfServiceScreen = () => {
           <Text style={tw`text-lg font-bold mb-2 mt-6`}>Use of the App</Text>
           
           <Text style={tw`mb-4`}>
-            The Jung App is designed for self-reflection and personal growth. It is not a substitute for professional mental health services. The App does not provide medical advice, diagnosis, or treatment.
+            The Jung App is designed for self-reflection and personal growth. It is not a substitute for professional coaching services. The App does not provide medical advice, diagnosis, or treatment.
           </Text>
           
           <Text style={tw`text-lg font-bold mb-2 mt-6`}>User Accounts</Text>

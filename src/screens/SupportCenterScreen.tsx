@@ -85,7 +85,7 @@ export default function SupportCenterScreen() {
     },
     {
       title: 'SAMHSA Helpline',
-      subtitle: 'Mental Health & Substance Abuse',
+      subtitle: 'Wellness & Substance Abuse',
       phone: '1-800-662-4357',
       website: 'https://www.samhsa.gov',
       icon: 'Heart',
@@ -171,7 +171,7 @@ export default function SupportCenterScreen() {
     },
     {
       title: 'Sleep Hygiene Basics',
-      description: 'Tips for better sleep quality and mental health.',
+      description: 'Tips for better sleep quality and overall wellness.',
       category: 'article',
       url: 'https://www.sleepfoundation.org/sleep-hygiene',
       icon: 'Moon',

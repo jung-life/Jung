@@ -35,7 +35,7 @@ const resources = [
   },
    {
     title: 'National Alliance on Mental Illness (NAMI)',
-    description: 'Information, support groups, and resources for mental health conditions.',
+    description: 'Information, support groups, and resources for personal development and wellness.',
     url: 'https://www.nami.org/',
     icon: <Heart size={24} color="#A8DADC" weight="light" />, // Example icon - reusing Heart
     color: 'bg-soothing-blue/10 border-soothing-blue/30',

@@ -27,7 +27,7 @@ export const PersonalDevelopmentDisclaimer: React.FC<PersonalDevelopmentDisclaim
   const handleSupportResources = () => {
     Alert.alert(
       'Support Resources',
-      'For professional help with life challenges:\n\n• Life coaching services\n• Career counseling\n• Personal development courses\n• Professional therapy (for mental health concerns)',
+      'For professional help with life challenges:\n\n• Life coaching services\n• Career counseling\n• Personal development courses\n• Professional coaching (for wellness concerns)',
       [
         { text: 'Learn More', onPress: () => Linking.openURL('https://www.psychologytoday.com') },
         { text: 'Close', style: 'cancel' }
@@ -104,9 +104,9 @@ export const PersonalDevelopmentDisclaimer: React.FC<PersonalDevelopmentDisclaim
               🤝 When to Seek Professional Help:
             </Text>
             <Text style={tw`text-gray-700 text-base leading-6 mb-4`}>
-              For significant life challenges, mental health concerns, or professional guidance needs:{'\n\n'}
+              For significant life challenges, wellness concerns, or professional guidance needs:{'\n\n'}
               • Licensed life coaches or career counselors{'\n'}
-              • Professional therapists for mental health support{'\n'}
+              • Professional coaches for personal development support{'\n'}
               • Career guidance services{'\n'}
               • Educational institutions and courses{'\n'}
               • Support groups and communities

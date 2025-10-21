@@ -38,6 +38,8 @@ import ConversationAnalyticsScreen from '../screens/ConversationAnalyticsScreen'
 import SupportCenterScreen from '../screens/SupportCenterScreen';
 import { CognitiveDistortionChecker } from '../screens/CognitiveDistortionChecker';
 import { ThoughtInsights } from '../screens/ThoughtInsights';
+import VoiceNotesScreen from '../screens/VoiceNotesScreen';
+import VoiceInsightsScreen from '../screens/VoiceInsightsScreen';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
 
 // Stack for AuthScreen and MainAppScreen flow
@@ -287,6 +289,20 @@ const MainAppStack = () => (
     <Stack.Screen
       name="ThoughtInsights"
       component={ThoughtInsights}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="VoiceNotesScreen"
+      component={VoiceNotesScreen}
+      options={{
+        headerShown: false // Screen has its own header
+      }}
+    />
+    <Stack.Screen
+      name="VoiceInsightsScreen"
+      component={VoiceInsightsScreen}
       options={{
         headerShown: false // Screen has its own header
       }}

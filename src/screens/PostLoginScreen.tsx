@@ -339,7 +339,7 @@ const PostLoginScreen = () => {
                   Conversations
                 </Text>
                 <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
-                  Get personalized mental health support
+                  Discover your insights through self-analysis
                 </Text>
                 <View style={tw`flex-row items-center`}>
                   <View style={tw`w-2 h-2 bg-green-500 rounded-full mr-2`} />
@@ -489,6 +489,105 @@ const PostLoginScreen = () => {
             </View>
           </SafeTouchableOpacity>
 
+          {/* Thought Helper Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-purple-100 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
+            onPress={() => navigation.navigate('CognitiveDistortionChecker')}
+          >
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-1 right-2 rotate-12`}>
+                <SafePhosphorIcon iconType="Lightbulb" size={32} color="#7C3AED" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-8 -rotate-12`}>
+                <SafePhosphorIcon iconType="Brain" size={20} color="#7C3AED" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-purple-200 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="Lightbulb" size={24} color="#7C3AED" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
+                  Thought Helper
+                </Text>
+                <Text style={tw`text-purple-700 text-sm mb-2`}>
+                  Challenge unhelpful thinking patterns
+                </Text>
+                <Text style={tw`text-xs text-purple-600`}>✨ Self-reflection and awareness tools</Text>
+              </View>
+            </View>
+          </SafeTouchableOpacity>
+
+          {/* Thought Insights Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-purple-50 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
+            onPress={() => navigation.navigate('ThoughtInsights')}
+          >
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={34} color="#7C3AED" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-6 rotate-45`}>
+                <SafePhosphorIcon iconType="Sparkle" size={18} color="#7C3AED" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-purple-100 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="TrendUp" size={24} color="#7C3AED" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
+                  Your Insights
+                </Text>
+                <Text style={tw`text-purple-700 text-sm mb-2`}>
+                  Track your wellness journey
+                </Text>
+                <Text style={tw`text-xs text-purple-600`}>📊 Progress & achievements</Text>
+              </View>
+            </View>
+          </SafeTouchableOpacity>
+
+          {/* Voice Notes Button */}
+          <SafeTouchableOpacity
+            style={tw`bg-emotional rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
+            onPress={() => navigation.navigate('VoiceNotesScreen')}
+          >
+            {/* Background Pattern */}
+            <View style={tw`absolute inset-0 opacity-10`}>
+              <View style={tw`absolute top-2 right-4`}>
+                <SafePhosphorIcon iconType="Microphone" size={36} color="#2D2B55" weight="thin" />
+              </View>
+              <View style={tw`absolute bottom-2 left-8 rotate-12`}>
+                <SafePhosphorIcon iconType="SpeakerHigh" size={20} color="#2D2B55" weight="thin" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={tw`flex-row items-start`}>
+              <View style={tw`w-12 h-12 bg-white/20 rounded-full items-center justify-center mr-4`}>
+                <SafePhosphorIcon iconType="Microphone" size={24} color="#2D2B55" weight="fill" />
+              </View>
+
+              <View style={tw`flex-1`}>
+                <Text style={tw`text-jung-deep text-lg font-bold mb-1`}>
+                  Voice Notes
+                </Text>
+                <Text style={tw`text-jung-deep/70 text-sm mb-2`}>
+                  Record your thoughts and insights
+                </Text>
+                <Text style={tw`text-xs text-jung-deep/60`}>🎤 Capture moments of clarity</Text>
+              </View>
+            </View>
+          </SafeTouchableOpacity>
+
           {/* Support Center Button (Crisis + Self-Help) */}
           <SafeTouchableOpacity
             style={tw`bg-resources rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
@@ -584,72 +683,6 @@ const PostLoginScreen = () => {
                   Insights from your conversations
                 </Text>
                 <Text style={tw`text-xs text-jung-deep/60`}>💬 Discover patterns & themes</Text>
-              </View>
-            </View>
-          </SafeTouchableOpacity>
-
-          {/* Thought Helper Button */}
-          <SafeTouchableOpacity
-            style={tw`bg-purple-100 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
-            onPress={() => navigation.navigate('CognitiveDistortionChecker')}
-          >
-            {/* Background Pattern */}
-            <View style={tw`absolute inset-0 opacity-10`}>
-              <View style={tw`absolute top-1 right-2 rotate-12`}>
-                <SafePhosphorIcon iconType="Lightbulb" size={32} color="#7C3AED" weight="thin" />
-              </View>
-              <View style={tw`absolute bottom-2 left-8 -rotate-12`}>
-                <SafePhosphorIcon iconType="Brain" size={20} color="#7C3AED" weight="thin" />
-              </View>
-            </View>
-
-            {/* Main Content */}
-            <View style={tw`flex-row items-start`}>
-              <View style={tw`w-12 h-12 bg-purple-200 rounded-full items-center justify-center mr-4`}>
-                <SafePhosphorIcon iconType="Lightbulb" size={24} color="#7C3AED" weight="fill" />
-              </View>
-
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
-                  Thought Helper
-                </Text>
-                <Text style={tw`text-purple-700 text-sm mb-2`}>
-                  Challenge unhelpful thinking patterns
-                </Text>
-                <Text style={tw`text-xs text-purple-600`}>✨ Science-based CBT techniques</Text>
-              </View>
-            </View>
-          </SafeTouchableOpacity>
-
-          {/* Thought Insights Button */}
-          <SafeTouchableOpacity
-            style={tw`bg-purple-50 rounded-xl p-6 w-full mb-4 shadow-sm relative overflow-hidden`}
-            onPress={() => navigation.navigate('ThoughtInsights')}
-          >
-            {/* Background Pattern */}
-            <View style={tw`absolute inset-0 opacity-10`}>
-              <View style={tw`absolute top-2 right-4`}>
-                <SafePhosphorIcon iconType="TrendUp" size={34} color="#7C3AED" weight="thin" />
-              </View>
-              <View style={tw`absolute bottom-2 left-6 rotate-45`}>
-                <SafePhosphorIcon iconType="Sparkle" size={18} color="#7C3AED" weight="thin" />
-              </View>
-            </View>
-
-            {/* Main Content */}
-            <View style={tw`flex-row items-start`}>
-              <View style={tw`w-12 h-12 bg-purple-100 rounded-full items-center justify-center mr-4`}>
-                <SafePhosphorIcon iconType="TrendUp" size={24} color="#7C3AED" weight="fill" />
-              </View>
-
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-purple-800 text-lg font-bold mb-1`}>
-                  Your Insights
-                </Text>
-                <Text style={tw`text-purple-700 text-sm mb-2`}>
-                  Track your wellness journey
-                </Text>
-                <Text style={tw`text-xs text-purple-600`}>📊 Progress & achievements</Text>
               </View>
             </View>
           </SafeTouchableOpacity>

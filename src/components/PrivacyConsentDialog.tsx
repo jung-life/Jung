@@ -65,7 +65,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
     if (!consents.healthDataProcessing) {
       Alert.alert(
         'Health Data Processing Required',
-        'To use this mental health app, we need your consent to process your health and therapy data. This is essential for the app to function properly.',
+        'To use this personal development app, we need your consent to process your wellness and coaching data. This is essential for the app to function properly.',
         [
           {
             text: 'Review Settings',
@@ -89,7 +89,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
   const handleDecline = () => {
     Alert.alert(
       'Cannot Use App',
-      'Without essential privacy consents, particularly health data processing, this mental health app cannot function. Would you like to review the privacy policy or exit?',
+      'Without essential privacy consents, particularly wellness data processing, this personal development app cannot function. Would you like to review the privacy policy or exit?',
       [
         {
           text: 'Review Privacy Policy',
@@ -163,7 +163,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.introText}>
-            {appName} processes personal and health information to provide mental health support. 
+            {appName} processes personal and wellness information to provide personal development support. 
             Your data is protected and never sold to third parties.
           </Text>
 
@@ -178,7 +178,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
 
             <ConsentOption
               title="Health Data Processing"
-              description="Process your therapy conversations, mood data, and mental health insights to provide personalized support."
+              description="Process your coaching conversations, mood data, and personal development insights to provide personalized support."
               required={true}
               enabled={consents.healthDataProcessing}
               onToggle={(value) => handleConsentChange('healthDataProcessing', value)}
@@ -207,7 +207,7 @@ const PrivacyConsentDialog: React.FC<PrivacyConsentDialogProps> = ({
 
             <ConsentOption
               title="Research Data Sharing"
-              description="Contribute anonymized data to mental health research (with strict privacy protections)."
+              description="Contribute anonymized data to personal development research (with strict privacy protections)."
               enabled={consents.dataSharing}
               onToggle={(value) => handleConsentChange('dataSharing', value)}
             />
