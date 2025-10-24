@@ -538,10 +538,10 @@ export default function SupportCenterScreen() {
         <View style={tw`px-6 pt-2 pb-4`}>
           <View style={tw`flex-row items-center justify-between mb-2`}>
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('PostLoginScreen' as any)}
               style={tw`p-2 -ml-2`}
             >
-              <SafePhosphorIcon iconType="ArrowLeft" size={24} color="#4A3B78" weight="bold" />
+              <SafePhosphorIcon iconType="House" size={24} color="#4A3B78" weight="bold" />
             </TouchableOpacity>
             <Text style={tw`text-2xl font-bold text-jung-deep`}>Support Center</Text>
             <View style={tw`w-8`} />

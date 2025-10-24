@@ -293,29 +293,20 @@ export const EmotionalAssessmentScreen = () => {
       }).join('\n\n');
       
       // Create prompt for AI analysis
-      const prompt = `
-        Analyze the following emotional responses to different scenarios:
-        
-        ${formattedResponses}
-        
-        Based on these responses, please:
-        1. Identify the dominant primary emotion (choose from: joy, sadness, anger, fear, disgust, surprise, trust, or anticipation)
-        2. Identify 2-3 secondary emotions that are present
-        3. Rate the overall emotional intensity on a scale of 1-10
-        4. Suggest potential emotional triggers or patterns
-        5. Identify potential emotional needs
-        
-        Format your response as a JSON object with the following structure:
-        {
-          "primary_emotion": "[emotion]",
-          "secondary_emotions": ["emotion1", "emotion2", "emotion3"],
-          "intensity": [number],
-          "triggers": ["trigger1", "trigger2"],
-          "needs": ["need1", "need2"]
-        }
-        
-        Return only valid JSON.
-      `;
+      const prompt = `Analyze the following emotional responses and return ONLY a JSON object with no additional text:
+
+${formattedResponses}
+
+Respond with ONLY this JSON structure:
+{
+  "primary_emotion": "[emotion from: joy, sadness, anger, fear, disgust, surprise, trust, anticipation]",
+  "secondary_emotions": ["emotion1", "emotion2"],
+  "intensity": [1-10],
+  "triggers": ["trigger1", "trigger2"],
+  "needs": ["need1", "need2"]
+}
+
+Return ONLY the JSON object above with no explanation or additional text.`;
       
       // Get analysis from AI
       const analysisResult = await generateAIResponse(prompt, [], 'jung', {

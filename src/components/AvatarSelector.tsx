@@ -75,12 +75,12 @@ const AvatarPopup: React.FC<AvatarPopupProps> = ({ visible, avatar, onClose, onC
 
           {/* Avatar Image */}
           <View style={tw`items-center mb-4`}>
-            <View style={tw`w-72 h-72 rounded-full overflow-hidden border-4 border-jung-purple shadow-lg`}>
+            <View style={tw`w-96 h-96 rounded-full overflow-hidden border-4 border-jung-purple shadow-lg`}>
               {imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
                   style={tw`w-full h-full`}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               ) : (
                 <View style={tw`w-full h-full bg-jung-purple/20 justify-center items-center`}>
@@ -148,40 +148,71 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
 
   return (
     <>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tw`p-2`}
-      >
-        {availableAvatars.map((avatar) => {
-          const isSelected = selectedAvatar === avatar.id;
+      <View style={tw`p-2`}>
+        {/* First row - 2 avatars */}
+        <View style={tw`flex-row justify-between mb-4`}>
+          {availableAvatars.slice(0, 2).map((avatar) => {
+            const isSelected = selectedAvatar === avatar.id;
 
-          return (
-            <TouchableOpacity
-              key={avatar.id}
-              style={tw`items-center mr-4 ${isSelected ? 'opacity-100' : 'opacity-70'}`}
-              onPress={() => handleAvatarPress(avatar)}
-            >
-              <View style={tw`relative`}>
-                <SimpleAvatar
-                  avatarId={avatar.id}
-                  size={110}
-                  style={tw`${isSelected ? 'border-2 border-jung-purple' : ''}`}
-                />
-                {/* Add a subtle "tap to preview" indicator */}
-                <View style={tw`absolute bottom-0 right-0 bg-jung-purple/90 rounded-full p-1`}>
-                  <SafePhosphorIcon iconType="Eye" size={12} color="white" weight="fill" />
+            return (
+              <TouchableOpacity
+                key={avatar.id}
+                style={tw`items-center flex-1 mx-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`}
+                onPress={() => handleAvatarPress(avatar)}
+              >
+                <View style={tw`relative`}>
+                  <SimpleAvatar
+                    avatarId={avatar.id}
+                    size={140}
+                    style={tw`${isSelected ? 'border-2 border-jung-purple' : ''}`}
+                  />
+                  {/* Add a subtle "tap to preview" indicator */}
+                  <View style={tw`absolute bottom-0 right-0 bg-jung-purple/90 rounded-full p-1.5`}>
+                    <SafePhosphorIcon iconType="Eye" size={14} color="white" weight="fill" />
+                  </View>
                 </View>
-              </View>
-              <Text style={tw`mt-1 text-center font-medium text-xs max-w-20 ${
-                isSelected ? 'text-jung-purple' : 'text-gray-700'
-              }`}>
-                {avatar.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                <Text style={tw`mt-2 text-center font-medium text-sm ${
+                  isSelected ? 'text-jung-purple' : 'text-gray-700'
+                }`}>
+                  {avatar.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Second row - 2 avatars */}
+        <View style={tw`flex-row justify-between`}>
+          {availableAvatars.slice(2, 4).map((avatar) => {
+            const isSelected = selectedAvatar === avatar.id;
+
+            return (
+              <TouchableOpacity
+                key={avatar.id}
+                style={tw`items-center flex-1 mx-2 ${isSelected ? 'opacity-100' : 'opacity-70'}`}
+                onPress={() => handleAvatarPress(avatar)}
+              >
+                <View style={tw`relative`}>
+                  <SimpleAvatar
+                    avatarId={avatar.id}
+                    size={140}
+                    style={tw`${isSelected ? 'border-2 border-jung-purple' : ''}`}
+                  />
+                  {/* Add a subtle "tap to preview" indicator */}
+                  <View style={tw`absolute bottom-0 right-0 bg-jung-purple/90 rounded-full p-1.5`}>
+                    <SafePhosphorIcon iconType="Eye" size={14} color="white" weight="fill" />
+                  </View>
+                </View>
+                <Text style={tw`mt-2 text-center font-medium text-sm ${
+                  isSelected ? 'text-jung-purple' : 'text-gray-700'
+                }`}>
+                  {avatar.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
 
       <AvatarPopup
         visible={showPopup}

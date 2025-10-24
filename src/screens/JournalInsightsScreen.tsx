@@ -118,10 +118,10 @@ const JournalInsightsScreen = () => {
         {/* Header */}
         <View style={tw`px-6 py-4 border-b border-white/20 flex-row items-center`}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('PostLoginScreen' as any)}
             style={tw`mr-4`}
           >
-            <SafePhosphorIcon iconType="ArrowLeft" size={24} color="#4A3B78" weight="bold" />
+            <SafePhosphorIcon iconType="House" size={24} color="#4A3B78" weight="bold" />
           </TouchableOpacity>
           <Text style={tw`text-2xl font-bold text-jung-deep`}>Journal Insights</Text>
         </View>

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import tw from '../lib/tailwind';
-import { ArrowLeft, CheckCircle, Brain, Lightbulb, Heart } from 'phosphor-react-native';
+import { CheckCircle, Brain, Lightbulb, Heart, House } from 'phosphor-react-native';
 import { GradientBackground } from '../components/GradientBackground';
 import { COGNITIVE_DISTORTIONS, MOOD_STATES, WELLNESS_DISCLAIMERS } from '../data/cognitiveDistortions';
 import { ThoughtEntry, CognitiveDistortion } from '../types/cognitiveDistortions';
@@ -456,10 +456,10 @@ export const CognitiveDistortionChecker: React.FC = () => {
           {/* Header */}
           <View style={tw`flex-row items-center px-6 py-4`}>
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('PostLoginScreen' as any)}
               style={tw`w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-4`}
             >
-              <ArrowLeft size={20} color="#FFFFFF" weight="regular" />
+              <House size={20} color="#FFFFFF" weight="regular" />
             </TouchableOpacity>
             <View style={tw`flex-1`}>
               <Text style={tw`text-lg font-semibold text-white`}>

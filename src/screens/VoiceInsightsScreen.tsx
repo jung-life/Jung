@@ -139,8 +139,8 @@ const VoiceInsightsScreen = () => {
 
         {/* Header */}
         <View style={tw`flex-row items-center justify-between px-4 py-3`}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <SafePhosphorIcon iconType="ArrowLeft" size={24} color="#2D2B55" weight="bold" />
+          <TouchableOpacity onPress={() => navigation.navigate('PostLoginScreen' as any)}>
+            <SafePhosphorIcon iconType="House" size={24} color="#2D2B55" weight="bold" />
           </TouchableOpacity>
           <Text style={tw`text-xl font-bold text-jung-deep`}>Voice Insights</Text>
           <View style={tw`w-6`} />

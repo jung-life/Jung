@@ -28,6 +28,7 @@ import { SymbolicBackground } from '../components/SymbolicBackground';
 import { encryptData, decryptData } from '../lib/encryptionUtils';
 import { PrivacyConsentDialog } from '../components/PrivacyConsentDialog';
 import { CreditDisplay } from '../components/CreditDisplay';
+import { SafetyService } from '../services/safetyService';
 import { useCredits } from '../hooks/useCredits';
 import { creditService } from '../lib/creditService';
 import { useUsageTracking } from '../hooks/useUsageTracking';
@@ -348,8 +349,29 @@ export const ChatScreen = () => {
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(`Subscription error on ${channelName}: ${status}`, err);
 
-            // Automatic retry logic for timeouts and errors
-            if (status === 'TIMED_OUT' && isActive) {
+            // Check for JWT token expiration
+            const errorMessage = err?.message || err?.toString() || '';
+            const isTokenExpired = errorMessage.includes('InvalidJWTToken') ||
+                                   errorMessage.includes('Token has expired') ||
+                                   errorMessage.includes('JWT');
+
+            if (isTokenExpired) {
+              console.log(`JWT token expired for ${channelName}, refreshing session...`);
+              // Refresh the session and retry subscription
+              supabase.auth.refreshSession().then(({ data, error }) => {
+                if (error) {
+                  console.error('Failed to refresh session:', error);
+                } else if (data.session && isActive && conversationId) {
+                  console.log('Session refreshed, resubscribing...');
+                  // Remove the failed channel and create a new one
+                  supabase.removeChannel(channel).then(() => {
+                    // Refresh the messages and restart subscription
+                    fetchMessages().catch(console.error);
+                  }).catch(console.error);
+                }
+              }).catch(console.error);
+            } else if (status === 'TIMED_OUT' && isActive) {
+              // Automatic retry logic for timeouts and errors
               console.log(`Retrying subscription for ${channelName} after timeout...`);
               setTimeout(() => {
                 if (isActive && conversationId) {
@@ -507,6 +529,23 @@ export const ChatScreen = () => {
   
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
+
+    // SAFETY CHECK: Analyze user input before sending
+    const safetyCheck = SafetyService.checkUserInputSafety(inputText);
+    console.log('🛡️ Chat safety check:', safetyCheck);
+
+    if (safetyCheck.recommendedAction === 'redirect_emergency') {
+      const shouldContinue = await SafetyService.handleCrisisIntervention();
+      if (!shouldContinue) {
+        setInputText(''); // Clear the input
+        return;
+      }
+    }
+
+    if (safetyCheck.riskLevel === 'high') {
+      SafetyService.showProfessionalReferral(safetyCheck.riskLevel);
+      // Continue with conversation but user has been warned
+    }
 
     // Check usage limits for free users
     const limits = checkLimits();

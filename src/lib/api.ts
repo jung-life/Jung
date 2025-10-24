@@ -3,6 +3,7 @@ import { generatePromptForAvatar } from './avatarPrompts';
 import { standardizedLLM, LLMRequest } from './standardizedLLM';
 import { creditService } from './creditService';
 import { getOptimalRoutingStrategy, RoutingContext } from './intelligentRouting';
+import { SafetyService } from '../services/safetyService';
 
 // Multi-provider AI API with privacy protection and cost optimization
 export const generateAIResponse = async (
@@ -19,11 +20,26 @@ export const generateAIResponse = async (
     // Default to Claude 3.5 Sonnet for better therapeutic responses and lower cost
     const provider = options.provider || 'claude';
     const privacyLevel = options.privacyLevel || 'BASIC';
-    
+
     // Check for user consent - required for privacy protection
     if (!options.userConsent) {
       // Return a consent request message
       return getConsentRequestMessage(avatarId);
+    }
+
+    // SAFETY CHECK: Analyze user input for crisis or high-risk content
+    const safetyCheck = SafetyService.checkUserInputSafety(prompt);
+    console.log('🛡️ Safety check:', safetyCheck);
+
+    if (safetyCheck.recommendedAction === 'redirect_emergency') {
+      const shouldContinue = await SafetyService.handleCrisisIntervention();
+      if (!shouldContinue) {
+        return 'I understand you reached out for support. Please prioritize your safety and well-being by contacting professional crisis support services.';
+      }
+    }
+
+    if (safetyCheck.recommendedAction === 'show_warning' && safetyCheck.riskLevel === 'high') {
+      SafetyService.showProfessionalReferral(safetyCheck.riskLevel);
     }
 
     // Ensure previousMessages is always an array
@@ -51,10 +67,14 @@ export const generateAIResponse = async (
 
     const routingDecision = getOptimalRoutingStrategy(routingContext);
 
+    // Enhance system prompt with additional safety guidelines
+    const safetyEnhancedPrompt = enhancedPrompt.split('Here is the conversational history')[0].trim() +
+      '\n\n' + SafetyService.getEnhancedSafetyPrompt();
+
     // Use standardized LLM service with intelligent routing
     const llmRequest: LLMRequest = {
       prompt: anonymizedPrompt,
-      systemPrompt: enhancedPrompt.split('Here is the conversational history')[0].trim(),
+      systemPrompt: safetyEnhancedPrompt,
       previousMessages: messages.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
@@ -80,6 +100,20 @@ export const generateAIResponse = async (
       processingTimeMs: llmResponse.processingTimeMs,
       timestamp: new Date().toISOString()
     });
+
+    // SAFETY CHECK: Analyze AI response for medical advice or inappropriate content
+    const responseCheck = SafetyService.checkResponseSafety(llmResponse.content);
+    console.log('🛡️ Response safety check:', responseCheck);
+
+    if (responseCheck.shouldBlock) {
+      console.log('🚫 Blocking response due to medical advice detection');
+      return SafetyService.generateSafeAlternativeResponse(llmResponse.content, responseCheck);
+    }
+
+    if (responseCheck.containsMedicalAdvice) {
+      console.log('⚠️ Adding safety disclaimer to response');
+      return SafetyService.generateSafeAlternativeResponse(llmResponse.content, responseCheck);
+    }
 
     return llmResponse.content;
 
