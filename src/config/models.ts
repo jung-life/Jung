@@ -1,7 +1,7 @@
 // Centralized LLM model configuration and pricing management
 export interface ModelConfig {
   name: string;
-  provider: 'anthropic' | 'openai';
+  provider: 'anthropic' | 'openai' | 'google';
   modelId: string;
   inputCostPer1M: number; // Cost per 1M input tokens in USD
   outputCostPer1M: number; // Cost per 1M output tokens in USD
@@ -132,6 +132,52 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     features: ['1M context', 'latest reasoning', 'cost effective'],
     isActive: false, // Set to false until confirmed available
     priority: 1
+  },
+
+  // Google Gemini models
+  'gemini-1.5-pro': {
+    name: 'Gemini 1.5 Pro',
+    provider: 'google',
+    modelId: 'gemini-1.5-pro',
+    inputCostPer1M: 1.25,
+    outputCostPer1M: 5.00,
+    maxTokens: 8192,
+    contextWindow: 2097152, // 2M tokens
+    temperature: 0.7,
+    description: 'Google\'s most capable model with huge context window',
+    features: ['2M context', 'multimodal', 'excellent reasoning'],
+    isActive: true,
+    priority: 1
+  },
+
+  'gemini-1.5-flash': {
+    name: 'Gemini 1.5 Flash',
+    provider: 'google',
+    modelId: 'gemini-1.5-flash',
+    inputCostPer1M: 0.075,
+    outputCostPer1M: 0.30,
+    maxTokens: 8192,
+    contextWindow: 1048576, // 1M tokens
+    temperature: 0.7,
+    description: 'Fast and cost-effective Gemini model',
+    features: ['1M context', 'very fast', 'ultra cheap', 'multimodal'],
+    isActive: true,
+    priority: 2
+  },
+
+  'gemini-1.5-flash-8b': {
+    name: 'Gemini 1.5 Flash-8B',
+    provider: 'google',
+    modelId: 'gemini-1.5-flash-8b',
+    inputCostPer1M: 0.0375,
+    outputCostPer1M: 0.15,
+    maxTokens: 8192,
+    contextWindow: 1048576, // 1M tokens
+    temperature: 0.7,
+    description: 'Ultra-low cost Gemini model for high volume',
+    features: ['1M context', 'fastest', 'cheapest', 'lightweight'],
+    isActive: true,
+    priority: 3
   }
 };
 
@@ -155,6 +201,15 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     defaultHeaders: {
       'Content-Type': 'application/json'
     }
+  },
+
+  google: {
+    name: 'Google',
+    apiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY || '',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultHeaders: {
+      'Content-Type': 'application/json'
+    }
   }
 };
 
@@ -162,9 +217,9 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
 export type ModelStrategy = 'cost-optimized' | 'balanced' | 'quality-first' | 'fallback';
 
 export const MODEL_STRATEGIES: Record<ModelStrategy, string[]> = {
-  'cost-optimized': ['claude-3-haiku', 'claude-3.5-haiku', 'claude-3.5-sonnet'],
-  'balanced': ['claude-3.5-haiku', 'claude-3.5-sonnet', 'gpt-4o'],
-  'quality-first': ['claude-3.5-sonnet', 'claude-3.5-haiku', 'gpt-4o'],
+  'cost-optimized': ['gemini-1.5-flash-8b', 'gemini-1.5-flash', 'claude-3-haiku'],
+  'balanced': ['gemini-1.5-flash', 'claude-3.5-haiku', 'gemini-1.5-pro'],
+  'quality-first': ['gemini-1.5-pro', 'claude-3.5-sonnet', 'gpt-4o'],
   'fallback': ['claude-3.5-sonnet', 'claude-3.5-haiku', 'claude-3-haiku']
 };
 

@@ -9,6 +9,7 @@ import {
   ModelStrategy,
   ModelConfig
 } from '../config/models';
+import { GoogleGenerativeAI, Content } from '@google/generative-ai';
 
 export interface LLMRequest {
   prompt: string;
@@ -106,6 +107,80 @@ class StandardizedLLMService {
       provider: 'anthropic',
       processingTimeMs
     };
+  }
+
+  private async callGoogleAPI(
+    model: ModelConfig,
+    messages: Array<{ role: string; content: string }>,
+    systemPrompt?: string
+  ): Promise<LLMResponse> {
+    const startTime = Date.now();
+    const providerConfig = getProviderConfig('google');
+
+    // Initialize Google Generative AI
+    const genAI = new GoogleGenerativeAI(providerConfig.apiKey);
+    const geminiModel = genAI.getGenerativeModel({
+      model: model.modelId,
+      generationConfig: {
+        maxOutputTokens: model.maxTokens,
+        temperature: model.temperature,
+      },
+      systemInstruction: systemPrompt
+    });
+
+    // Convert messages to Gemini format
+    const history: Content[] = [];
+    messages.forEach((msg, index) => {
+      if (index < messages.length - 1) { // All but the last message go into history
+        history.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        });
+      }
+    });
+
+    try {
+      const chat = geminiModel.startChat({ history });
+      const lastMessage = messages[messages.length - 1];
+      const result = await chat.sendMessage(lastMessage.content);
+      const response = result.response;
+
+      const processingTimeMs = Date.now() - startTime;
+
+      // Extract token usage - Gemini API may not always provide exact counts
+      const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
+      const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
+      const totalTokens = result.response.usageMetadata?.totalTokenCount || inputTokens + outputTokens;
+
+      // Clean response
+      let cleanedContent = response.text()
+        .replace(/<\/?response>/gi, '')
+        .replace(/<\/?thinking>/gi, '')
+        .replace(/<\/?analysis>/gi, '')
+        .trim();
+
+      const modelKey = getModelKeyByConfig(model) || 'gemini-1.5-flash';
+
+      return {
+        content: cleanedContent,
+        modelUsed: model.modelId,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        costUSD: estimateTokenCost(modelKey, inputTokens, outputTokens),
+        creditsCost: calculateCreditCost(modelKey, inputTokens, outputTokens),
+        provider: 'google',
+        processingTimeMs
+      };
+    } catch (error: any) {
+      throw {
+        message: error.message || 'Google Gemini API error',
+        code: error.code || 'unknown',
+        provider: 'google',
+        modelId: model.modelId,
+        retryable: error.status >= 500 || error.status === 429
+      } as LLMError;
+    }
   }
 
   private async callOpenAIAPI(
@@ -215,6 +290,8 @@ class StandardizedLLMService {
           return await this.callAnthropicAPI(selectedModel, messages, request.systemPrompt);
         } else if (selectedModel.provider === 'openai') {
           return await this.callOpenAIAPI(selectedModel, messages, request.systemPrompt);
+        } else if (selectedModel.provider === 'google') {
+          return await this.callGoogleAPI(selectedModel, messages, request.systemPrompt);
         } else {
           throw new Error(`Unsupported provider: ${selectedModel.provider}`);
         }
@@ -231,8 +308,8 @@ class StandardizedLLMService {
         // Try fallback model on next attempt
         if (attempt === 0) {
           const fallbackModels = request.strategy === 'cost-optimized'
-            ? ['claude-3.5-sonnet', 'gpt-4o']
-            : ['gpt-4o', 'claude-3.5-sonnet'];
+            ? ['gemini-1.5-flash', 'claude-3.5-sonnet', 'gpt-4o']
+            : ['gemini-1.5-pro', 'gpt-4o', 'claude-3.5-sonnet'];
 
           for (const fallbackId of fallbackModels) {
             const fallback = MODEL_CONFIGS[fallbackId];
